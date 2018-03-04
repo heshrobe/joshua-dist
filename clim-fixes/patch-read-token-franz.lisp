@@ -1,0 +1,71 @@
+(in-package :clim-internals)
+
+;; READ-TOKEN reads characters until it encounters an activation gesture,
+;; a delimiter character, or something else (like a mouse click).
+
+#+allegro
+(defun read-token (stream &key input-wait-handler pointer-button-press-handler
+                               click-only timeout)
+  (with-temporary-string (string :length 50 :adjustable t)
+    (let* ((gesture nil)
+           (gesture-type nil)
+           (quote-seen nil)
+           (old-delimiters *delimiter-gestures*)
+           (*delimiter-gestures* *delimiter-gestures*))
+      (flet ((return-token (&optional unread)
+               (when unread
+                 (unread-gesture unread :stream stream))
+               (when (and (activation-gesture-p unread)
+                          (input-editing-stream-p stream))
+                 (rescan-if-necessary stream))
+               (return-from read-token
+                 (values (evacuate-temporary-string string)))))
+        (loop
+          (multiple-value-setq (gesture gesture-type)
+            (stream-read-gesture stream
+				 :input-wait-handler
+				 (or input-wait-handler
+				     *input-wait-handler*)
+				 :pointer-button-press-handler
+				 (or pointer-button-press-handler
+				     *pointer-button-press-handler*)
+				 :timeout (and click-only timeout)))
+          (cond ((eq gesture-type :timeout)
+                 (return-from read-token :timeout))
+                ((and click-only (eq gesture :eof))
+                 (error "Got an EOF when waiting for mouse input"))
+                ((eq gesture :eof)
+                 (return-token gesture))
+                ((and click-only
+                      (not (typep gesture 'pointer-button-event)))
+                 (beep stream))
+                ((typep gesture 'pointer-button-event)
+                 ;; No need to do anything, since this should have been handled
+                 ;; in the presentation type system already
+                 )
+                ((characterp gesture)
+                 (cond ((and (zerop (fill-pointer string))
+                             (eql gesture *quotation-character*))
+                        (setq quote-seen t)
+                        (setq *delimiter-gestures* nil))
+                       ((and quote-seen
+                             (eql gesture *quotation-character*))
+                        (setq quote-seen nil)
+                        (setq *delimiter-gestures* old-delimiters))
+                       ((activation-gesture-p gesture)
+                        (return-token gesture))
+                       ((delimiter-gesture-p gesture)
+                        ;; ditto?
+                        (return-token gesture))
+                       ((or (ordinary-char-p gesture)
+                            (diacritic-char-p gesture))
+                        (vector-push-extend gesture string)
+                        ;;--- haven't updated WRITE-CHAR yet
+                        #+++ignore (write-char gesture stream))
+                       (t (beep stream))))
+                ((activation-gesture-p gesture)
+                 (return-token gesture))
+                ((delimiter-gesture-p gesture)
+                 (return-token gesture))
+		;; Allegro sources do (beep stream) here.
+                (t (RETURN-TOKEN GESTURE))))))))
