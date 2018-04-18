@@ -33,14 +33,14 @@
   ;; (load "~/Research-Projects/natural-software/code/defsystem.lisp")
   ;; (load-system 'natsoft)
   
-  (load "~/Research-Projects/new-awdrat/code/defsystem.lisp")
-  (load-system 'awdrat)
+  ;; (load "~/Research-Projects/new-awdrat/code/defsystem.lisp")
+  ;; (load-system 'awdrat)
   
-  (load "~/Research-Projects/control-system/defsystem.lisp")
-  (load-system 'controls)
+  ;; (load "~/Research-Projects/control-system/defsystem.lisp")
+  ;; (load-system 'controls)
   
-  (load "~/Research-Projects/attack-planning/defsystem.lisp")
-  (load-system 'aplan)
+  ;; (load "~/Research-Projects/attack-planning/defsystem.lisp")
+  ;; (load-system 'aplan)
 
   )
 
