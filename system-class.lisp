@@ -9,18 +9,20 @@
      ())
    
    (defmethod defsys:product-pathname ((module separate-destination-module))
-     (let ((source-pathname (ds:source-pathname module)))
-       (let* ((my-directory (append (butlast (pathname-directory source-pathname)) 
-				    (list (format nil "~a-binaries"
-						  #+(and unix solaris2) 'solaris
-						  #+(and unix macosx) 'macosx
-						  #+(and unix linux smp) 'linux-smp
-						  #+(and unix linux (not smp)) 'linux-non-smp
-						  #+MSWindows 'windows))))
+     (let ((source-pathname (translate-logical-pathname (ds:source-pathname module))))
+       (let* ((my-directory (append (pathname-directory source-pathname) 
+				    (list (string-upcase
+					   (format nil "~a-binaries"
+						   #+(and unix solaris2) 'solaris
+						   #+(and unix macosx) 'macosx
+						   #+(and unix linux smp) 'linux-smp
+						   #+(and unix linux (not smp)) 'linux-non-smp
+						   #+MSWindows 'windows)))))
 	      (full-pathname (make-pathname :directory my-directory
 					    :host (pathname-host source-pathname)
 					    :device (pathname-device source-pathname)
 					    :name (pathname-name source-pathname)
+					    :type "fasl"
 					    )))
 	 (ensure-directories-exist full-pathname)
 	 full-pathname)))

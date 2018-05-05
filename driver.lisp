@@ -14,6 +14,8 @@
 
 (load "~/quicklisp/setup.lisp")
 
+(ql:quickload :cl-json)
+
 (let* ((loading-file *load-truename*)
        (directory (cdr (pathname-directory loading-file))))
   (print loading-file)
@@ -45,6 +47,9 @@
 		       :device (pathname-device loading-file)
 		       :name "jd-defsystem" :type "lisp")
         #+mcl :external-format #+mcl :unix)
+  (load (make-pathname :directory `(:absolute ,@directory "ideal")
+		       :device (pathname-device loading-file)
+		       :name "load-ideal" :type "lisp"))
   )
 
   
@@ -68,6 +73,10 @@
   (when compile
     (compile-system 'joshua-developer :recompile recompile))
   (load-system 'joshua-developer)
+  ;; ideal
+  (when compile
+    (compile-system 'ideal :recompile recompile))
+  (load-system 'ideal)
   ;; xml-parser
   (when xml-server
     (when compile

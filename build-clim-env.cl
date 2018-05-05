@@ -14,10 +14,12 @@
 (load "~/josh-dist/driver.lisp")
 
 (handler-bind ((fasl-casemode-mismatch #'(lambda (c) (invoke-restart 'excl::fasl-casemode-mismatch-continue)))) 
-  (build-it)
+  (build-it :xml-server t)
 
-  (load "~/josh-dist/xml-parser/xml-parser-defsystem.lisp")
-  (load-system 'xml-parser)
+  ;; (load "~/josh-dist/xml-parser/xml-parser-defsystem.lisp")
+  ;; (load-system 'xml-parser)
+  ;; covered by :xml-server switch to build-it
+  ;; (load-system 'sample-xml-rpc-server)
 
   (load "~/josh-dist/ideal/load-ideal.lisp")
   (load-system 'ideal)
@@ -28,19 +30,17 @@
   ;; I don't think I have a need for this anymore
   ;; (load "test-eli.fasl")
 
-  (load-system 'sample-xml-rpc-server)
-
-  ;; (load "~/Research-Projects/natural-software/code/defsystem.lisp")
-  ;; (load-system 'natsoft)
+  (load "~/Research-Projects/natural-software/code/defsystem.lisp")
+  (load-system 'natsoft)
   
-  ;; (load "~/Research-Projects/new-awdrat/code/defsystem.lisp")
-  ;; (load-system 'awdrat)
+  (load "~/Research-Projects/new-awdrat/code/defsystem.lisp")
+  (load-system 'awdrat)
   
-  ;; (load "~/Research-Projects/control-system/defsystem.lisp")
-  ;; (load-system 'controls)
+  (load "~/Research-Projects/control-system/defsystem.lisp")
+  (load-system 'controls)
   
-  ;; (load "~/Research-Projects/attack-planning/defsystem.lisp")
-  ;; (load-system 'aplan)
+  (load "~/Research-Projects/attack-planning/defsystem.lisp")
+  (load-system 'aplan)
 
   )
 
