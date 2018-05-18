@@ -1,0 +1,8 @@
+At the moment joshua has a bunch of global state, for example the discrimination nets and other similar things that are used by specific models.  Since this is global it's impossible to have two different joshua things going on at the same time.  At the very least "clear" clears both their states.  In a more conventional type systems you could have two "processes" with separate address spaces each of which was running a different joshua.  And I guess in principle, we could have two different lisp images running in different application processes for the same user.
+
+In addition, if we have two threads running (i.e. lisp processes) there's a lot of dynamic state (e.g. the rule-triggering queue) which isn't bound by lisp-process and this stuff could step on itself too.
+
+So it seems like there are a couple of new abstractions needed:
+ 1) A context: the set of all static state like indices.  These can be shared between processes (of course we'd need to be more careful about locking than we are now)
+ 2) The dynamic state: per process dynamic state (like queues).
+  

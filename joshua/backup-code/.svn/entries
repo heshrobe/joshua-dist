@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="1"
+   name=""
+   committed-date="2006-01-06T16:58:57.444318Z"
+   url="file:///afs/csail/u/h/hes/REPOS/josh-dist/joshua/code"
+   last-author="hes"
+   kind="dir"
+   uuid="73f4128a-b309-0410-aaa5-f9d3656b4317"
+   revision="1"/>
+<entry
+   committed-rev="1"
+   name="._predimpl.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="predicat.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="e42dfaf7bead598b85427b96b9f88c0f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._mapfvars.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._packaged.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="66b8f098c6a24a5403b36e4a6bf43050"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._readnnwr.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="rete.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="5eaa350e694889a42e790a206546e18c"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="matcher.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="a011cb6bee83a9e5ed7f9bb4fc2277d8"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._cfs.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="743fa483abd67077ae64a3863567dcc6"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="joshua-defsystem.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="867b7e53f28ee753260b8c7e88217252"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="rules.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="6bd7a43f60a74abc637a055149a502a8"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="cfs.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="52e76029c55bb599519fe4f32695da72"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="preddefs.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="bb660d746d7f3dd1733725458476a14f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="predimpl.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="f36d859e648a7185b91910629caa93a9"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="mapfvars.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="dbc1d2b5b253bd8069110d5baddfef2f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="packaged.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="948499c49978c41306d1b7f19a5eb748"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._objectmo.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="readnnwr.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="a1942e93b10a7ea840b1f0cb65429caf"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="discrimi.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="ca5592e648aa4ee5e8cc84392a57d1c4"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._rules.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="2276d0c53982523ca95ef584c15e760a"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._ltms.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="clos-heaps.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="08a4e8cb348406891fec295a670bc144"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._matcher.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._mapforms.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="objectmo.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="26d051566c51547d7178f8e034312bf1"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._supplied.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="predicat.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="45c0084bbe874235cea9e9ecc9d2e855"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._predprot.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="cloehacks.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="911208c47bafb73d390359821c78350a"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._borrowin.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:09.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._unificat.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="rete.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="0933a33b859f31d589b382bd398b6b00"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="ltms.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="f593df7dff1991bb224f6561d901b8b7"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="mapforms.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="7384644728c22be9246a916033fba9c5"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="supplied.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="1376edd9b63cb40336ac95551b7fadc1"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="cfs.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="441dd26d6aae11d56c62d8dbb191aed1"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="predimpl.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="787f1ac8f86359334ddcc415de9e3de4"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="mapfvars.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="11b7f6ea133178053c701f2c075b5b1b"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="predprot.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="b27a162e2ec25e0f5809cbbfb9ccf451"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="readnnwr.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="f573ca9d9a1f5c96fa21ba04bb029503"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="borrowin.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="53837a2de739e67ab4259383e590d44e"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="unificat.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="1b39d56cc20734321e3424c944bfb41f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._preddefs.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._clos-heaps.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._packaged.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="clos-heaps.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="6d896b36ef7b8f1f2414837b535c9f12"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._discrimi.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="objectmo.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="026d598f627202e5e73b6f21c1447f81"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="matcher.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="e58c8b6efebea0d7d943ad2d541a108f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._cfs.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="rules.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="2192eddf1992a7d835d927fb1ca4a157"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="preddefs.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="acd1438054a28923770e15297c0dd14b"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._borrowin.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="ba944f7d0b08570cb84a05972a128233"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="ltms.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="21704f092d2c41d89e1b316dd2ab3d18"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="packaged.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="bcc40652e3b6a8fb19e85aff834f6e05"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="discrimi.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="9dcf0b7607b667c3c9152c3db150aa1f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="mapforms.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="2135e93a697b864d7308d8c4a5778486"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="supplied.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="15f0d386ecd18f8ae5f9e99a37877e3f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._rules.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._predicat.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._rete.cfsl"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d01ce0a5e50531723be3292e28de2043"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="predprot.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="29abb8e9d74a3d5ba9e3d44651b9eeaa"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="borrowin.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="723f6947892ae4126d769906ef0a8644"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="unificat.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="cd979ca82e0879bc0352f548c447a3fa"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+<entry
+   committed-rev="1"
+   name="._joshua-defsystem.lisp"
+   text-time="2006-01-06T17:02:10.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="46ba83e5d5c9044c61b1746e179d2238"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:10.000000Z"/>
+</wc-entries>

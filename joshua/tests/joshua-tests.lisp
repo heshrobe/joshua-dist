@@ -1,0 +1,715 @@
+;;; -*- Base: 10; Mode: common-LISP; readtable: Joshua; Package: JOSHUA-USER -*-
+
+(in-package :JOSHUA-USER)
+
+(defparameter *joshua-tests* nil "List of tests for Joshua.")
+
+(def-defining-form deftest
+   :definer
+   ((name &body body)
+    ;; succeeds if all the forms in body return non-NIL.
+    `(progn #+genera (scl:record-source-file-name ',name 'deftest)
+	    (pushnew ',name *joshua-tests*)
+	    (defun ,name ()
+	      (and ,@body))))
+   :killer
+   ((name)
+    ;; how to undefine a Joshua test
+    (setq *joshua-tests* (delete name *joshua-tests*))
+    (fundefine name))
+   :type-name "Joshua Test")
+
+(defun check-database (predication)
+  ;; check that something is in the database
+  (ask predication #'(lambda (backward-support)
+		       (declare (ignore backward-support))
+		       (return-from check-database t))
+       :do-backward-rules nil))
+
+(defun test-n-successes (n query)
+  ;; test whether or not a query succeeds n times.
+  (let ((success-count 0))
+    (flet ((count-successes (backward-support)
+	     (declare (ignore backward-support))
+	     (incf success-count)))
+      (ask query #'count-successes)
+      (= success-count n)))) 
+
+(defun test-n-fetches (n query)
+  ;; like test-n-successes, but at the database level
+  (let ((success-count 0))
+    (flet ((count-successes (backward-support)
+	     (declare (ignore backward-support))
+	     (incf success-count)))
+      (fetch query #'count-successes)
+      (= success-count n))))
+
+(defun samaritan (&optional (test-names *joshua-tests*) (stream *standard-output*))
+  ;; top-level driver for all the Joshua tests.
+  ;; poor man's table formatting (we don't use the DW formatting stuff 'cause we want
+  ;; to print the table as it's generated, instead of all at the end.  this way there's
+  ;; visible progress in the case of a very long test suite.)
+  (loop with tab-string
+	initially (setq tab-string
+			;; poor man's table-formatting.  
+			(format nil "~~~DT"
+				(+ 12 (loop for test-name in test-names
+					    maximize (length (string test-name))))))
+		  (format stream "~&~8TTest Name~@?Verdict" tab-string)
+	for test-name in test-names
+	doing (format stream "~&Running ~A..." test-name) (clear)
+	if (catch 'get-out
+	     (handler-bind ((error #'(lambda (condition)
+				       (declare (ignore condition))
+				       (throw 'get-out nil))))
+	       (funcall test-name)))
+ 	  do (format stream "~@?passed." tab-string)
+	else
+	  do (format stream "~@?failed." tab-string)
+	  and collect test-name into failed-test-names
+	finally
+	  (clear)
+	  (cond (failed-test-names
+		  (format stream "~&~D test~:P out of ~D failed: ~a."
+			  (length failed-test-names) (length test-names) failed-test-names))
+		(t
+		  (format stream "~&Passed all ~D test~:P."
+			  (length test-names))))))
+
+
+
+;;;; Passed
+
+(define-predicate test-known (x)) ;dumb frob for testing known
+
+(deftest known-test
+  ;; run a test of KNOWN
+  ;; put test data in database
+  (tell [test-known 1])
+  (tell [not [test-known 2]])
+  ;; ASKing for PROVABLE, 1 truth-value
+  (test-n-successes 1 [provable [test-known ? ]])
+  (test-n-successes 1 [provable [not [test-known ? ]]])
+  (test-n-successes 0 [provable [test-known foo]])
+  (test-n-successes 0 [provable [not [test-known foo]]])
+  
+  ;; ASKing for NOT PROVABLE, 1 truth-value
+  (test-n-successes 1 [not [provable [test-known foo]]])
+  (test-n-successes 1 [not [provable [not [test-known foo]]]])	;Yow!  Figure that out!
+  (test-n-successes 0 [not [provable [test-known 1]]])
+  (test-n-successes 0 [not [provable [not [test-known 2]]]])
+  
+  ;; ASKing for KNOWN, both truth-values
+  (test-n-successes 0 [known [test-known foo]])
+  (test-n-successes 0 [known [not [test-known foo]]])	;same as previous case
+  (test-n-successes 1 [known [test-known 1]])
+  (test-n-successes 1 [known [not [test-known 1]]])	;same as previous case
+  (test-n-successes 1 [known [not [test-known 2]]])
+  (test-n-successes 1 [known [test-known 2]])		;same as previous case
+  
+  ;; ASKing for NOT KNOWN, both truth-values
+  (test-n-successes 0 [not [known [test-known 1]]])
+  (test-n-successes 0 [not [known [not [test-known 1]]]])	;same as previous case
+  (test-n-successes 0 [not [known [not [test-known 2]]]])
+  (test-n-successes 0 [not [known [test-known 2]]])	;same as previous case
+  (test-n-successes 1 [not [known [test-known foo]]])
+  (test-n-successes 1 [not [known [not [test-known foo]]]])	;same as previous case
+  )
+
+
+
+;;; Passed
+
+(define-predicate bozo (who) (ltms:ltms-predicate-model))
+
+(deftest one-of-test
+  ;; Common Lisp has no global handler so bind the equivalent here.
+  (handler-bind ((tms-contradiction
+		   ;; have to handle the contradiction automatically, can't ask user.
+		   #'(lambda (condition)
+		       ;; make sure it's the contradiction we expect, and then handle it
+		       ;; the way we want to.  (Note that 2 contradictions happen, only one
+		       ;; of which is interesting.)
+		       (let ((non-premises (tms-contradiction-non-premises condition)))
+			 (when (= (length non-premises) 1)
+			   ;; this is the case the global handler in Genera would have handled
+			   (invoke-restart :unjustify-subset non-premises))))))
+    ;; first add the constraint that sombody is a bozo.
+    (prog1 t (tell [ltms:one-of [bozo larry] [bozo curly] [bozo moe]] :justification :assumption))
+    ;; now it should believe Larry is a bozo and have no opinion about the others
+    (test-n-successes 1 [ltms:one-of . ?])
+    (test-n-successes 1 [bozo ?])
+    (test-n-successes 0 [not [bozo ?]])
+    (check-database [bozo larry])
+    ;; now tell it larry's not a bozo
+    (prog1 t (tell [not [bozo larry]]))
+    ;; it should believe curly's a bozo and larry isn't while having no opinion about moe
+    (test-n-successes 1 [ltms:one-of . ?])
+    (test-n-successes 1 [bozo ?])
+    (test-n-successes 1 [not [bozo ?]])
+    (check-database [bozo curly])
+    (check-database [not [bozo larry]])
+    ;; now tell it curly's not a bozo
+    (prog1 t (tell [not [bozo curly]]))
+    ;; it should believe curly and larry are not bozos, but moe is
+    (test-n-successes 1 [ltms:one-of . ?])
+    (test-n-successes 1 [bozo ?])
+    (test-n-successes 2 [not [bozo ?]])
+    (check-database [bozo moe])
+    (check-database [not [bozo larry]])
+    (check-database [not [bozo curly]])
+    ;; now tell it (ok, so this is a fantasy) that moe is not a bozo
+    (prog1 t (tell [not [bozo moe]]))
+    ;; now it should believe all 3 are not bozos, and have rejected the one-of
+    (test-n-successes 0 [ltms:one-of . ?])
+    (test-n-successes 1 [not [ltms:one-of . ?]])
+    (test-n-successes 0 [bozo ?])
+    (test-n-successes 3 [not [bozo ?]])
+    (check-database [not [bozo larry]])
+    (check-database [not [bozo curly]])
+    (check-database [not [bozo moe]])))
+
+
+
+;;; Passed
+
+(deftest dn-table-test
+  ;; test the tables used by the discrimination net
+  (let ((dn-table (ji::make-dn-table)))
+    (and (zerop (ji::dn-table-size dn-table))
+	 (null (ji::dn-table-get 1 dn-table))
+	 (loop for i below ji::*dn-table-crossover-size*
+	       ;; fill to brim, but not over
+	       doing (setf (ji::dn-table-get i dn-table) i)
+	       finally (return t))
+	 (ji::dn-table-alist-p dn-table)
+	 (listp (ji::dn-table-data dn-table))
+	 (every #'numberp (ji::dn-table-keys dn-table))
+	 (every #'numberp (ji::dn-table-values dn-table))
+	 (setf (ji::dn-table-get 'foo dn-table) 'bar) ;1 above
+	 (not (ji::dn-table-alist-p dn-table)))))
+
+
+
+
+;;; Passed
+
+(define-predicate jericho-type-of-host (a b))
+(define-predicate jericho-machine-type (a b))
+(define-predicate jericho-uses-bitmap-printer (a b))
+(deftest ask-conjunct-test
+  ;; 7thSon found a bug in the ASK method of AND-model, which first showed up if you
+  ;; ASKed more than 3 conjuncts (a let of conjunct was missing, so it made closures
+  ;; over a lexical that subsequently changed).  In the example below, the 2nd query would
+  ;; get ASKed 2ce, and the 3rd query not at all, leading to uninstantiated variables.
+  (progn (tell [and [jericho-type-of-host riverside lispm]
+		    [jericho-machine-type riverside 3600]
+		    [jericho-uses-bitmap-printer riverside journal]])
+	 (block test-ask-of-conjunct
+	   (ask [and [jericho-type-of-host ?host ?type]
+		     [jericho-machine-type ?host ?machine-type]
+		     [jericho-uses-bitmap-printer ?host ?printer]]
+		#'(lambda (backward-support)
+		    (when (and (typep (ask-query backward-support) 'ji::and-internal)
+			       (not (unbound-logic-variable-p ?host))
+			       (not (unbound-logic-variable-p ?type))
+			       (not (unbound-logic-variable-p ?machine-type))
+			       (not (unbound-logic-variable-p ?printer)))
+		      ;; this is ok
+		      (return-from test-ask-of-conjunct t)))))))
+
+
+;;; Passed
+
+;;;
+;;; Test importance feature for forward rules.  (Incomplete test as of now.)
+;;;
+
+(defvar *importance-of-secondary-rule*)
+(defvar *importance-of-primary-rule*)
+(defvar *firing-order*)
+
+(define-predicate test-forward-importance (x))
+
+(defrule primary-rule (:forward :importance *importance-of-primary-rule*)
+  IF [test-forward-importance ?x]
+  THEN (push 'primary-rule *firing-order*))
+
+(defrule secondary-rule (:forward :importance *importance-of-secondary-rule*)
+  IF [test-forward-importance ?x]
+  THEN (push 'secondary-rule *firing-order*))
+
+(deftest forward-importance-test
+  ;; test variable rule importances
+  (and (progn (clear)
+	      (setq *firing-order* nil
+		    *importance-of-primary-rule* 10
+		    *importance-of-secondary-rule* 1)
+	      ;; primary-rule should fire first
+	      (tell [test-forward-importance foo])
+	      (equal *firing-order* '(secondary-rule primary-rule)))
+       (progn (clear)
+	      (setq *firing-order* nil
+		    *importance-of-primary-rule* 1
+		    *importance-of-secondary-rule* 10)
+	      ;; secondary-rule should fire first
+	      (tell [test-forward-importance foo])
+	      (equal *firing-order* '(primary-rule secondary-rule)))))
+
+
+
+;;; Passed
+
+;;;
+;;; Test importance feature for backward rules.  (Incomplete test as of now.)
+;;; (This should be combined with the forward importance test above, and expanded to be rigorous.)
+;;;
+
+(define-predicate test-backward-importance (x)) ;should share w/forward importance test
+
+(defrule primary-rule-backward (:backward :importance *importance-of-primary-rule*)
+  IF t
+  THEN [test-backward-importance primary-rule-backward])
+
+(defrule secondary-rule-backward (:backward :importance *importance-of-secondary-rule*)
+  IF t
+  THEN [test-backward-importance secondary-rule-backward])
+
+(deftest backward-importance-test
+  ;; test variable rule importances
+  (and (progn (clear)
+	      (setq *importance-of-primary-rule* 10
+		    *importance-of-secondary-rule* 1)
+	      ;; primary-rule should fire first
+	      (let ((firing-order nil))
+		(ask [test-backward-importance ?rule-name]
+		     #'(lambda (support)
+			 (declare (ignore support))
+			 (push ?rule-name firing-order)))
+		(equal firing-order '(secondary-rule-backward primary-rule-backward))))
+       (progn (clear)
+	      (setq *importance-of-primary-rule* 1
+		    *importance-of-secondary-rule* 10)
+	      ;; secondary-rule should fire first
+	      (let ((firing-order nil))
+		(ask [test-backward-importance ?rule-name]
+		     #'(lambda (support)
+			 (declare (ignore support))
+			 (push ?rule-name firing-order)))
+		(equal firing-order '(primary-rule-backward secondary-rule-backward))))))
+
+
+
+;;; Passed
+
+(define-predicate is-on (a b))
+
+(defvar *ask-is-on-2-importance* 1)
+(defvar *question-order* nil)
+
+(defquestion ask-is-on-0 (:backward) [is-on a b]
+  :code
+  ;; just note it's fired and continue
+  ((query truth-value continuation)
+   (progn query truth-value)			;meaning ignore
+   (push 0 *question-order*)
+   (succeed)))
+	     
+(defquestion ask-is-on-1 (:backward :importance 2) [is-on a b]
+  :code
+  ;; just note it's fired and continue
+  ((query truth-value continuation)
+   (progn truth-value query)			;meaning ignore
+   (push 1 *question-order*)
+   (succeed)))
+
+(defquestion ask-is-on-2 (:backward :importance *ask-is-on-2-importance*) [is-on a b]
+  :code
+  ;; just note it's fired and continue
+  ((query truth-value continuation)
+   (progn truth-value query)			;meaning ignore
+   (push 2 *question-order*)
+   (succeed)))
+
+(deftest backward-question-importance-test
+  ;; run a simple dummy test of questions & importance.
+  (progn (setq *ask-is-on-2-importance* 1
+	       *question-order* nil)
+	 ;; should get them in order 0, 1, 2
+	 (ask [is-on a b]
+	      #'(lambda (b-s)
+		  (declare (ignore b-s))
+		  nil)
+	      :do-backward-rules nil 
+	      :do-questions t)
+	 (equal *question-order* '(2 1 0)))
+  (progn (setq *ask-is-on-2-importance* 3
+	       *question-order* nil)
+	 ;; should get them in order 0, 2, 1
+	 (ask [is-on a b]
+	      #'(lambda (b-s)
+		  (declare (ignore b-s))
+		  nil)
+	      :do-backward-rules nil
+	      :do-questions t)
+	 (equal *question-order* '(1 2 0))))
+
+
+
+;;;; passed
+
+(define-predicate simple-simon (arg1 arg2))
+
+(deftest untell-test
+  (flet ((untell-simon (x y)
+	   ;; remove certain simple-simon patterns from the database
+	   (map-over-database-predications `[simple-simon ,x ,y] #'untell)
+	   t)
+	 (tell-simon ()
+	   (tell [and [simple-simon 1 2]
+		      [simple-simon 2 3]])))
+    (and (null (untell [simple-simon foo bar])) ;should do nothing; 1st imple looped!
+	 ;; first test that it becomes invisible to ASK
+	 (tell-simon)
+	 (test-n-successes 2 [simple-simon ? ?])
+	 (untell-simon 1 2)
+	 (test-n-successes 1 [simple-simon ? ?])
+	 (untell-simon 2 3)
+	 (test-n-successes 0 [simple-simon ? ?])
+	 ;; now test at the database level (no unification or truth-value checking)
+	 (tell-simon)
+	 (test-n-fetches 2 [simple-simon ? ?])
+	 (untell-simon 1 2)
+	 (test-n-fetches 1 [simple-simon ? ?])
+	 (untell-simon 2 3)
+	 (test-n-fetches 0 [simple-simon ? ?]))))
+
+
+
+;;; Passed
+
+;;;
+;;; Tests for filters in forward rules.
+;;;
+
+(define-predicate test-filter-1 (a b))
+(define-predicate test-filter-2 (a b))
+(define-predicate test-filter-3 (a))
+
+(defrule forward-filter-test-rule (:forward)
+  IF [and [test-filter-1 ?a ?b]
+	  (ask [test-filter-2 ?b ?c]
+	       #'(lambda (support)
+		   (declare (ignore support))
+		   (succeed)))
+	  [test-filter-1 ?c ?d]]
+  THEN [test-filter-3 ?d])
+
+(deftest forward-trigger-filter-test
+  ;; put some stuff in the database and see if the ask in the filter above works
+  ;; this is nowhere near an exhaustive test
+  (tell [test-filter-2 2 3])
+  (tell [test-filter-2 2 4])
+  (tell [test-filter-2 2 5])
+  (tell [test-filter-1 1 2])
+  (tell [test-filter-1 3 5])
+  (tell [test-filter-1 4 6])
+  (tell [test-filter-1 7 8])
+  (let ((values nil))
+    (ask [test-filter-3 ?x]
+	 #'(lambda (support)
+	     (declare (ignore support))
+	     (push ?x values)))
+    (equal (sort values #'<)
+	   '(5 6))))
+
+
+;;; Passed, notice what we had to do to equal.
+
+(define-predicate jappend (x y z))
+
+(defrule jappend-1 (:backward :importance 1)
+  If [jappend ?x ?y ?z]
+  Then [jappend (?a . ?x) ?y (?a . ?z)])
+
+(defrule jappend-2 (:backward :importance 2)
+  If t
+  Then [jappend nil ?x ?x])
+
+(deftest jappend-test
+  (labels ((equal-derefering-lvs (tree1 tree2)
+	     (cond ((eql tree1 tree2) t)
+		   ((typep tree1 'ji::joshua-logic-variable)
+		    (unless (ji::joshua-logic-variable-unbound-p tree1)
+		      (equal-derefering-lvs (ji::joshua-logic-variable-value tree1)
+					    tree2)))
+		   ((typep tree2 'ji::joshua-logic-variable)
+		    (unless (ji::joshua-logic-variable-unbound-p tree2)
+		      (equal-derefering-lvs tree1
+					    (ji::joshua-logic-variable-value tree2))))
+		   ((atom tree1) nil)
+		   ((atom tree2) nil)
+		   (t (and (equal-derefering-lvs (car tree1) (car tree2))
+			   (equal-derefering-lvs (cdr tree1) (cdr tree2)))))))
+    (macrolet ((test-ask-append (query var answer &aux (tag (gensym)))
+		 `(block ,tag
+		    (ask ,query
+			 #'(lambda (support)
+			     (declare (ignore support))
+			     (when (equal-derefering-lvs ,var ,answer)
+			       (return-from ,tag t)))))))
+      (and (test-ask-append [jappend (1 2) (3 4) ?x]     ?x '(1 2 3 4))
+	   (test-ask-append [jappend (1 2) ?x (1 2 3 4)] ?x '(3 4))
+	   (test-ask-append [jappend ?x (3 4) (1 2 3 4)] ?x '(1 2))
+	   (test-ask-append [jappend (1 2) (3 . ?y) ?x]  ?x (list* 1 2 3 ?y))
+	   (test-ask-append [jappend (1 2) ?y ?x]        ?x (list* 1 2 ?y))
+	   ;;(test-ask-append [jappend ?x nil ?x] ???)
+	   ))))
+
+
+
+;;;; Passed
+
+;;;
+;;; A test of tell/ask-data/clear modelling.
+;;;
+
+(defvar *known-foods* nil "What's on the menu.")
+
+(define-predicate-model good-to-eat-model
+			(food)
+			(default-protocol-implementation-model))
+
+(define-predicate-method (tell good-to-eat-model) (truth-value justification)
+  (progn justification)				;meaning ignore
+  ;; tell something about food.
+  (when (unbound-logic-variable-p food)
+    (error "You can't possibly mean that everything is good to eat: ~S" self))
+  (unless (= truth-value *true*)
+    (error "You don't need to say what's not good to eat: ~S" self))
+  (cond ((member food *known-foods*)
+	 ;; this thing is already known to be good to eat.
+	 self)
+	(t
+	 ;; this is a new one, put it on the list
+	 (push food *known-foods*)
+	 self)))
+
+(define-predicate-method (ask-data good-to-eat-model) (truth-value continuation)
+  ;; retrieve some data about known foods
+  (unless (or (null truth-value)
+	      (eql truth-value *true*))
+    (signal 'ji:model-can-only-handle-positive-queries
+	    :model (type-of self)
+	    :query self))
+  (typecase food
+    (unbound-logic-variable
+      ;; wants to succeed once for each possible food
+      (loop for known-food in *known-foods*
+	    doing (with-unification
+		    (unify food known-food)
+		    (stack-let ((support `(,self ,truth-value good-to-eat)))
+		      (funcall continuation support)))))
+    (otherwise
+      ;; wants to know if something in particular is good to eat
+      (when (member food *known-foods*)
+	(stack-let ((support `(,self ,truth-value good-to-eat)))
+	  (funcall continuation support))))))
+
+(define-predicate-method (clear good-to-eat-model) (&optional (clear-database t) clear-rules)
+  ;; flush all the data about known foods
+  (progn clear-rules)				;meaning ignore
+  (when clear-database
+    (setq *known-foods* nil)))
+
+(define-predicate good-to-eat (food) (good-to-eat-model)
+  :destructure-into-instance-variables)
+
+(deftest simple-data-modelling-test
+  (and
+    ;; test the insert part of it
+    (progn (setq *known-foods* nil)
+	   (tell [and [good-to-eat suan-la-chow-show]
+		      [good-to-eat kung-pao-chi-ding]
+		      [good-to-eat ta-chien-chi-ding]
+		      [good-to-eat lychee-nuts]])
+	   (equal *known-foods* '(lychee-nuts ta-chien-chi-ding kung-pao-chi-ding suan-la-chow-show)))
+    ;; test the ask part of it -- first number of successes
+    (test-n-successes 4 [good-to-eat ?what])
+    ;; then with var instantiated.
+    (check-database [good-to-eat suan-la-chow-show])
+    (check-database [good-to-eat kung-pao-chi-ding])
+    (check-database [good-to-eat ta-chien-chi-ding])
+    (check-database [good-to-eat lychee-nuts])
+    ;; then with var uninstantiated
+    (let ((answers nil))
+      (ask [good-to-eat ?what]
+	   #'(lambda (support)
+	       (declare (ignore support))
+	       (push ?what answers)))
+      (equal (reverse answers) *known-foods*))
+    ;; test the clear-model part of it
+    (progn (clear)
+	   (null *known-foods*))))
+
+
+;;; Works
+
+(define-predicate subsumption-tester (arg))
+(deftest subsumption-test
+  ;; this tests for a dn bug JGA found while trying to understand unify and variant.
+  (progn (clear)
+	 (let ((old-guy (tell [subsumption-tester ?x])))
+	   (let ((new-guy (tell [subsumption-tester ?y])))
+	     (when (eql old-guy new-guy)
+	       (test-n-successes 1 [subsumption-tester ?]))))))
+
+
+
+;;; Passed
+
+(define-object-type site
+  :slots (file-server mail-server namespace-server domain-server))
+
+(define-predicate site-value-of
+	(slot value)
+	(slot-value-mixin default-protocol-implementation-model))
+
+(define-predicate-method (say site-value-of) (&optional (stream *standard-output*))
+  (with-statement-destructured (slot server) self
+    (destructuring-bind (site server-type) (path-name slot)
+      (format stream "~&The ~S of site ~S is ~S." server-type site server))))
+
+(deftest location-value-test
+  (let ((site (make-object 'site :name 'SCRC)))
+    (and
+      ;; first make sure all the slots are unbound
+      (let ((found-one nil))
+	(map-over-slots-of-object
+	  #'(lambda (slot)
+	      (when (slot-boundp slot 'ji::current-value)
+		(setq found-one t)))
+	  site)
+	(not found-one))
+      ;; now fill in some slots by TELLing the appropriate predications
+      (tell [and [site-value-of (scrc file-server) quabbin]
+		 [site-value-of (scrc mail-server) elephant-butte]
+		 [site-value-of (scrc namespace-server) riverside]
+		 [site-value-of (scrc domain-server) pegasus]])
+      ;; now see if it got filled in right
+      (eq (file-server site) 'quabbin)
+      (eq (mail-server site) 'elephant-butte)
+      (eq (namespace-server site) 'riverside)
+      (eq (domain-server site) 'pegasus)
+      ;; make sure the database understands how to find it
+      (check-database [site-value-of (scrc file-server) quabbin])
+      (check-database [site-value-of (scrc mail-server) elephant-butte])
+      (check-database [site-value-of (scrc namespace-server) riverside])
+      (check-database [site-value-of (scrc domain-server) pegasus])
+      ;; clear the database
+      (clear)
+      ;; make sure the slots are unbound now
+      (not (slot-boundp (file-server site nil) 'ji::current-value))
+      (not (slot-boundp (mail-server site nil) 'ji::current-value))
+      (not (slot-boundp (namespace-server site nil) 'ji::current-value))
+      (not (slot-boundp (domain-server site nil) 'ji::current-value))
+      ;; make sure the database stuff can't find anything
+      (test-n-successes 0 [site-value-of (scrc file-server) quabbin])
+      (test-n-successes 0 [site-value-of (scrc mail-server) elephant-butte])
+      (test-n-successes 0 [site-value-of (scrc namespace-server) riverside])
+      (test-n-successes 0 [site-value-of (scrc domain-server) pegasus])
+      ;; flush the example we just made
+      (prog1 t (kill site)))))
+
+
+;;; Passed
+
+(defvar *trigger-modelling-triggers* nil "Where trigger-modelling triggers go when they're hiding.")
+
+(define-predicate-model trigger-modelling-model () ())
+
+(define-predicate-method (locate-backward-rule-trigger trigger-modelling-model)
+			 (truth-value continuation context rule-name)
+  (progn truth-value context rule-name)
+  (setq *trigger-modelling-triggers* (funcall continuation *trigger-modelling-triggers*)))
+
+(define-predicate-method (map-over-backward-rule-triggers trigger-modelling-model) (continuation)
+  (mapc continuation *trigger-modelling-triggers*))
+
+
+(define-predicate trigger-modelling (arg) (trigger-modelling-model default-predicate-model))
+
+(defrule trigger-modelling-rule (:backward)
+  IF t
+  THEN [trigger-modelling foo])
+
+(deftest simple-trigger-modelling-test
+  ;; test of simple trigger modelling.  Note that the 0 successes actually
+  ;; tests for inheriting the correct POSITIONS-MATCHER-CAN-SKIP method.
+  (test-n-successes 0 [trigger-modelling bar])
+  (test-n-successes 1 [trigger-modelling foo]))
+
+
+
+;;; Works (except that the when in the rule doesn't compile because mapforms discovers
+;;; that it is zl:::cltl::if).
+
+(define-predicate fact (arg value)
+		  (ask-rules-only-mixin default-protocol-implementation-model))
+
+(defrule fact-ground (:backward)
+  IF t
+  THEN [fact 0 1]) 
+
+(defrule fact-step (:backward)
+  IF (when (> ?arg 0)
+       ;; would do this differently if is-lisp-value were in the system.
+       (ask `[fact ,(1- ?arg) ,?step-value]
+	    #'(lambda (support)
+		(declare (ignore support))
+		(unify ?value (* ?step-value ?arg))
+		(succeed))))
+  THEN [fact ?arg ?value])
+
+(deftest factorial-test
+  ;; make sure you get 120, and only 120.
+  (let ((first-iteration-p t))
+    (ask [fact 5 ?what]
+	 #'(lambda (support)
+	     (declare (ignore support))
+	     (when (or (not first-iteration-p)
+		       (not (numberp ?what))
+		       (not (= ?what 120)))
+	       (return-from factorial-test nil))))
+    t))
+
+(define-predicate above (a b))
+
+
+(defrule above-from-on (:backward)
+  If [and [is-on ?a ?b]
+	  [is-on ?b ?c]]
+  Then [above ?a ?c])
+
+
+(deftest simple-backward-rule-test
+  (prog1
+    (tell [is-on a b])
+    (tell [is-on b c]))
+  (test-n-successes 1 [above ?a ?c]))
+
+
+(deftest conjunctive-and-nested-ask-test
+  (prog1 t
+	 (tell [is-on a b])
+	 (tell [is-on b c]))
+  (and
+    (test-n-successes 1 [and [is-on ?a ?b] [is-on ?b ?c]])
+    (block foo
+      (ask [is-on ?a ?b]
+	   #'(lambda (b-s)
+	       (declare (ignore b-s))
+	       (ask [is-on ?b ?c]
+		    #'(lambda (b-s)
+			(declare (ignore b-s))
+			(return-from foo t))))))))

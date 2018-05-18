@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="1"
+   name=""
+   committed-date="2006-01-06T16:58:57.444318Z"
+   url="file:///afs/csail/u/h/hes/REPOS/josh-dist/joshua/tests"
+   last-author="hes"
+   kind="dir"
+   uuid="73f4128a-b309-0410-aaa5-f9d3656b4317"
+   revision="1"/>
+<entry
+   committed-rev="1"
+   name="joshua-tests.lisp"
+   text-time="2006-01-06T17:02:05.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="cbd59104bd1c1f814ca6f7eb37199477"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:05.000000Z"/>
+<entry
+   committed-rev="1"
+   name="object-modeling-tests.lisp"
+   text-time="2006-01-06T17:02:05.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="057e81b1ac33925eb9fa8b17edc64eeb"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:05.000000Z"/>
+<entry
+   committed-rev="1"
+   name="defsystem.lisp"
+   text-time="2006-01-06T17:02:05.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="df2a49fee0ef84e2301c7aa75e3059b5"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:05.000000Z"/>
+<entry
+   committed-rev="1"
+   name="tms-tests.lisp"
+   text-time="2006-01-06T17:02:05.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="7086a1a59093bead4154dbbc35ed05b2"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:05.000000Z"/>
+<entry
+   committed-rev="1"
+   name="gramps-test.lisp"
+   text-time="2006-01-06T17:02:05.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="b60d2d2e430adec660a93daac943c8a8"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:05.000000Z"/>
+<entry
+   committed-rev="1"
+   name="widget-factory.lisp"
+   text-time="2006-01-06T17:02:05.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="0b9a228370573d12e2714415ebe25ec9"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:05.000000Z"/>
+</wc-entries>

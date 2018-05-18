@@ -1,0 +1,23 @@
+;;; -*- Mode: LISP; Syntax: Common-lisp; Package: cl-User; -*-
+
+(in-package :cl-user)
+
+
+#+mcl
+(clim-defsys:defsystem joshua-developer
+  ( :default-pathname "joshua:developer;")
+  ("tracing" :language :lisp-unix)
+  ("encapsulations" :load-before-compile ("tracing") :language :lisp-unix)
+  ("ptypes-and-commands" :load-before-compile ("encapsulations") :language :lisp-unix))
+
+#+allegro
+(defsystem joshua-developer
+    ( :default-pathname "joshua:developer;"
+     :default-module-class separate-destination-module
+     :pretty-name "Joshua Developer")
+  (:serial
+    ("tracing")
+    ("encapsulations")
+    ("ptypes-and-commands")))
+
+
