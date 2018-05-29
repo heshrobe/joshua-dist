@@ -14,7 +14,7 @@
 (load "~/josh-dist/driver.lisp")
 
 (handler-bind ((fasl-casemode-mismatch #'(lambda (c) (invoke-restart 'excl::fasl-casemode-mismatch-continue)))) 
-  (build-it :xml-server t)
+  (build-it :xml-server #+MacOSX t #-MacOSX nil)
 
   ;; (load "~/josh-dist/xml-parser/xml-parser-defsystem.lisp")
   ;; (load-system 'xml-parser)
