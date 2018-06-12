@@ -36,7 +36,7 @@
 
 #-Genera
 (in-package #+MCL "COMMON-LISP-USER"
-            #+allegro :common-lisp-user
+            #+(or allegro sbcl) :common-lisp-user
 	    #+LUCID "USER"
 	    #+CLOE "CLOE")
 ;;;
