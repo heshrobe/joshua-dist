@@ -93,12 +93,14 @@
   #+mcl (:shadow "CLEAR" "CCL")
   #+lucid (:shadow using-resource clear-resource)
   #+allegro (:import-from excl with-stack-list with-stack-list*)
+  #+allegro (:import-from clos finalize-inheritance class-slots slot-definition-allocation class-finalized-p intern-eql-specializer)
   #+(or genera cloe-developer) (:import-from sys with-stack-list with-stack-list* stack-let)
+  #+sbcl(:import-from sb-mop slot-definition-allocation class-slots finalize-inheritance class-finalized-p intern-eql-specializer)
   (:export
    "JOSHUA-MODULE" "SEPARATE-DESTINATION-JOSHUA-MODULE"
     "ENABLE-JOSHUA" "DISABLE-JOSHUA"
     "SELF"
-    "DEF-DEFINING-FORM" "UNDEF-DEFINING-FORM"
+    "DEF-DEFINING-FORM" "UNDEF-DEFINING-FORM"class-finalized-p
     ;;
     "OF"
     "LOGIC-VARIABLE-NAME" "JOSHUA-LOGIC-VARIABLE-VALUE"
@@ -216,11 +218,15 @@
      "RULE-CERTAINTY-FACTOR"
      "CF-MIXIN" "CF-PREDICATE-MODEL"
      "CERTAINTY-FACTOR"
-
+     "SLOT-DEFINITION-ALLOCATION" "CLASS-SLOTS" "FINALIZE-INHERITANCE" "CLASS-FINALIZED-P" "INTERN-EQL-SPECIALIZER"
     )
   )
 
+
 #+allegro (eval-when (:compile-toplevel :load-toplevel :execute) (require :cltl1))
+
+;;; Note: get-setf-method in cltl1 goes to get-setf-expansion in ansi
+;;;       define-setf-method               define-setf-expander
 
 (defpackage joshua-internals
   ;; Joshua developers write code here
@@ -242,12 +248,14 @@
   #+allegro (:import-from clos slot-definition-name class-precedence-list)
   #+allegro (:import-from mop method-specializers generic-function-methods class-direct-subclasses)
   #+allegro (:import-from excl compiler-let funwrap fwrap arglist def-fwrapper call-next-fwrapper)
+  #+sbcl (:import-from sb-mop slot-definition-name class-precedence-list)
+  #+sbcl (:import-from sb-mop method-specializers generic-function-methods class-direct-subclasses)
   (:use :joshua
          #+genera "CL"
          #+cloe "CLOE"
 	 #+mcl "COMMON-LISP"
 	 #+lucid "LISP" #+lucid "LUCID-COMMON-LISP" #+lucid "CLOS"
-	 #+allegro :common-lisp)
+	 #+(or allegro sbcl) :common-lisp)
   ;; "Well, if you insist"
   (:export
     "*BLINK-PREDICATIONS-IN-JOSHUA-MODE*"   "*BLINK-SETS-IN-JOSHUA-MODE*"
@@ -317,7 +325,7 @@
          #+genera "CL"
          #+cloe "CLOE"
 	 #+mcl "COMMON-LISP"
-	 #+allegro :common-lisp
+	 #+(or allegro sbcl) :common-lisp
 	 #+lucid "LISP" #+lucid "LUCID-COMMON-LISP" #+lucid "CLOS"))
 
 (defpackage ltms
@@ -328,7 +336,7 @@
          #+genera "CL"
          #+cloe "CLOE"
 	 #+mcl "COMMON-LISP"
-	 #+allegro :common-lisp
+	 #+(or allegro sbcl) :common-lisp
 	 #+lucid "LISP" #+lucid "LUCID-COMMON-LISP" #+lucid "CLOS")
   ;; This is for the object-modelling Stuff
   (:shadow "VALUE-OF" "OBJECT-TYPE-OF" "PART-OF" "NAMED-PART-OF" "EQUATED")
@@ -356,9 +364,9 @@
   (:use #+cloe "CLOE"
 	#+genera "CL"
 	#+mcl "COMMON-LISP"
-	#+allegro :common-lisp
+	#+(or allegro sbcl) :common-lisp
 	#+lucid "LISP" #+lucid "LUCID-COMMON-LISP" #+lucid "CLOS")
-  #+(or mcl lucid allegro) (:import-from joshua WITH-STACK-LIST WITH-STACK-LIST* STACK-LET)
+  #+(or mcl lucid allegro sbcl) (:import-from joshua WITH-STACK-LIST WITH-STACK-LIST* STACK-LET)
   #+mcl (:import-from CCL compiler-let)
   #+lucid (:Import-from LOOP LOOP-FINISH)
   #+(or genera cloe-developer) (:import-from SYS WITH-STACK-LIST WITH-STACK-LIST* STACK-LET)

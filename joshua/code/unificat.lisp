@@ -50,7 +50,7 @@
 	 (catch 'failure-exit ,@body)
        (unwind-trail))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline unify-fail)))
 (defun unify-fail ()
   ;; throw out of the extension computation, returning NIL
@@ -132,7 +132,7 @@
 	  ;; success
 	  (return t)))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline unify-predication)))
 (defun unify-predication (predication1 predication2)
   ;; unify predications by taking their argument map and unifying the lists

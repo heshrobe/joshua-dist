@@ -48,8 +48,8 @@
 
 (defparameter *joshua-meters* nil "List of all the Joshua meters that Peek knows about.")
 
-(eval-when (compile eval load)
-	   (proclaim '(inline peek-meter-initial-value)))
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (proclaim '(inline peek-meter-initial-value)))
 (defun peek-meter-initial-value (name)
   ;; where the initial value of the meter gets stashed.
   (get name 'peek-meter-initial-value))
@@ -117,7 +117,7 @@
   (context nil)
   (certainty nil))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline rule-debug-info))
   (defun rule-debug-info (rule-name)
     (get rule-name 'rule-debug-info)))
@@ -155,12 +155,12 @@
 ;;;
 
 ;;; Bit 0 is for true, bit 1 is for false.  If both are on, that's contradictory.
-(eval-when (eval load compile) ;used in macroexpanders of macros used below
-(defconstant *unknown*       0)
-(defconstant *true*          1)
-(defconstant *false*         2)
-(defconstant *contradictory* 3) ;for the TMS
-)
+(eval-when (:compile-toplevel :execute :load-toplevel) ;used in macroexpanders of macros used below
+  (defconstant *unknown*       0)
+  (defconstant *true*          1)
+  (defconstant *false*         2)
+  (defconstant *contradictory* 3)	;for the TMS
+  )
 
 (defparameter *truth-value-table* '#(*unknown* *true* *false* *contradictory*)
   "For figuring out the name of a truth value")
@@ -216,12 +216,12 @@
   ;; to this logic-variable NAME.
   (find symbol variable-analyses :key #'variable-analysis-variable))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline trigger-variable-analysis-p))
   (defun trigger-variable-analysis-p (variable-analysis)
     (variable-analysis-triggers-found-in variable-analysis)))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline action-variable-analysis-p))
   (defun action-variable-analysis-p (variable-analysis)
     (not (trigger-variable-analysis-p variable-analysis)))) 
@@ -363,7 +363,7 @@
   (pattern nil)
   (context nil))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline question-info))
   (defun question-info (name)
     (get name 'question-info)))

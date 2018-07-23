@@ -376,6 +376,30 @@
   `(destructuring-bind ,arglist (cdr (predication-maker-statement ,statement))
      ,@body))
 
+
+;;; On bootless and unhorsed LISPs (i.e. those without invisible
+;;; pointers), we must "dereference" LVs the hard way.  This operator
+;;; is used in expansions of LOGIC-VARIABLE-MAKER.
+;;;    Should this be INLINE?
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (proclaim '(inline joshua-logic-variable-value))
+  (defun joshua-logic-variable-value (jlv &aux val)
+    (loop
+       (cond ((not (joshua-logic-variable-p jlv))
+	      (return jlv))	     ;bound or not LV => return value.
+	     ((eq (setq val (joshua-logic-variable-value-cell jlv)) jlv)
+	      (return jlv))   ;unbound => return the structure itself.
+	     (t (setq jlv val)))))) ;indirect => chase down the chain.
+
+(defun set-joshua-logic-variable-value (jlv new-value &aux val)
+  (loop
+    (cond ((or (eq (setq val (joshua-logic-variable-value-cell jlv)) jlv)
+	       (not (joshua-logic-variable-p val)))
+	   (return (setf (joshua-logic-variable-value-cell jlv) new-value)))
+	  (t (setq jlv val)))))
+
+(defsetf joshua-logic-variable-value set-joshua-logic-variable-value)
+
 (defmacro logic-variable-maker (name &environment env)
   (let ((known-lvs (macroexpand '(known-lvs) env)))
     (unless (member name known-lvs)
@@ -525,7 +549,7 @@
   name
   value-cell)
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline joshua-logic-variable-unbound-p))
   (defun joshua-logic-variable-unbound-p (x)
     (eq (joshua-logic-variable-value-cell x) x))
@@ -535,36 +559,12 @@
   '(and joshua-logic-variable
 	(satisfies joshua-logic-variable-unbound-p)))
 
-(eval-when (compile eval load)
-(proclaim '(inline unbound-logic-variable-p))
-(defun unbound-logic-variable-p (x)
-  ;; Sort of a tautology, but what the heck.
-  (typep x 'unbound-logic-variable))
-)
-
-
-;;; On bootless and unhorsed LISPs (i.e. those without invisible
-;;; pointers), we must "dereference" LVs the hard way.  This operator
-;;; is used in expansions of LOGIC-VARIABLE-MAKER.
-;;;    Should this be INLINE?
-(eval-when (compile eval load)
-(proclaim '(inline joshua-logic-variable-value))
-(defun joshua-logic-variable-value (jlv &aux val)
-  (loop
-    (cond ((not (joshua-logic-variable-p jlv))
-	   (return jlv))			;bound or not LV => return value.
-	  ((eq (setq val (joshua-logic-variable-value-cell jlv)) jlv)
-	   (return jlv))			;unbound => return the structure itself.
-	  (t (setq jlv val))))))		;indirect => chase down the chain.
-
-(defun set-joshua-logic-variable-value (jlv new-value &aux val)
-  (loop
-    (cond ((or (eq (setq val (joshua-logic-variable-value-cell jlv)) jlv)
-	       (not (joshua-logic-variable-p val)))
-	   (return (setf (joshua-logic-variable-value-cell jlv) new-value)))
-	  (t (setq jlv val)))))
-
-(defsetf joshua-logic-variable-value set-joshua-logic-variable-value)
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (proclaim '(inline unbound-logic-variable-p))
+  (defun unbound-logic-variable-p (x)
+    ;; Sort of a tautology, but what the heck.
+    (typep x 'unbound-logic-variable))
+  )
 
 (defun make-unbound-logic-variable (name)
   (let ((variable-structure (make-joshua-logic-variable :name name :value-cell nil)))
@@ -574,7 +574,7 @@
   (check-type lv joshua-logic-variable)
   (setf (joshua-logic-variable-value-cell lv) lv))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline logic-variable-name))
   (defun logic-variable-name (logic-variable)
     (joshua-logic-variable-name logic-variable)))
@@ -598,7 +598,7 @@
      ,@body))
 
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline white-space-p))
   (defun white-space-p (char &optional ignore)
     (declare (ignore ignore))
@@ -702,7 +702,7 @@
 	   (return things)))
 
 (defun read-maybe-nothing (&optional input-stream (eof-errorp t) eof-value recursive-p)
-  (declare (values thing read-something-p))
+  #-sbcl(declare (values thing read-something-p))
   (let* ((first-char (peek-char t input-stream eof-errorp eof-value recursive-p))
 	 (macro-fn (get-macro-character first-char)))
     (if macro-fn
@@ -900,7 +900,7 @@ Joshua readtable and the JI, JU, and Joshua packages. "
 
 ;;;;;;;;;;;;;;;;;
 
-#+(or mcl allegro)
+#+(or mcl allegro sbcl)
 (eval-when (:compile-toplevel :execute :load-toplevel)
 
 (defun joshua-predication-printer (stream object)
@@ -911,14 +911,14 @@ Joshua readtable and the JI, JU, and Joshua packages. "
                        for thing in (cadr object)
                        unless first-time do (write-char #\space stream)
 		     do #+mcl (ccl::write-1 thing stream)
-			#+allegro (write thing :stream stream)
+			#+(or allegro sbcl) (write thing :stream stream)
                        ))
       (otherwise (write-string "[" stream)
                  (loop for first-time = t then nil 
                        for thing in (cadr object)
                        unless first-time do (write-char #\space stream)
 		     do #+mcl (ccl::write-1 thing stream)
-			#+allegro (write thing :stream stream))))
+			#+(or allegro sbcl) (write thing :stream stream))))
     (write-string "]" stream)))
 
 (defun joshua-backquote-printer (stream object) (format stream "`~w" (cadr object)))

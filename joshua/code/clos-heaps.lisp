@@ -203,7 +203,7 @@
 ;;;    (list* bindings prologue iterspec)))
 ;;;)
 
-#-(or genera lucid mcl allegro)
+#-(or genera lucid mcl allegro sbcl)
 (defun y-or-n-p (&rest format-args)
   (terpri *query-io*)
   (apply #'format *query-io* format-args)
@@ -215,7 +215,10 @@
 	    (#\N (return nil))))))
 
 (defmethod for-all-items ((h heap) continuation)
-  (declare (dynamic-extent continuation))
+  ;; I think this was a downward-funarg declaration
+  ;; in the original genera version
+  ;; but ANSI CL doesn't have such a declaration
+  ;;(declare (dynamic-extent continuation))
   (with-slots (heap-array active-size) h
     (loop for index from 1 upto active-size
 	  for (key . value) = (aref heap-array index)
@@ -230,7 +233,7 @@
       (flet ((print-an-entry (key item index)
 	       (declare (ignore index))
 	       (format stream "~&Key ~S~20T~S" key item)))
-	(declare (dynamic-extent print-an-entry))
+	(declare (dynamic-extent #'print-an-entry))
 	(for-all-items self #'print-an-entry)
 	(terpri stream)))))
 
@@ -244,7 +247,7 @@
 	       (decf active-size)
 	       (rebuild-heap self)
 	       (return-from delete-by-item (values this-item this-key)))))
-      (declare (dynamic-extent do-it))
+      (declare (dynamic-extent #'do-it))
       (for-all-items self #'do-it)
       (if no-error-p
 	  (values nil nil)
@@ -259,7 +262,7 @@
 	       (decf active-size)
 	       (rebuild-heap self)
 	       (return-from delete-by-key (values this-item this-key)))))
-      (declare (dynamic-extent do-it))
+      (declare (dynamic-extent #'do-it))
       (for-all-items self #'do-it)
       (if no-error-p
 	  (values nil nil)
@@ -270,7 +273,7 @@
            (declare (ignore index))
            (when (funcall equal-predicate item this-item)
              (return-from find-by-item (values this-item this-key)))))
-    (declare (dynamic-extent do-it))
+    (declare (dynamic-extent #'do-it))
     (for-all-items self #'do-it)
     (if no-error-p
       (values nil nil)
@@ -281,7 +284,7 @@
 	     (declare (ignore index))
 	     (when  (funcall equal-predicate key this-key)
 	       (return-from find-by-key (values this-item this-key)))))
-      (declare (dynamic-extent do-it))
+      (declare (dynamic-extent #'do-it))
       (for-all-items self #'do-it)
       (if no-error-p
 	  (values nil nil)

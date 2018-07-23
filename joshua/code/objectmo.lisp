@@ -37,11 +37,11 @@
 (in-package :ji)
 
 #-genera
-(eval-when (compile load eval) (enable-joshua))
+(eval-when (:compile-toplevel :execute :load-toplevel) (enable-joshua))
 
 ;;; This condition is signalled by follow path and its kin.
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (define-condition bad-path (error)
     ((first-bad-token . #-lucid (:reader bad-path-first-bad-token :initarg :first-bad-token) #+lucid nil)
      (whole-path . #-lucid (:reader bad-path-whole-path :initarg :whole-path) #+lucid nil)
@@ -96,15 +96,19 @@
 ;;; Called to map over the values of a slot for ASK.
 (defgeneric map-over-values (slot query continuation value-in-predication)
   (:documentation "The Slot Protocol's Implementation of Ask-Data")
-  (declare (dynamic-extent continuation)))
+  ;; I think that this isn't legal anywhere, but SBCL complains.
+  #-sbcl(declare (dynamic-extent continuation))
+  )
 
 (defgeneric map-over-slot-backward-rule-triggers (slot continuation)
   (:documentation "The Slot Protocol's Implementation of Map-over-backward-rule-triggers")
-  (declare (dynamic-extent continuation)))
+  #-sbcl (declare (dynamic-extent continuation))
+  )
 
 (defgeneric map-over-slot-backward-question-triggers (slot continuation)
   (:documentation "The Slot Protocol's Implementation of Map-over-backward-Question-triggers")
-  (declare (dynamic-extent continuation)))
+  #-sbcl (declare (dynamic-extent continuation))
+  )
 
 (defgeneric slot-is-empty-p (slot)
   (:documentation "Does this slot have an explicit value?"))
@@ -385,7 +389,7 @@
    (block-propagation :initform nil :initarg :block-propagation :accessor slot-block-propagation))
   ) 
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline propagate-equality)))
 (defun propagate-equality (value destination source-predication equality-predication)
   (tell `[,(predication-predicate source-predication) ,destination ,value]
@@ -548,7 +552,7 @@
 			(slot-value self 'current-value)
 			predication)))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
 (defvar *slot-options* '(:set-valued :truth-maintenance :equalities :attached-actions :object-notifying))
 
 (defvar *default-slot-options*
@@ -653,7 +657,10 @@
 			 :role-name nil)))))
 
 (defmethod map-over-subtypes ((self object-type) function)
-  (declare (dynamic-extent function))
+  ;; I think that this isn't really what one wants
+  ;; In genera this was called downward-funarg I think
+  ;; SBCL doesn't like it
+  #-sbcl (declare (dynamic-extent function))
   (let ((subtypes-visited (make-hash-table)))
     (labels ((do-one-subtype (type)
 	       (unless (gethash type subtypes-visited)
@@ -665,7 +672,7 @@
       (do-one-subtype self))))
 
 (defmethod map-over-supertypes ((self object-type) function)
-  (declare (dynamic-extent function))
+  #-SBCL (declare (dynamic-extent function))
   (let ((supertypes-visited (make-hash-table)))
     (labels ((do-one-supertype (type)
 	       (unless (gethash type supertypes-visited)
@@ -978,7 +985,7 @@
       (setq typical-instance nil)
       (setq instances (delete object instances)))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline object-type-named)))
 (defun object-type-named (type-name)
   (gethash type-name *all-object-types*))
@@ -1444,7 +1451,7 @@
                       (return (funcall key current-object nil)))))))
 
 (defun map-over-object-hierarchy (function-to-apply &optional initial-object)
-  (declare (dynamic-extent function-to-apply))
+  #-sbcl (declare (dynamic-extent function-to-apply))
   (labels ((handle-object (object)
                           #+cloe (declare (sys:downward-function))
 	     (funcall function-to-apply object)
@@ -1487,13 +1494,13 @@
     (do-one-level from-object to-object)))
 
 (defun map-over-slots-of-object (function-to-apply object)
-  (declare (dynamic-extent function-to-apply))
+  #-sbcl (declare (dynamic-extent function-to-apply))
   (loop for slot-name in (all-slot-names object)
 	for slot = (funcall slot-name object nil)
 	doing (funcall function-to-apply slot)))
 
 (defun map-over-slots-in-object-hierarchy (function-to-apply &optional initial-object)
-  (declare (dynamic-extent function-to-apply))
+  #-sbcl (declare (dynamic-extent function-to-apply))
   (flet ((slot-mapper (object)
            #+cloe (declare (sys:downward-function))
 	   (map-over-slots-of-object function-to-apply object)))
@@ -1754,7 +1761,7 @@
 		      (loop for thing in sub-context doing (find-in-current-context thing)))))
 	     (is-an-object-type-of-predicate (predicate-name)
 	       ;; Lucid warns if you provide the environment argument.  This shuts him up.
-	       (let ((his-flavor (find-class  predicate-name nil #-(or mcl lucid allegro) 'compile)))
+	       (let ((his-flavor (find-class predicate-name nil #-(or mcl lucid allegro sbcl) 'compile)))
 		 (and his-flavor
 		      (member (find-class 'type-of-mixin) (class-precedence-list his-flavor)))))
 	     (same-as-object (thing)
@@ -2162,14 +2169,14 @@
 			    doing (find-in-current-context thing enclosing-predication-maker kind-of-usage)))))
 	     (is-an-object-type-of-predicate (predicate-name)
 	       ;; Lucid warns if you provide the environment argument.  This shuts him up.
-	       (let ((his-flavor (find-class predicate-name nil #-(or lucid allegro mcl) 'compile)))
-		 #+allegro
-		 (when (and his-flavor (not (clos:class-finalized-p his-flavor)))
-		   (clos:finalize-inheritance his-flavor))
+	       (let ((his-flavor (find-class predicate-name nil #-(or lucid allegro mcl sbcl) 'compile)))
+		 #+(or allegro sbcl)
+		 (when (and his-flavor (not (class-finalized-p his-flavor)))
+		   (finalize-inheritance his-flavor))
 		 (and his-flavor (member (find-class 'type-of-mixin) (class-precedence-list his-flavor)))))
 	     (is-a-value-of-predicate (predicate-name)
 	       ;; Lucid warns if you provide the environment argument.  This shuts him up.
-	       (let ((his-flavor (find-class predicate-name nil #-(or mcl allegro lucid) 'compile)))
+	       (let ((his-flavor (find-class predicate-name nil #-(or mcl allegro sbcl lucid) 'compile)))
 		 (and his-flavor
 		      (member (find-class 'slot-value-mixin) (class-precedence-list his-flavor)))))
 	     (same-as-object (thing)
@@ -2576,6 +2583,6 @@
 ;;;  `(com-describe-joshua-object ,the-object))
 
 #-genera
-(eval-when (compile load eval) (disable-joshua))
+(eval-when (:compile-toplevel :execute :load-toplevel) (disable-joshua))
 
 

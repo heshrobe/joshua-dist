@@ -233,7 +233,7 @@
 
 (defrule primary-rule (:forward :importance *importance-of-primary-rule*)
   IF [test-forward-importance ?x]
-  THEN (push 'primary-rule *firing-order*))
+  then (push 'primary-rule *firing-order*))
 
 (defrule secondary-rule (:forward :importance *importance-of-secondary-rule*)
   IF [test-forward-importance ?x]

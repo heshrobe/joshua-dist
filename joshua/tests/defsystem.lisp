@@ -22,7 +22,7 @@
 #+allegro
 (defsystem joshua-tests
     (:pretty-name "Joshua Portable Tests"
-     :default-module-class joshua:joshua-module
+     :default-module-class joshua-module
      :default-pathname "joshua:tests;")
   (:serial
    "joshua-tests"

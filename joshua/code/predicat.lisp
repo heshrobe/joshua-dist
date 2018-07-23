@@ -71,17 +71,17 @@
 ;;;  The code appears to depend on it.   Should a bunch of FSPEC stuff be in
 ;;;  BORROWINGS.lisp, then?
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline joshua-fspec-protocol))
   (defun joshua-fspec-protocol (fspec)
     (first fspec)))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline joshua-fspec-model))
   (defun joshua-fspec-model (fspec)
     (second fspec)))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline joshua-fspec-method-keywords))
   (defun joshua-fspec-method-keywords (fspec)
     (cddr fspec)))
@@ -142,7 +142,7 @@
 	translated
 	operation)))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicate-synonyms))
   (defun predicate-synonyms (predicate)
     (get predicate 'predicate-synonyms)))
@@ -151,7 +151,7 @@
 	 `(setf (get ,pred 'predicate-synonyms) ,val))
 
 ;;; this should be called canonical-predicate or something like that
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicate-is-synonym-for))
   (defun predicate-is-synonym-for (synonym-predicate)
     (cond ((symbolp synonym-predicate)
@@ -161,7 +161,7 @@
 	  ((logic-variable-maker-p synonym-predicate) 'variable-predicate)
 	  (t synonym-predicate))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline set-predicate-is-synonym-for))
   (defun set-predicate-is-synonym-for (synonym-predicate new-value)
     (setf (get synonym-predicate 'predicate-is-synonym-for) new-value)))
@@ -199,7 +199,7 @@
       (let ((used-ivs nil))
 	(loop for form in real-body
 	      do (setq used-ivs (jlt:used-variables form :already-known used-ivs :from-set names)))
-	`(eval-when (compile eval load)
+	`(eval-when (:compile-toplevel :execute :load-toplevel)
 	   #+(or genera cloe-developer)
 	   (record-source-file-name ',fspec 'define-predicate-method)
 	   (defmethod ,protocol ,@method-keywords ((self ,model) ,@args)
@@ -236,7 +236,7 @@
 	 (protocol (protocol-internal-name (joshua-fspec-protocol fspec)))
 	 (model (joshua-fspec-model    fspec)))
     (multiple-value-bind (decs real-body) (find-body-declarations body nil)
-      `(eval-when (compile eval load)
+      `(eval-when (:compile-toplevel :execute :load-toplevel)
 	 (defmethod ,protocol ,@method-keywords ((self ,model) ,@args)
 	   ,@decs
 	   #+(or genera cloe-developer)
@@ -309,7 +309,7 @@
 ;;; property-list functions.
 ;;;
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline no-method-keywords))
   (defun no-method-keywords (x)
     (null (cddr x))))
@@ -358,7 +358,7 @@
 ;;; Here 'cause it needs to be around for macroexpansion of ASK's.
 ;;;
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicationp))
   (defun predicationp (object) (typep object 'predication)))
 
@@ -386,12 +386,12 @@
       (predication-bits-ive-been-untold bits)
       (predication-bits-tms-bits bits))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predication-logic-variable-free-p))
   (defun predication-logic-variable-free-p (predication)
     (zerop (predication-bits-has-logic-variables (predication-bits predication)))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predication-truth-value))
   (defun predication-truth-value (predication)
     (predication-bits-truth-value (predication-bits predication))))
@@ -533,7 +533,7 @@
 
 (defmethod initialize-instance :after ((self predication) &key (initialize t)
 				       &allow-other-keys )
-  (declare (ignore ignore))
+  ;; (declare (ignore ignore))
   (when initialize
     (with-slots (STATEMENT BITS) self
       (install-predicate-args-in-map self)
@@ -552,8 +552,8 @@
 	      (if (list-has-logic-variables-p statement) 1 0))))))
 
 ;;; BUG: this should record the entire bits field.
-(defmethod make-load-form ((self predication) #+(or mcl allegro) &optional #+(or mcl allegro) environment)
-  #+(or mcl allegro) (declare (ignore environment))
+(defmethod make-load-form ((self predication) #+(or mcl allegro sbcl) &optional #+(or mcl allegro sbcl) environment)
+  #+(or mcl allegro sbcl) (declare (ignore environment))
   (with-slots (STATEMENT) self
     ;; Makes an instance of the right flavor.  Relies on make-instance method, above,
     ;; for destructuring and such.  Indexing is somebody else's job.
@@ -632,7 +632,7 @@
   ;; parse up a form like (make-predication '(...)).  Used in rule
   ;; compiler, in the places where it has to be generic over forms,
   ;; instead of instances.
-  (declare (ignore env))
+  ;; (declare (ignore env))
   `(let ((form ,form))
 	(check-type form (satisfies predication-maker-p)
 		    "a predication source designator.")
@@ -658,7 +658,7 @@
 
 (defun length-dotted (possibly-dotted-list)
   ;; "length" and last cons of possibly-dotted-list
-  (declare (values length dotted-tail))
+  #-sbcl(declare (values length dotted-tail))
   (loop initially (when (atom possibly-dotted-list) (return (values 0 possibly-dotted-list)))
 	for cons = possibly-dotted-list then (cdr cons) ;faster than "on"
 	counting cons into length
@@ -679,7 +679,7 @@
 
 (defun check-predication-args-optional-no-rest (statement name min-args max-args defaulter)
   ;; check args for predications with some &OPTIONAL args, but no &REST arg.  May return new map.
-  (declare (dynamic-extent defaulter))
+  #-sbcl(declare (dynamic-extent defaulter))
   (multiple-value-bind (length tail) (length-dotted (cdr statement))
     (cond (tail
 	    ;; bad tail
@@ -702,7 +702,7 @@
 
 (defun check-predication-args-no-optional-rest (statement name min-args rest-defaulter)
   ;; check args for predications with &REST arg, but no &OPTIONAL args.
-  (declare (dynamic-extent rest-defaulter))
+  #-sbcl (declare (dynamic-extent rest-defaulter))
   (multiple-value-bind (length tail) (length-dotted (cdr statement))
     (cond ((< length min-args)
 	   ;; too few args
@@ -717,7 +717,7 @@
 (defun check-predication-args-optional-rest (statement name min-args max-args
 							  full-defaulter rest-defaulter)
   ;; check args for predications with both &OPTIONAL and &REST args
-  (declare (dynamic-extent full-defaulter rest-defaulter))
+  #-sbcl(declare (dynamic-extent full-defaulter rest-defaulter))
   (multiple-value-bind (length tail) (length-dotted (cdr statement))
     (cond ((< max-args length)
 	   ;; there are plenty of args to go around, no defaulting necessary
@@ -867,7 +867,7 @@
      ,@body))
 
 (defun process-predicate-args (args)
-  (declare (values fixed-arglist required-arg-specs optional-arg-specs rest-arg-spec))
+  #-sbcl(declare (values fixed-arglist required-arg-specs optional-arg-specs rest-arg-spec))
   ;; &REST and &OPTIONAL as in CL lambda-lists are also allowed, with the usual interpretations.
   ;;
   ;; Return values: a "fixed" arglist, i.e., one in which the &rest arg is not defaulted.
@@ -940,7 +940,7 @@
 (defvar *all-predicates* (make-hash-table))
 
 ;;; The following stolen from SYSDEF.lisp
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
 (defconstant *arg-desc-max-args* (byte 8 0))	;sys:%%arg-desc-max-args
 (defconstant *arg-desc-min-args* (byte 8 8))	;sys:%%arg-desc-min-args
 (defconstant *arg-desc-rest-arg* (byte 1 16))	;sys:%%arg-desc-rest-arg
@@ -950,7 +950,7 @@
   args-info
   arglist)
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicate-max-args))
   (defun predicate-max-args (args-info)
     (ldb *arg-desc-max-args* args-info)))
@@ -958,7 +958,7 @@
 (define-setf-method predicate-max-args  (x)
   (defbitfields-setf-expander x `',*arg-desc-max-args* 'predicate-max-args))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicate-min-args))
   (defun predicate-min-args (args-info)
     (ldb *arg-desc-min-args* args-info)))
@@ -966,7 +966,7 @@
 (define-setf-method predicate-min-args (x)
   (defbitfields-setf-expander x `',*arg-desc-min-args* 'predicate-min-args))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicate-rest-arg))
   (defun predicate-rest-arg (args-info)
     (ldb *arg-desc-rest-arg* args-info)))
@@ -1178,7 +1178,7 @@
 
 (defun parse-predication-maker (form)
   ;; extract the predicate from things predication-maker forms
-  (declare (values predicate args))
+  #-sbcl(declare (values predicate args))
   (destructuring-bind (predicate . args) (predication-maker-statement form)
     (values (predicate-is-synonym-for predicate) args)))
 
@@ -1211,11 +1211,11 @@
 
 
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline stackify-thing))
   (defun stackify-thing (thing env all-lvs)
     (declare (ignore env all-lvs)
-	     (dynamic-extent thing))
+	     #-sbcl(dynamic-extent thing))
     thing))
        
 
@@ -1224,7 +1224,7 @@
 
 (defmacro tell (predication &key justification)
   ;; convert to positional form, defaulting correctly.
-  (declare (values canonical-version new-or-old))
+  #-sbcl(declare (values canonical-version new-or-old))
   `(tell-internal ,predication *true* , justification))
 
 
@@ -1265,22 +1265,22 @@
 			   ,@new-form))))
     new-form))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline ask-query))
   (defun ask-query (backward-support)
     (first backward-support)))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline ask-query-truth-value))
   (defun ask-query-truth-value (backward-support)
     (second backward-support)))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline ask-database-predication))
   (defun ask-database-predication (backward-support)
     (third backward-support)))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline ask-derivation))
   (defun ask-derivation (backward-support)
     (rest (rest backward-support))))
@@ -1414,7 +1414,7 @@
   ;; like do-queries*, but has a named block so return-from makes sense
   (expand-do-queries name varspecs body))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline ask-question))
   (defun ask-question (question predication truth-value continuation)
     (funcall question predication truth-value continuation)))

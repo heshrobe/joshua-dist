@@ -43,7 +43,7 @@
 (defparameter *rule-control-structures* nil
   "Registry of rule control structures.")
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline rule-control-structure-p)))
 (defun rule-control-structure-p (x)
   ;; whether or not you've got a rule in your hands, there
@@ -207,82 +207,87 @@
 (defun write-forward-rule-trigger-code (Rule-name if-part environment arguments body-variables
 					&aux trigger-variable-analyses)
   ;; write some code to generate a Rete network and index the triggers appropriately
-  (declare (values trigger-code trigger-variable-analyses))
-  (let ((*forward-rule-trigger-compiler-environment* environment))
-    (declare (special *forward-rule-trigger-compiler-environment*))
-    ;; first, parse up the arguments to the control structure
-    (with-control-structure-arguments ((importance semi-unification certainty documentatoin) arguments)
-      ;; this implementation is a kludge that awaits the rest of the generic rule compiler.
-      ;; its advantage over the previous implementation is that all the kludges are in the same place!
-      (setq importance (process-importance importance))
-      (unless (predication-maker-p if-part)
-	(error "The IF part of the forward rule ~s contains only Lisp code.~&It must contain at least one pattern." rule-name))
-      (with-predication-maker-parsed (predicate the-statement) if-part
-	(when (member predicate '(or and))
-	  (unless (loop for form in the-statement thereis (predication-maker-p form))
-	    (error "The IF part of the forward rule ~s contains only Lisp code.~&It must contain at least one pattern."
-		   rule-name))))
-      ;; At this point, triggers is a list of (possibly nested) predication-maker forms.
-      ;; each possibly followed by a :support ?x.
-      ;; Process them and make up entry structures that are dispatched on by
-      ;; make-rete-network.
-      (let ((real-triggers (expand-forward-rule-trigger if-part nil *true* if-part nil)))
-	(setq if-part (convert-analysis-to-pred-maker real-triggers))
-	(labels ((find-and-analyze-trigger (trigger)
-		   (case (car trigger)
-		     ((:and :or) (loop for thing in (cdr trigger) doing (find-and-analyze-trigger thing)))
-		     (:procedure
+  #-sbcl (declare (values trigger-code trigger-variable-analyses))
+   (let ((*forward-rule-trigger-compiler-environment* environment))
+     (declare (special *forward-rule-trigger-compiler-environment*))
+     ;; first, parse up the arguments to the control structure
+     (with-control-structure-arguments ((importance semi-unification certainty documentatoin) arguments)
+       ;; this implementation is a kludge that awaits the rest of the generic rule compiler.
+       ;; its advantage over the previous implementation is that all the kludges are in the same place!
+       (setq importance (process-importance importance))
+       (unless (predication-maker-p if-part)
+	 (error "The IF part of the forward rule ~s contains only Lisp code.~&It must contain at least one pattern." rule-name))
+       (with-predication-maker-parsed (predicate the-statement) if-part
+				      (when (member predicate '(or and))
+					(unless (loop for form in the-statement thereis (predication-maker-p form))
+					  (error "The IF part of the forward rule ~s contains only Lisp code.~&It must contain at least one pattern."
+						 rule-name))))
+       ;; At this point, triggers is a list of (possibly nested) predication-maker forms.
+       ;; each possibly followed by a :support ?x.
+       ;; Process them and make up entry structures that are dispatched on by
+       ;; make-rete-network.
+       (let ((real-triggers (expand-forward-rule-trigger if-part nil *true* if-part nil)))
+	 (setq if-part (convert-analysis-to-pred-maker real-triggers))
+	 (labels ((find-and-analyze-trigger (trigger)
+		    (case (car trigger)
+		      ((:and :or) (loop for thing in (cdr trigger) doing (find-and-analyze-trigger thing)))
+		      (:procedure
 		       (setq trigger-variable-analyses
-			     (analyze-trigger trigger trigger-variable-analyses (third trigger))))
-		     ((:match :object-match)
+			 (analyze-trigger trigger trigger-variable-analyses (third trigger))))
+		      ((:match :object-match)
 		       (when (null (third trigger))
 			 ;; this is the name of the support variable
 			 (setf (third trigger)
-			       ;; make all patterns have a support variable
-			       (gentemp "?ANONYMOUS-")))
+			   ;; make all patterns have a support variable
+			   (gentemp "?ANONYMOUS-")))
 		       (setq trigger-variable-analyses
-			     (analyze-trigger trigger trigger-variable-analyses (third trigger)))))))
-	  (find-and-analyze-trigger real-triggers))
-	(let ((*forward-rule-subsidiary-functions* nil))
-	  (let ((analysis (build-rete-topology real-triggers)))
-	    (analyze-variable-consumption analysis body-variables)
-	    (analyze-semi-ability analysis semi-unification)
-	    (write-rete-procedures rule-name analysis environment)
-	    (multiple-value-bind (pred-forms top-level-pred pred-mapping ignore-top-level) (collect-all-predications if-part)
-	      (multiple-value-bind (rete-bindings rete-body) (make-rete-network rule-name analysis pred-mapping)
-		(multiple-value-bind (final-output-map terminal-node pure-unification)
-		    (follow-analysis-to-terminal analysis)
-		  (make-output-env-assignments trigger-variable-analyses final-output-map)
-		  (let ((lvs-in-triggers (logic-variable-makers-in-thing if-part)))
-		    ;; write a function to install this rule.
-		    (values `(defun (:property ,rule-name install-triggers) ()
-			       #+(or genera cloe-developer)
-			       (declare (zl:::sys:function-parent ,rule-name defrule))
-			       ;; disarm any previously existing rule by this name
-			       ;; now write, compile, and collect up the matchers & mergers
-			       ;; record the debug-info and index the Rete network
-			       ;; under each of the triggers Do this by calling out
-			       ;; of line, there's nothing gained by compiling lots
-			       ;; of crud in line here.
-			       (let ,(loop for lv in lvs-in-triggers
-					 collect `(,lv (make-unbound-logic-variable ',lv)))
-				 (declare (ignorable ,@lvs-in-triggers))
-				 (macrolet ((known-lvs () ',lvs-in-triggers))
-				   (let* (,@pred-forms ,@rete-bindings)
-				     ,@(when ignore-top-level
-					`((declare (ignore ,top-level-pred))))
-				     ,@rete-body
-				     (install-forward-rule-triggers ',rule-name
-								    ,(pattern-analysis-rete-node analysis)
-								    ,terminal-node
-								    ,(maybe-quote-importance importance)
-								    ',if-part
-                                                                    ,certainty)))))
-			    (nreverse *forward-rule-subsidiary-functions*)
-			    ;; want the variable analyses, 'cause they contain final slot assignments.
-			    trigger-variable-analyses
-			    pure-unification
-			    )))))))))))
+			 (analyze-trigger trigger trigger-variable-analyses (third trigger)))))))
+	   (find-and-analyze-trigger real-triggers))
+	 (let ((*forward-rule-subsidiary-functions* nil))
+	   (let ((analysis (build-rete-topology real-triggers)))
+	     (analyze-variable-consumption analysis body-variables)
+	     (analyze-semi-ability analysis semi-unification)
+	     (write-rete-procedures rule-name analysis environment)
+	     (multiple-value-bind (pred-forms top-level-pred pred-mapping ignore-top-level ignorable-preds) 
+		 (collect-all-predications if-part)
+	       (multiple-value-bind (rete-bindings rete-body) (make-rete-network rule-name analysis pred-mapping)
+		 (multiple-value-bind (final-output-map terminal-node pure-unification)
+		     (follow-analysis-to-terminal analysis)
+		   (make-output-env-assignments trigger-variable-analyses final-output-map)
+		   (let ((lvs-in-triggers (logic-variable-makers-in-thing if-part)))
+		     ;; write a function to install this rule.
+		     (values `(setf (get ',rule-name 'install-triggers) 
+				#'(lambda ()
+				    #+(or genera cloe-developer)
+				     (declare (zl:::sys:function-parent ,rule-name defrule))
+				     ;; disarm any previously existing rule by this name
+				     ;; now write, compile, and collect up the matchers & mergers
+				     ;; record the debug-info and index the Rete network
+				     ;; under each of the triggers Do this by calling out
+				     ;; of line, there's nothing gained by compiling lots
+				     ;; of crud in line here.
+				     (let ,(loop for lv in lvs-in-triggers
+					       collect `(,lv (make-unbound-logic-variable ',lv)))
+				       ,@(when lvs-in-triggers
+					   `((declare (ignorable ,@lvs-in-triggers))))
+				       (macrolet ((known-lvs () ',lvs-in-triggers))
+					 (let* (,@pred-forms ,@rete-bindings)
+					   ,@(when (and ignore-top-level (not (member top-level-pred ignorable-preds)))
+					       `((declare (ignore ,top-level-pred))))
+					   ,@(when ignorable-preds
+					       `((declare (ignorable ,@ignorable-preds))))
+					   ,@rete-body
+					   (install-forward-rule-triggers ',rule-name ;
+									  ,(pattern-analysis-rete-node analysis)
+									  ,terminal-node
+									  ,(maybe-quote-importance importance)
+									  ',if-part
+									  ,certainty))))))
+			     (nreverse *forward-rule-subsidiary-functions*)
+			     ;; want the variable analyses, 'cause they contain final slot assignments.
+			     trigger-variable-analyses
+			     pure-unification
+			     )))))))))))
 
 
 (defun follow-analysis-to-terminal (analysis)
@@ -332,34 +337,36 @@
     (do-next-part analysis)))
 
 (defun collect-all-predications (if-part)
-  (let ((forms nil) (mapping nil))
+  (let ((forms nil) (mapping nil) (ignorable-preds nil))
     (labels ((do-one-piece (p-maker)
 	       (cond
-		 ((predication-maker-p p-maker)
-		   (let ((name (assoc p-maker mapping)))
-		     (unless name
-		       (setq name (gentemp "PREDICATION-"))
-		       (push (cons p-maker name) mapping)
-		       (let ((predicate (predication-maker-predicate p-maker)))
-			 (when (member predicate '(and or not))
-			   (setq p-maker `(predication-maker
-					    (list ',predicate
-						  ,@(loop for piece in (cdr (predication-maker-statement p-maker))
-							for processed-piece = (do-one-piece piece)
-							collect processed-piece)))))
-			 (push (list name p-maker) forms)))
-		     (setq p-maker name)))
-		 ((logic-variable-maker-p p-maker))
-		 ((eql p-maker :support))
-		 (t (setq p-maker `',p-maker)))
-		 p-maker))
+		((predication-maker-p p-maker)
+		 (let ((name (assoc p-maker mapping)))
+		   (unless name
+		     (setq name (gentemp "PREDICATION-"))
+		     (push (cons p-maker name) mapping)
+		     (let ((predicate (predication-maker-predicate p-maker)))
+		       (when (member predicate '(and or not))
+			 (push name ignorable-preds)
+			 (setq p-maker `(make-predication
+					 (list ',predicate
+					   ,@(loop for piece in (cdr (predication-maker-statement p-maker))
+						 for processed-piece = (do-one-piece piece)
+						 collect processed-piece)))))
+		       (push (list name p-maker) forms)))
+		   (setq p-maker name)))
+		((logic-variable-maker-p p-maker))
+		((eql p-maker :support))
+		(t (setq p-maker `',p-maker)))
+	       p-maker))
       (let ((top-name (do-one-piece if-part)))
 	(values (nreverse forms) top-name mapping
 		(member (predication-maker-predicate if-part) '(and or))
+		ignorable-preds
 		)))))
 
 (defun preliminary-analysis-of-forward-rule-body (then-part)
-  (declare (values actions variables))
+  #-sbcl (declare (values actions variables))
   (let ((actions
 	  (if (predication-maker-p then-part)
 	      (with-predication-maker-parsed (predicate args) then-part
@@ -380,7 +387,7 @@
 				arguments computed-semi-unification
 				&aux action-variable-analyses analyses-in-actions)
   ;; writes a function that presumably implements a forward rule's actions
-  (declare (values body-code action-variable-analyses))
+  #-sbcl (declare (values body-code action-variable-analyses))
   (with-control-structure-arguments ((importance documentation semi-unification certainty) arguments)
     (setq computed-semi-unification (or computed-semi-unification semi-unification))
     ;; At this point, actions is a list of forms -- some lisp, some predication-maker forms.
@@ -479,7 +486,7 @@
 		',rule-name)))))
 
 (defun parse-backward-trigger (then-part)
-  (declare (values trigger trigger-negated))
+  #-sbcl (declare (values trigger trigger-negated))
   (with-predication-maker-parsed (predicate args) then-part
       ;; ---- probably ought to make sure it's well-formed
       (case predicate
@@ -491,45 +498,46 @@
 
 (defun write-backward-rule-trigger-code (rule-name trigger trigger-negated if-part environment arguments)
   ;; write some code to generate the trigger mechanism for a backward rule.
-  (declare (values trigger-code))
-  (declare (ignore environment))           
-  (with-control-structure-arguments ((importance documentation certainty) arguments)
-    ;; this implementation is a kludge that awaits the rest of the generic rule compiler.
-    ;; its advantage over the previous implementation is that all the kludges are in the same place!
-    (setq importance (process-importance importance))
-    (let ((predicate (predication-maker-predicate trigger)))
-      (when (eq predicate 'or)
-	(error "Backward rules don't grok OR triggers yet: ~S" trigger))
-      (when (eq predicate 'and)
-	(error "Backward rules don't deal with conjunctive triggers yet.")))
-    ;; write a function to install this rule.
-    (let ((truth-value (if trigger-negated '*false* '*true*)))
-    `(defun (:property ,rule-name install-triggers) ()
-       #+(or genera cloe-developer)
-       (declare (zl:::sys:function-parent ,rule-name defrule))
-       ;; disarm any previously existing rule by this name
-       (disarm-rule-triggers ',rule-name)	;take direction arg?
-       (let* ((trigger ,trigger)
-	      (entry (make-backward-trigger
-		       :rule ',rule-name
-		       :importance ,(maybe-quote-importance importance))))
-	 ;; record the debug-info
-	 (setf (rule-debug-info ',rule-name)
-	       (make-rule-debug-info :name ',rule-name
-                                     :certainty ,certainty
-				     :control :backward
-				     :triggers (list (list trigger ,truth-value))
-				     :context ',if-part
-				     :network entry))	;this should be called something else
-	 ;; now index the trigger-object (this does the interning of variant patterns)
-	 (add-backward-rule-trigger trigger ,truth-value entry ',if-part ',rule-name))))))
+  #-sbcl (declare (values trigger-code))
+   (declare (ignore environment))           
+   (with-control-structure-arguments ((importance documentation certainty) arguments)
+     ;; this implementation is a kludge that awaits the rest of the generic rule compiler.
+     ;; its advantage over the previous implementation is that all the kludges are in the same place!
+     (setq importance (process-importance importance))
+     (let ((predicate (predication-maker-predicate trigger)))
+       (when (eq predicate 'or)
+	 (error "Backward rules don't grok OR triggers yet: ~S" trigger))
+       (when (eq predicate 'and)
+	 (error "Backward rules don't deal with conjunctive triggers yet.")))
+     ;; write a function to install this rule.
+     (let ((truth-value (if trigger-negated '*false* '*true*)))
+       `(setf (get ',rule-name 'install-triggers) 
+	  #'(lambda ()
+	      #+(or genera cloe-developer)
+	       (declare (zl:::sys:function-parent ,rule-name defrule))
+	       ;; disarm any previously existing rule by this name
+	       (disarm-rule-triggers ',rule-name) ;take direction arg?
+	       (let* ((trigger ,trigger)
+		      (entry (make-backward-trigger
+			      :rule ',rule-name
+			      :importance ,(maybe-quote-importance importance))))
+		 ;; record the debug-info
+		 (setf (rule-debug-info ',rule-name)
+		   (make-rule-debug-info :name ',rule-name
+					 :certainty ,certainty
+					 :control :backward
+					 :triggers (list (list trigger ,truth-value))
+					 :context ',if-part
+					 :network entry)) ;this should be called something else
+		 ;; now index the trigger-object (this does the interning of variant patterns)
+		 (add-backward-rule-trigger trigger ,truth-value entry ',if-part ',rule-name)))))))
 
 
 (defun write-backward-rule-body (rule-name trigger trigger-negated if-part environment arguments)
   ;; Write the body of a backward rule.  This is more complicated than you might think,
   ;; because it has to cons all structures containing logic variables in order to be
   ;; re-entrant.
-  (declare (values body-code))
+  #-sbcl (declare (values body-code))
   (with-control-structure-arguments ((importance documentation certainty) arguments)
     ;; this implementation is a kludge that awaits the rest of the generic rule compiler.
     ;; its advantage over the previous implementation is that all the kludges are in the same place!
@@ -538,7 +546,7 @@
     (multiple-value-bind (trigger if-part) (expand-backward-rule-trigger trigger trigger-negated if-part)
       (let ((actions (expand-backward-rule-action if-part nil *true* nil if-part)))
       ;; at this point, actions is a tree of nested rule-action expressions.
-      (let* ((data-stack-p nil)
+      (let* (#+ignore (data-stack-p nil)
 	     (variables (union (logic-variable-makers-in-thing if-part)
 			       (logic-variable-makers-in-thing trigger)))
 	     (bindings nil))
@@ -547,10 +555,11 @@
 		   ;; ---- eventually, open-code the unification
 		   (multiple-value-bind (match-form new-bindings used-data-stack-p)
 		       (write-backward-rule-matcher head variables environment '.goal.)
+		     (declare (ignore used-data-stack-p))
 		     ;; add new bindings and data stack flag; body depends on whether we're
 		     ;; back-chaining on another predication or executing a piece of lisp code.
 		     (setq bindings (nconc bindings new-bindings))
-		     (when used-data-stack-p (setq data-stack-p t))
+		     #+ignore (when used-data-stack-p (setq data-stack-p t))
 		     match-form))
 		 (compile-node (node continuation top-level?)
 		   (case (car node)
@@ -577,8 +586,15 @@
 		     (declare (ignore junk))
 		     (when (null ask-args)
 		       (setq ask-args '(t .do-questions.)))
+		     ;; Note: Stackify thing is inlined and does nothing
+		     ;; Therefore new-bindings is always NIL and
+		     ;; the clause (when new-bindings ... is dead code
+		     ;; SBCL's compiler figures this out and then
+		     ;; marks that as dead code with a compiler note.
 		     (multiple-value-bind (new-thing new-bindings used-data-stack-p)
 			 (stackify-thing action environment variables)
+		       (declare (ignore used-data-stack-p #+sbcl new-bindings))
+		       #+ignore
 		       (when used-data-stack-p (setq data-stack-p t))
 		       (when top-level?
 			 (setq continuation
@@ -587,7 +603,7 @@
 				      (with-stack-list (rule-support .goal. .truth-value. '(rule ,rule-name) ,support-var)
 					(funcall ,continuation rule-support))))))
 		       (let ((body `(ask-internal ,new-thing ,truth-value ,continuation ,@ask-args)))
-			 (when new-bindings (setq body `(stack-let* ,new-bindings ,body)))
+			 #-sbcl (when new-bindings (setq body `(stack-let* ,new-bindings ,body)))
 			 body))))
 		 (compile-procedure-node (node continuation top-level?)
 		   (let ((lv-name (third node))
@@ -680,6 +696,7 @@
 	      (setq body-form `(stack-let* ,bindings ,body-form)))
 	    ;; In Genera this switch would have told us to use the data-stack
 	    ;; this is just here to defeat a compiler warning.
+	    #+ignore
 	    (when data-stack-p nil)
 	    (when variables
 	      (setq body-form `(with-unbound-logic-variables ,variables
@@ -690,7 +707,7 @@
 	       ,@(when documentation (list documentation))
 	       #+(or genera cloe-developer)
 	       (declare (zl:::sys:function-parent ,rule-name defrule))
-	       (declare (dynamic-extent .continuation.))
+	       #-sbcl (declare (dynamic-extent .continuation.))
 	       (declare (ignorable .do-questions.))
 	       (when (eql .truth-value.
 			  ,(if trigger-negated '*false* '*true*))
@@ -739,6 +756,8 @@
 			 (variables-in-trigger environment name-of-pred-to-match)
   ;; ---- for now, just build a predication and match it.
   ;; ---- eventually, open-code the unification
+  ;; Note: Stackify-thing is inlined, but doesn't actually do anything and so new-bindings
+  ;; and use-data-stack-p are always nil
   (multiple-value-bind (new-thing new-bindings used-data-stack-p)
       (stackify-thing self environment variables-in-trigger)
     ;; add new bindings and data stack flag; body depends on whether we're
@@ -759,9 +778,11 @@
   ;; what gets called by the default question-asker.  This is what Joshua calls
   ;; for people who want an automatically-generated user-interface.
   (let* ((named-vars (reverse (named-logic-variables-in-thing query)))
+	 #+ignore
 	 (named-vars-names (nreverse (loop for thing in named-vars
-					   collect (logic-variable-name thing)))))
-    (declare (ignore named-vars-names))
+					collect (logic-variable-name thing))))
+	 )
+    ;; (declare (ignore named-vars-names))
     (cond ((null named-vars)
 	   ;; there are no variables in this query
 	   (fresh-line *query-io*) ;can't do conditional newlines in redisplayers in 365!
@@ -783,7 +804,7 @@
 	    ;;   instead of an accepting-values?
 	    (error "can't handle this type of question yet.")))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline question-pattern)))
 (defun question-pattern (name)
   ;; figure out what the pattern is for a given question.
@@ -819,8 +840,9 @@
    :definer
    ((name (control-structure &rest control-structure-args) pattern
 	  &key code context
+	  &aux variables bindings body-form args
 	  &environment environment
-	  &aux variables bindings body-form args)
+	  )
     #+genera (declare (zwei:indentation 1 1 1 2))
     ;; the body is a keyword because, in the future, there will be a
     ;; declarative question-asking language.  You'll say something like
@@ -845,6 +867,10 @@
 	(setq args (car code))
 	(setq variables (union (logic-variable-makers-in-thing trigger)
 			       (logic-variable-makers-in-thing context)))
+	;; Note: see note in write-backward-rule-matcher
+	;; A consequence of that is that new-trigger-bindings is always
+	;; NIL so the (setq bindings new-trigger... is dead-code
+	;; Even SBCL's compiler doesn't figure that out
 	(multiple-value-bind (new-trigger new-trigger-bindings)
 	    (write-backward-rule-matcher trigger variables environment (first args))
 	  (setq bindings new-trigger-bindings)
@@ -891,7 +917,7 @@
 		    ,@(when documentation (list documentation))
 		    ;; takes 2 args -- query and continuation
 		    (declare #+(or genera cloe-developer) (zl:::sys:function-parent ,name defquestion)
-			     (dynamic-extent ,(third args)))
+			     #-sbcl (dynamic-extent ,(third args)))
 		    (when (eql ,(second args)
 			       ,(if trigger-negated '*false* '*true*))
 		      ,body-form))

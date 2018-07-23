@@ -40,16 +40,19 @@
 (in-package :ji)
 
 ;;; Make all Lisps at least tolerate values declarations
-
-#-(or genera cloe lucid)
-(eval-when (compile eval load)
-	   (proclaim '(declaration values)))
+;;; SBCL has its own values declaration which is a type declaration
+;;; incompatible with this one which tells you the names of the return
+;;; values.  The other three already have a version mimicing the genera one
+#-(or genera cloe lucid sbcl)
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (Proclaim '(declaration values))
+  )
 
 ;;; From EVAL.LISP...
 (DEFUN FIND-BODY-DECLARATIONS (BODY ENV &OPTIONAL (LAMBDA-LIST NIL LAMBDA-LIST-P))
-  "Separate the declarations from the body."
-  (DECLARE (VALUES DECLARATIONS REAL-BODY FIRST-FORM-ALREADY-MACRO-EXPANDED))
+  #-SBCL (DECLARE (VALUES DECLARATIONS REAL-BODY FIRST-FORM-ALREADY-MACRO-EXPANDED))
   (DECLARE (IGNORE LAMBDA-LIST ENV))
+  "Separate the declarations from the body."
   (LOOP FOR REAL-BODY ON BODY
 	FOR FORM = (FIRST REAL-BODY)
 	;; don't macroexpand looking for declarations
@@ -62,6 +65,28 @@
 	COLLECT FORM INTO DECLARATIONS
 	FINALLY (RETURN (VALUES DECLARATIONS REAL-BODY (AND REAL-BODY FORM)))))
 
+;;; The code below uses CLTL1 versions
+;;; Allegro, Genera have compatability versions of these
+;;; but SBCL doesn't.  So I've provided them here.
+;;; Fix: Probably just include these in the Joshua code universally
+;;; Or better yet, change the references to the ANSI version.
+;;; Note: get-setf-method in cltl1 goes to get-setf-expansion in ansi
+;;;       define-setf-method               define-setf-expander
+
+
+#+sbcl
+(defun get-setf-method (form &optional env)
+  (get-setf-expansion form env))
+
+#+sbcl
+(defun get-setf-method-multiple-value (form &optional env)
+  ;; see get-setf-method for a description of the env arg.
+  ;; Like get-setf-method, but may return multiple new-value variables.
+  (get-setf-expansion form env))
+
+#+sbcl
+(defmacro define-setf-method (access-fn lambda-list &body body)
+  `(define-setf-expander ,access-fn ,lambda-list ,@body))
 
 ;;;  DEFBITFIELDS...  replacement for FIXNUM type defstruct...
 
@@ -92,7 +117,7 @@
 	(setf (ldb (eval bytespec) init) (eval initform))
 	finally
 	(return
-	  `(eval-when (compile eval load)
+	  `(eval-when (:compile-toplevel :execute :load-toplevel)
 	     (proclaim '(inline ,@accessor-names))
 	     ,@accessor-defs
 	     ,@setfs
@@ -235,8 +260,8 @@
   ;;   and style-checker are similar.
   ;; type-name is a string or NIL
   ;; fcn-spec-type is a fcn-spec type or NIL (seldom needed)
-  (check-type name symbol)
-  (check-type definer list "a definition of the form (<args> . <body>)")
+  (check-type name (or nil symbol))
+  (check-type definer (or nil list) "a definition of the form (<args> . <body>)")
   `(progn
      #+(or genera cloe-developer)
      (record-source-file-name ',name 'def-defining-form)
@@ -246,7 +271,7 @@
      ,@(when type-name
 	 ;; pretty name that appears in patch comments, typein line, etc.
 	 `((setf (get ',name 'zl:::si:definition-type-name) ',type-name)))
-     ,(cond ((listp definer)
+     ,(cond ((and definer (listp definer))
 	     `(defmacro ,name ,(car definer)
 		;; this is the thing that actually expands the defining macro
 		,@(cdr definer)))
@@ -258,9 +283,9 @@
 
 #-mcl
 (defun class-instance-slots (class)
-  #+allegro (clos:finalize-inheritance class)
-  (loop for slot-definition in (clos:class-slots class)
-      for allocation = (clos:slot-definition-allocation slot-definition)
+  #+(Or allegro sbcl) (finalize-inheritance class)
+  (loop for slot-definition in (class-slots class)
+      for allocation = (slot-definition-allocation slot-definition)
       when (eql allocation :instance)
       collect slot-definition))
 

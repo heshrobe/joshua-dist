@@ -73,6 +73,17 @@
     #-(or genera cloe-developer)
     (declare (ignore killer))
     (declare (ignore shower #-allegro body))
+    ;; Note:  The spec says that a defgeneric declaration can only be an optimize declaration
+    ;;        Allegro (or genera, cloe, mcl I guess) doesn't seem to care
+    ;;        But SBCL is more specific, so I'm doing this.  It might be that I should
+    ;;        do it for all lisps.
+    #+sbcl
+    (when declaration
+      (setf (rest declaration)
+	    (loop for decl in (rest declaration)
+	       for (name) = decl
+	       when (eql name 'optimize)
+	       collect decl)))
     `(progn
        #+(or genera cloe-developer) (record-source-file-name ',name 'define-protocol-function)
        ;; define the generic function for this protocol element
@@ -81,7 +92,7 @@
 	 (declare (zl:::sys:function-parent ,name define-protocol-function)
 		  ,@(when declaration (cdr declaration)))
          #-(or genera cloe-developer)
-         ,@(when declaration `((declare ,(cdr declaration))))
+         ,@(when declaration `((declare ,@(cdr declaration))))
 	 #-mcl ,@(when documentation `((:documentation ,documentation)))
 	 ,@(when argument-precedence-order
 	     `((:argument-precedence-order ,argument-precedence-order)))
@@ -131,12 +142,12 @@
 
 (define-protocol-function tell (predication truth-value justification)	;note this is internal arglist
   :documentation "Tell the database to believe a certain predication."
-  :declaration (declare (values canonical-version new-or-old))
+  #-sbcl :declaration #-sbcl(declare (values canonical-version new-or-old))
   :internal-name tell-internal)
 
 (define-protocol-function ask (predication truth-value continuation do-backward-rules do-questions)
   :documentation "Ask the database about the state of its belief in a certain predication."
-  :declaration (declare (dynamic-extent continuation) (values))
+  :declaration (declare (dynamic-extent continuation) #-sbcl (values))
   :internal-name ask-internal)
 
 (define-protocol-function ask-data (predication truth-value continuation)
@@ -155,11 +166,11 @@
 
 (define-protocol-function insert (predication)
   :documentation "Insert predication into the virtual database."
-  :declaration (declare (values database-predication new-p)))
+  #-sbcl :declaration #-sbcl (declare (values database-predication new-p)))
 
 (define-protocol-function uninsert (database-predication)
   :documentation "Remove a predication from the virtual database."
-  :declaration (declare (values)))
+  #-sbcl :declaration #-sbcl (declare (values)))
 
 (define-protocol-function fetch (predication continuation)
   :documentation "Fetch matching predications from the virtual database calling a continuation on each."
@@ -315,7 +326,7 @@
   :definer compile-time-method-protocol-definer
   :shower property-protocol-shower
   :documentation "Called from backward rule match compiler, to write the matcher"
-  :declaration (declare (values form bindings used-data-stack-p)))
+  #-sbcl :declaration #-sbcl (declare (values form bindings used-data-stack-p)))
 
 ;;; Expand Forward Rule Trigger
 ;;;  return a data structure that drives the rest of the rule compiler.  This data structure represents

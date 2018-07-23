@@ -298,44 +298,52 @@ an argument of T when an iteration is entered and NIL when it is left."
 ;;;	some other atom - a special processing function, obtained from the
 ;;;	  property of the function name whose indicator is our second argument
 ;;; Return KIND and SPECIAL.
- (DEFUN CLASSIFY-FORM (FORM PROPERTY &AUX FCN TEM)
-  (COND ((ATOM FORM)
-	 (COND ((CONSTANTP FORM) 'QUOTE)
-	       ((SYMBOL-MACRO-P FORM *MAPFORMS-LEXICAL-FUNCTION-ENVIRONMENT*)
-		(VALUES 'macro 'SYMBOL-MACRO))
-	       (T 'SYMEVAL)))
-	((EQ (SETQ FCN (CAR FORM)) 'QUOTE)
-	 'QUOTE)
-	((SYMBOLP FCN)
-	 (LET ((DEF (and (fboundp fcn) (SYMBOL-FUNCTION FCN))))
-	   (COND ((NULL DEF) NIL)
-		 ;; Do We Know The Template (In Preference To The Macro)
-		 ((SETQ TEM (GETHASH FCN *ARG-TEMPLATE-TABLE*))
-		  (VALUES TEM (AND PROPERTY (GET FCN PROPERTY))))
-		 ;; OK Is it a Macro?
-		 ((MACRO-FUNCTION FCN)
-		  (VALUES 'macro 'MACRO))
-		 #+genera
-		 ((lisp:functionp def) nil)
-		 ((FUNCTIONP DEF)
-		  NIL)
-                 ;; THIS SCREWS UP MCL SINCE THE DEFINITION OF MACROLET AND SYMBOLMACROLET ARE IN FACT
-                 ;; ARRAYS FOR SOME REASON.  I DON'T KNOW WHAT THE ORIGINAL GENERA DEFINITION WAS 
-                 ;; GUARDING AGAINST, NEED TO CHECK THAT AND IN OTHER IMPLEMENTATIONS AS WELL.
-                 ;; Probably just reversing the order of the two clauses below will work.
-                 #-mcl
-		 ((ARRAYP DEF)
-		  NIL)
-		 ((AND PROPERTY (SETQ TEM (GET FCN PROPERTY)))
-		  (VALUES NIL TEM))
-		 (T (FORM-NOT-UNDERSTOOD FORM "~S is a special form but lacks an arg-template"
-					 FCN)
-		    NIL))))
-	((AND (LISTP FCN) (EQ (CAR FCN) 'LAMBDA))
-	 (VALUES NIL 'LAMBDA))
-	(T (FORM-NOT-UNDERSTOOD FORM "~S not understood in the function position of a form"
-				FCN)
-	   NIL)))
+(defun classify-form (form property)
+  (if (atom form)
+      (cond ((constantp form) 'quote)
+	    ((symbol-macro-p form *mapforms-lexical-function-environment*)
+	     (values 'macro 'symbol-macro))
+	    (t 'symeval))
+      (let ((function (car form)))
+	(cond
+	  ((eq function 'quote) 'quote)
+	  ((symbolp function)
+	   (let ((local-definition (assoc function (env-functions *mapforms-lexical-function-environment*) :test #'eq))
+		 (definition (and (fboundp function) (symbol-function function)))
+		 (template (gethash function *arg-template-table*))
+		 (function-property (and property (get function property))))
+	     (cond
+	       (local-definition
+		(when (eq (car local-definition) 'special) (values nil 'macro)))
+	       ((Not (fboundp function)) nil)
+	       ;; The template takes precedence over an actual provided macro
+	       (template
+		(values template function-property))
+	       ;; ok is it a macro?
+	       ((macro-function function) (values 'macro 'macro))
+	       ;; is it a vanilla global function
+	       ;; Note: Special forms have definitions that aren't functionp in ALLEGRO
+	       ;; But in SBCL this seems more complicated.  For example (macro-function 'COND) is T
+	       ;; (macro-function 'if) is NIL.  (functionp #'if) is T (while in Allegro it's NIL).
+	       ;; Both have templates, so we never get here for those.
+	       ;; In SBCL a macro would test positive for functionp, so the order here matters
+	       (#-SBCL (functionp definition) #+SBCL (not (sb-kernel::special-operator-p function)) nil)
+	       ;; I don't know why the (symbol-function function) would be an array.  But it seems to
+	       ;; be true for something that I've forgotten about.
+	       ;; But this screws up mcl since the definition of macrolet and symbolmacrolet are in fact
+	       ;; arrays for some reason.  
+	       #-mcl
+	       ((arrayp definition) nil)
+	       ;; finally it's bound but not to a macro or a function but it has a property
+	       ((and property function-property)
+		(values nil function-property))
+	       (t (form-not-understood form "~s is a special form but lacks an arg-template"
+				       function)
+		  nil))))
+	  ((and (listp function) (eq (car function) 'lambda))
+	   (values nil 'lambda))
+	  (t (form-not-understood form "~s not understood in the function position of a form" function)
+	     nil)))))
 
 
 
@@ -417,13 +425,13 @@ an argument of T when an iteration is entered and NIL when it is left."
 	       (SETF ORIGINAL-FORM NEW-FORM)
 	       (SETF ORIGINAL-BEFORE-MACRO-EXPANSION NEW-FORM))))
       (WHEN DONE-FLAG
-	(RETURN (COND (*COPYFORMS-EXPAND-ALL-MACROS* FORM)
-		      ;; If macro expansion was uninteresting, undo it
-		      ((EQ FORM ORIGINAL-FORM) ORIGINAL-BEFORE-MACRO-EXPANSION)
-		      ;; If no macro expansion was involved, form was replaced wholesale
-		      ((EQ ORIGINAL-FORM ORIGINAL-BEFORE-MACRO-EXPANSION) FORM)
-		      ;; That didn't succeed, so include the macro expansion in the result
-		      (T FORM)))))))
+	(COND (*COPYFORMS-EXPAND-ALL-MACROS* (return FORM))
+	      ;; If macro expansion was uninteresting, undo it
+	      ((EQ FORM ORIGINAL-FORM) (return ORIGINAL-BEFORE-MACRO-EXPANSION))
+	      ;; If no macro expansion was involved, form was replaced wholesale
+	      ((EQ ORIGINAL-FORM ORIGINAL-BEFORE-MACRO-EXPANSION) (return FORM))
+	      ;; That didn't succeed, so include the macro expansion in the result
+	      (T (return FORM)))))))
   
 ;;; The user function may call back into this if doing a MAPFORMS
 (DEFUN MAPFORMS-1 (FORM &OPTIONAL (USAGE 'EVAL))
@@ -957,7 +965,7 @@ an argument of T when an iteration is entered and NIL when it is left."
 	      (PUSH VAR *MAPFORMS-BOUND-VARIABLES*))))
 	(eval `(symbol-macrolet ,(cadr form)
 		 (macrolet ((.scootch-it. (&environment e)
-			      (let ((*host-specific-environment* e))
+ 			      (let ((*host-specific-environment* e))
 				`',(MAPFORMS-LIST ',ORIGINAL-FORM ',FORM ',BODY 'EFFECT ',USAGE))))
 		   (.scootch-it.))))))))
 
@@ -1181,13 +1189,15 @@ an argument of T when an iteration is entered and NIL when it is left."
 
 ;;;; Support function stolen from Genera
 
-(defun parse-body-declarations (body &optional
-                                     (lambda-list nil lambda-list-p)
-                                     &aux (specials nil) (unspecials nil) (declarations nil)
-                                     (documentation nil) (debugging-info nil)
-                                     (var-dcls nil) (fun-dcls nil))
-  (declare (values declarations specials body documentation debugging-info var-dcls
-                   unspecials fun-dcls))
+(defun parse-body-declarations (body
+				&optional
+				  (lambda-list nil lambda-list-p)
+				&aux (specials nil) (unspecials nil) (declarations nil)
+				  (documentation nil) (debugging-info nil)
+				  (var-dcls nil) (fun-dcls nil))
+  (declare (ignore lambda-list))
+  #-sbcl(declare (values declarations specials body documentation debugging-info var-dcls
+			 unspecials fun-dcls))
   (labels ((add-var-dcl (kind value &rest vars)
                         (dolist (var vars)
                           (cond ((symbolp var)
@@ -1260,12 +1270,17 @@ an argument of T when an iteration is entered and NIL when it is left."
                                        (second declaration)))
                          (t (push declaration declarations)))))
                 (t (return)))
-          (pop body)))
-  (when lambda-list-p
-    (let ((arglist (assoc 'arglist debugging-info)))
-      (if arglist
-        (setf arglist (cdr arglist))
-        (setf arglist lambda-list))))
+	 (pop body)))
+  ;;Note: isn't this whole form dead-code?
+  ;; arglist is never consumed after the setf forms
+  ;; I'm not sure how this got here but the original genera code doesn't
+  ;; have anything like this.  Instead inside the when it has a bunch of stuff about
+  ;; turning dynamic-extent declarations into downward funarg declarations
+  ;; (when lambda-list-p
+  ;;   (let ((arglist (assoc 'arglist debugging-info)))
+  ;;     (if arglist
+  ;;       (setf arglist (cdr arglist))
+  ;;       (setf arglist lambda-list))))
   (values (nreverse declarations) specials body documentation debugging-info var-dcls
           unspecials fun-dcls))
 

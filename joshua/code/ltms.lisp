@@ -162,7 +162,7 @@
 	 (consequent :initform nil :initarg :consequent :accessor clause-consequent))
 	)
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
  (proclaim '(inline make-clause))
  (defun make-clause (name positive-literals negative-literals)
   (make-instance 'clause :name name :positive-literals positive-literals :negative-literals negative-literals)))
@@ -175,7 +175,7 @@
 	(clause)
 	((creating-predication :initarg :creating-predication)))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
  (proclaim '(inline make-one-of-clause))
  (defun make-one-of-clause (name positive-literals negative-literals creating-predication)
   (make-instance 'one-of-clause
@@ -191,7 +191,7 @@
    (number-of-literals :initform 0 :accessor assumption-clause-number-of-literals :initarg :number-of-literals))
   )
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
  (proclaim '(inline make-assumption-clause))
  (defun make-assumption-clause (name positive-literals negative-literals number-of-literals)
   (make-instance 'assumption-clause

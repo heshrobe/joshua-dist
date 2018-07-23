@@ -108,7 +108,7 @@
 	;; have to go through run-rule, 'cause the truth-values might have changed.
 	doing (execute-forward-rule (car entry) (cadr entry))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline clear-forward-queue)))
 (defun clear-forward-queue ()
   ;; throw away a bunch of queued rules.
@@ -123,7 +123,7 @@
 
 (defun run-backward-queue (queue function)
   ;; empty a backward queue, doing something to each entry
-  (declare (dynamic-extent function))
+  #-sbcl (declare (dynamic-extent function))
   (loop for entry = (heap-remove queue)
 	while entry
 	doing (funcall function entry)))
@@ -133,7 +133,7 @@
   ;; stick this in a backward queue
   (heap-insert queue entry (number-from-importance importance)))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline number-from-importance)))
 
 (defun number-from-importance (importance)
@@ -145,7 +145,7 @@
     (symbol (symbol-value importance))
     (function (funcall importance))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline enqueue-forward-rule)))
 (Defun enqueue-forward-rule (rete-state child-entry importance)
   ;; stick an entry into the priority queue with a given priority
@@ -219,7 +219,7 @@
 
 (defun parse-justification (justification)
   ;; parse up the justification into pieces to hand to justify
-  (declare (values mnemonic true-supporters false-supporters unknown-supporters))
+  #-sbcl (declare (values mnemonic true-supporters false-supporters unknown-supporters))
   (etypecase justification
     (null
       ;; not supplied, so default it from *support*
@@ -316,7 +316,6 @@
 ;  ;; that queuing necessitates this.
 ;  (when (and *something-in-fwrd-q* (not *forward-queue-emptying-p*))
 ;    (run-forward-queue)))
-
 
 (define-predicate-method (notice-truth-value-change default-protocol-implementation-model :before) (old-truth-value)
   ;; If it's the updating pass and there's a truth value change, then
@@ -490,7 +489,7 @@
 	(deallocate-resource 'backward-importance-queue-resource backward-importance-queue)))))
 
 (defun trigger-backward-rule (rule predication truth-value continuation do-questions)
-  (declare (dynamic-extent continuation)
+  (declare #-sbcl(dynamic-extent continuation)
 	   #+genera (dbg:invisible-frame joshua-internals))
   (incf *backward-fire-count*)
   ;; we're now 1 deeper in rules.

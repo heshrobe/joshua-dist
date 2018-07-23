@@ -64,7 +64,7 @@
   ;; ensure that structures get copied.
   (declare (special *new-variables*))
   (labels ((copy-value (value)
-	     (declare (values new-value new-value-p))
+	     #-sbcl (declare (values new-value new-value-p))
 	     ;; we have to explicitly tell whether we changed anything, since
 	     ;; unified variables will be eq
 	     (typecase value
@@ -263,7 +263,7 @@
   (unadvise-compile-file)
   (setq *original-compile-file* (symbol-function 'compile-file))
   (setf (symbol-function 'compile-file)
-	#'(lambda (input-pathname &key output-file) 
+	#'(lambda (input-pathname &key output-file &allow-other-keys) 
 	    (let ((*file-matcher-cache* nil)
 		  (*file-semi-matcher-cache* nil)
 		  (*file-merger-cache* nil)
@@ -275,8 +275,36 @@
 		  (funcall *original-compile-file* input-pathname :output-file output-file)
 		  (funcall *original-compile-file* input-pathname))))))
 
-#-(or genera mcl allegro)
-(advise-compile-file)
+#-(or genera mcl allegro sbcl) (advise-compile-file)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Notes on working with SBCL (and ASDF):
+;;; SBCL doesn't have a public version of advise, defwrapper ...
+;;; However sb-int:encapsulate is exported.  So it could be used.
+;;; However, even more ASDF doesn't wind up calling compile-file
+;;; for :joshua-file modules.  But you can advise compile-op for that
+;;; with an :around method (and I'm already doing so to set the readtable).
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; This might be a gentler way to play the game anyhow.
+;;; except that in SBCL (and quite possibly other lisps)
+;;; using SLIME compiling out of the buffer works by creating a temp
+;;; file and the calling compile-file and load on that, so you actually
+;;; need to advise compile file.
+(defun compile-joshua-file (input-pathname &rest stuff &key &allow-other-keys)
+  (let ((*file-matcher-cache* nil)
+	(*file-semi-matcher-cache* nil)
+	(*file-merger-cache* nil)
+	(*file-semi-merger-cache* nil)
+	(*compiling-joshua-file* t))
+    (declare (special *file-matcher-cache* *file-semi-matcher-cache*
+		      *file-merger-cache* *file-semi-merger-cache*))
+    (apply #'compile-file input-pathname stuff)))
+
+#+sbcl
+(sb-ext:without-package-locks
+ (advise-compile-file))
 
 #+mcl
 (ccl:advise compile-file 
@@ -316,8 +344,8 @@
 
 (defun get-matcher-or-merger-from-cache (key type-of-cache creator-if-not-found)
   ;; get a matcher or merger from the appropriate cache, creating it if not found
-  (declare (values value found-in-cache-p found-key)
-	   (dynamic-extent creator-if-not-found))
+  #-sbcl (declare (values value found-in-cache-p found-key)
+		  (dynamic-extent creator-if-not-found))
   (let ((compiling-to-core (not *compiling-joshua-file*)))
     (flet ((meter-match-merge-cache (type-of-cache hit-or-miss)
 	     (if (eql hit-or-miss 'hit)
@@ -395,7 +423,7 @@
 
 (defun write-forward-rule-matchers (rule-name predication environment support-variable)
   ;; construct full unification matcher, semi-unification matcher, and variable map
-  (declare (values full-matcher semi-matcher output-map))
+  #-sbcl (declare (values full-matcher semi-matcher output-map))
   (let* ((named-variables (logic-variable-makers-in-thing predication))
 	 (output-map (build-map named-variables support-variable)))
     (when support-variable (push support-variable named-variables))
@@ -560,7 +588,7 @@
   ;; Test case:
   ;;  (write-environment-merger '((?a . 0) (?b . 1) (?c . 2) (?d . 3))
   ;;                            '((?c . 0) (?d . 1) (?e . 2)))
-  (declare (values full-merger semi-merger output-map merge-id))
+  #-sbcl (declare (values full-merger semi-merger output-map merge-id))
   (labels
     ((validate-output-map (left-map right-map output-map)
        ;; every variable in either left or right must be in output
@@ -706,7 +734,7 @@
   ;; which are not shared, and list of variables in right which are not shared.
   ;; Example: (analyze-environment-sharing '((?x . 0) (?y . 1)) '((?y . 1) (?z . 0)))
   ;;   returns (?Y) and (?Z).
-  (declare (values shared unshared-left unshared-right))
+  #-sbcl (declare (values shared unshared-left unshared-right))
   (values
     (mapcar #'car
 	    (intersection right-map left-map :key #'car))
@@ -829,7 +857,7 @@
 				    code
 				  `(when ,code (succeed nil)))))))))
       (let ((generated-code `(defun ,function-name (.env. old-state-has-lvs .continuation.)
-			       (declare (dynamic-extent .continuation.))
+			       #-sbcl (declare (dynamic-extent .continuation.))
 			       ,@(when (null variable-initialization-code)
 				   `((progn .env.)))
 			       ,(if semi-unification-only

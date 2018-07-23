@@ -100,7 +100,7 @@
   (current-size 0.)
   (data nil))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline is-dn-table-p))
   (defun is-dn-table-p (x)
     (dn-table-p x)))
@@ -116,14 +116,14 @@
 	(dn-table-data dn-table)         nil))
 
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline assoc-equal))
   (defun assoc-equal (item alist)
     "Open-coding of (assoc item alist :test #'equal)."
     (loop for cell in alist when (equal item (car cell)) return cell)))
 
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline dn-table-get))
   (defun dn-table-get (key dn-table)
     "Gets data associated with key in dn-table."
@@ -168,7 +168,7 @@
 ;;; There's no iteration path because of this complexity.
 (defun dn-table-map (dn-table function)
   "Map a function over all the key-datum pairs."
-  (declare (dynamic-extent function))
+  #-sbcl (declare (dynamic-extent function))
   (if (dn-table-alist-p dn-table)
       ;; loop over the alist
       (loop for cell in (dn-table-data dn-table)
@@ -202,7 +202,7 @@
       ))
 
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline discrimination-net-node-terminal-p))
   (defun discrimination-net-node-terminal-p (node)
     "Whether or not this node is terminal."
@@ -242,7 +242,7 @@
 	    (setf (dn-table-get token (discrimination-net-node-info-or-table from-node)) new-node)
 	    new-node))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline dn-tell-variable))
   (defun dn-tell-variable (from-node)
     (cond ((discrimination-net-node-var-link from-node))
@@ -250,7 +250,7 @@
 	       (setf (discrimination-net-node-var-link from-node) new-node)
 	       new-node)))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline dn-tell-segment-variable))
   (defun dn-tell-segment-variable (from-node)
     (cond ((discrimination-net-node-seg-var-link from-node))
@@ -258,7 +258,7 @@
 	       (setf (discrimination-net-node-seg-var-link from-node) new-node)
 	       new-node)))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline dn-tell-embedded-list))
        (defun dn-tell-embedded-list (node)
          (dn-tell-token '*embedded-list* node)))
@@ -320,7 +320,7 @@
 (defun dn-ask-token-variables (root-node current-node predication generator-state collector-function)
   ;; select children along variable links matching this non-variable, non-segment-variable token
   (declare #+genera (dbg:invisible-frame joshua-internals)
-	   (dynamic-extent collector-function))
+	   #-sbcl (dynamic-extent collector-function))
   (when (discrimination-net-node-var-link current-node)
     ;; has a var-link, so recurse on it
     (dn-ask-next root-node (discrimination-net-node-var-link current-node) predication generator-state
@@ -333,7 +333,7 @@
 			       token do-variables-p)
   ;; select children matching this non-variable, non-segment-variable token
   (declare #+genera (dbg:invisible-frame joshua-internals)
-	   (dynamic-extent collector-function))
+	   #-sbcl (dynamic-extent collector-function))
   (when (is-dn-table-p (discrimination-net-node-info-or-table current-node))
     ;; this node has a table, so look up the token in it
     (let ((next-node (dn-table-get token (discrimination-net-node-info-or-table current-node))))
@@ -349,7 +349,7 @@
   ;; just like dn-ask-token, except it asks the constant token *END-PREDICATION*,
   ;; ignores regular variables in the data, and only returns terminal nodes.
   (declare #+genera (dbg:invisible-frame joshua-internals)
-	   (dynamic-extent collector-function))
+	   #-sbcl (dynamic-extent collector-function))
   (when (is-dn-table-p (discrimination-net-node-info-or-table current-node))
     ;; current node has a table, so look for *END-PREDICATION*'s in it
     (let ((next-node (dn-table-get '*END-PREDICATION* (discrimination-net-node-info-or-table current-node))))
@@ -364,7 +364,7 @@
   ;; a variable in the query pattern means to skip a level.  Since we canonicalize
   ;; sub-predications, this just means to recurse on the kids of current-node
   (declare #+genera (dbg:invisible-frame joshua-internals)
-	   (dynamic-extent collector-function))
+	   #-sbcl (dynamic-extent collector-function))
   (when (is-dn-table-p (discrimination-net-node-info-or-table current-node))
     ;; recurse on all nodes in the table
     (dn-table-map (discrimination-net-node-info-or-table current-node)
@@ -385,7 +385,7 @@
   ;; a tail segment variable (in either query or data) 
   ;; means collect this node's fringe
   (declare #+genera (dbg:invisible-frame joshua-internals)
-	   (dynamic-extent collector-function))
+	   #-sbcl (dynamic-extent collector-function))
   (when (is-dn-table-p (discrimination-net-node-info-or-table current-node))
     ;; this node has a table, so look at each entry
     (dn-table-map (discrimination-net-node-info-or-table current-node)
@@ -403,21 +403,21 @@
     ;; has a seg-var link, so accept its fringe
     (dn-ask-segment-variable (discrimination-net-node-seg-var-link current-node) collector-function)))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline dn-ask-predication))
   (defun dn-ask-predication (root-node predication collector-function)
-    (declare (dynamic-extent collector-function))
+    #-sbcl (declare (dynamic-extent collector-function))
     (dn-ask-next root-node
 		 root-node
 		 predication
 		 (predication-statement predication)
 		 collector-function)))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline dn-ask-embedded-list))
   (defun dn-ask-embedded-list (root-node current-node predication generator-state
 			       collector-function)
-    (declare (dynamic-extent collector-function))
+    #-sbcl (declare (dynamic-extent collector-function))
     (dn-ask-token root-node
 		  current-node
 		  predication
@@ -429,7 +429,7 @@
 (defun dn-ask-next (root-node current-node predication generator-state collector-function)
   ;; dispatch on type of next token to walk it
   (declare #+genera (dbg:invisible-frame joshua-internals)
-	   (dynamic-extent collector-function))
+	   #-sbcl (dynamic-extent collector-function))
   (cond ((null generator-state)
 	 ;; no more tokens go get, call collector-function on terminal kids
 	 (dn-ask-*END-PREDICATION* current-node collector-function))
@@ -481,7 +481,7 @@
 			     next-token t)))))))
 
 (defun discrimination-net-fetch (root-node predication continuation)
-  (declare (dynamic-extent continuation))
+  #-sbcl (declare (dynamic-extent continuation))
   ;; in order to save stack depth, collect nodes from all over the net,
   ;; then call the continuation
   (let ((nodes nil))

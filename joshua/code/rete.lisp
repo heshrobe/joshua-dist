@@ -142,7 +142,7 @@
 ;;; sure that demorganizing to begin with wouldn't have been better
 
 (defun build-rete-topology (trigger &optional variables-in-block environment-stack)
-  (declare (values analysis bottom-node insertion))
+  #-sbcl(declare (values analysis bottom-node insertion))
 ;;  (let ((*print-level* 2) (*print-length* 5))
 ;;    (format t "~% ~{~a~^ ~}" (list (car trigger) (cadr trigger))))
   (rete-topologizer (car trigger) 
@@ -598,7 +598,7 @@
 (defmethod rete-code-writer ((type (eql 'object-match-pattern-analysis)) rule-name analysis environment previous-map)
   (declare (ignore previous-map environment))
   (multiple-value-bind (stuff semi map)
-      (write-forward-rule-matchers rule-name (match-pattern-analysis-pattern analysis)
+      (write-forward-rule-matchers rule-name (object-match-pattern-analysis-pattern analysis)
 				   nil
 				   (pattern-analysis-name analysis))
     (declare (ignore stuff))
@@ -740,8 +740,8 @@
   (or (pattern-analysis-rete-node trigger-structure)
       (let ((method-exists (find-method #'rete-net-constructor nil
 					(list 
-					 #-allegro `(eql ,(type-of trigger-structure))
-					 #+allegro (clos:intern-eql-specializer (type-of trigger-structure))
+					 #-(or allegro sbcl) `(eql ,(type-of trigger-structure))
+					 #+(or allegro sbcl) (intern-eql-specializer (type-of trigger-structure))
 					 (find-class t)
 					 (find-class t))
 					nil)))
@@ -799,16 +799,16 @@
 (defmethod rete-net-constructor ((type (eql 'object-match-pattern-analysis)) rule-name trigger)
   (declare (special *node-making-code* *pred-mapping*))
   (let* ((name (gentemp "OBJECT-MATCH-NODE-"))
-	   (pred-name (cdr (assoc (match-pattern-analysis-pattern trigger) *pred-mapping*)))
-	   (match-node-code `(make-Rete-object-match-node
-			       :semi-unification-code ',(object-match-pattern-analysis-semi-unification-code trigger)
-			       :truth-value ',(object-match-pattern-analysis-truth-value trigger)
-			       :match-ids (list (make-match-id
-						  :rule-name ',rule-name
-						  :pattern ,pred-name)))))
-      (setf (pattern-analysis-rete-node trigger) name)
-      (push (list name match-node-code) *node-making-code*)
-      name))
+	 (pred-name (cdr (assoc (object-match-pattern-analysis-pattern trigger) *pred-mapping*)))
+	 (match-node-code `(make-Rete-object-match-node
+			    :semi-unification-code ',(object-match-pattern-analysis-semi-unification-code trigger)
+			    :truth-value ',(object-match-pattern-analysis-truth-value trigger)
+			    :match-ids (list (make-match-id
+					      :rule-name ',rule-name
+					      :pattern ,pred-name)))))
+    (setf (pattern-analysis-rete-node trigger) name)
+    (push (list name match-node-code) *node-making-code*)
+    name))
 
 (defmethod rete-net-constructor ((type (eql 'and-group-pattern-analysis)) rule-name trigger)
   (declare (special *node-making-code*))
@@ -901,7 +901,7 @@
 
 ;;;; The rete network execution model
 
-(eval-when(compile eval load)
+(eval-when(:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline rete-entry-type)))
 (defun rete-entry-type (entry)
   (type-of entry))
@@ -1089,14 +1089,14 @@
 			(follow-links node))
 		       ((rete-and-group-p node)
 			(loop for thing in (rete-and-group-parts node)
-			      doing (traverse-rete-net thing top-level?)))
+			   doing (traverse-rete-net thing top-level?)))
 		       ((rete-or-group-p node)
 			(loop for thing in (rete-or-group-parts node)
-			      doing (traverse-rete-net thing top-level?))))))
+			   doing (traverse-rete-net thing top-level?))))))
 	     (follow-links (node)
-			   (loop for child-entry in (basic-rete-node-children node)
-				 when (basic-rete-child-entry-p child-entry)
-				 do (traverse-rete-net (basic-rete-child-entry-child child-entry) nil))))
+	       (loop for child-entry in (basic-rete-node-children node)
+		  when (basic-rete-child-entry-p child-entry)
+		  do (traverse-rete-net (basic-rete-child-entry-child child-entry) nil))))
       (traverse-rete-net top-level-rete-node t))
     visited-nodes))
 
@@ -1110,8 +1110,11 @@
 		   (unless (member rete-node original-nodes)
 		     (push rete-node original-nodes)
 		     (loop for entry in (basic-rete-node-children rete-node)
-			   do (when (and (member (type-of entry) '(rete-procedure-entry rete-or-entry rete-terminal-entry))
-					 (eq (rete-procedure-entry-rule-name entry) rule-name))
+			do (when (and (member (type-of entry) '(rete-procedure-entry rete-or-entry rete-terminal-entry))
+				      (typecase entry
+					(rete-procedure-entry (eq (rete-procedure-entry-rule-name entry) rule-name))
+					(rete-or-entry (eq (rete-or-entry-rule-name entry) rule-name))
+					(rete-terminal-entry (eql (rete-terminal-entry-rule-name entry) rule-name))))
 				(push (cons rete-node entry) pairs))))))
 	    (loop for node in (rule-debug-info-network old-debug-info)
 		  when (or (rete-match-node-p node) (rete-procedure-node-p node))
@@ -1140,86 +1143,90 @@
 (defun intern-rete-network (alist)
   (let ((new-nodes nil))
     (labels
-      ((intern-Rete-match-nodes (donator receptor)
-	 (unless (eql donator receptor)
-	   ;; intern match nodes so that triggers which are variants of each other
-	   ;; share a node and don't do duplicate unifications.
-	   (intern-Rete-nodes donator receptor)
-	   (flet ((equal-matchids (match-id1 match-id2)
-		    (and (eql (match-id-rule-name match-id1)
-			      (match-id-rule-name match-id2))
-			 (variant (match-id-pattern match-id1)
-				  (match-id-pattern match-id2)))))
-	     (loop for match-id in (Rete-match-node-match-ids donator)
-		   doing (pushnew match-id (Rete-match-node-match-ids receptor)
-				  :test #'equal-matchids)))))
-       (intern-Rete-nodes (donator receptor)
-	 ;; make sure you use the new code
-	 (unless (eql donator receptor)
-	   (pushnew (cons donator receptor) alist :key #'car)
-	   (setq new-nodes (delete donator new-nodes :key #'car))
-	   (setf (Rete-node-code receptor) (Rete-node-code donator))
-	   (setf (Rete-node-semi-unification-code receptor) (Rete-node-semi-unification-code donator))
-	   ;; make all references in the child links point to canonical nodes
-	   (loop for child-entry in (basic-Rete-node-children donator)
-		 when (typep child-entry 'Rete-child-entry)
-		   do (let ((brother (Rete-child-entry-brother child-entry)))
-			(loop for brother-child-entry in (basic-Rete-node-children brother)
-			      when (and (typep brother-child-entry 'Rete-child-entry)
-					(eq (Rete-child-entry-brother brother-child-entry) donator))
-				do (setf (Rete-child-entry-brother brother-child-entry) receptor))))
-	   ;(setf (basic-rete-node-merges-underneath receptor) t)
-	   (attempt-to-merge-children donator receptor)))
-       (attempt-to-merge-children (donator receptor)
-	 (loop for donator-child-entry in (basic-rete-node-children donator)
-	       if (typep donator-child-entry 'Rete-child-entry)
-		 do (let* ((donator-brother (Rete-child-entry-brother donator-child-entry))
-			   (donator-side (rete-child-entry-side donator-child-entry))
-			   (donator-child (Rete-child-entry-child donator-child-entry))
-			   (donator-merge-id (Rete-merge-node-merge-id donator-child)))
-		      (loop for receptor-child-entry in (basic-rete-node-children receptor)
-			    when (typep receptor-child-entry 'Rete-child-entry)
-			      do (let* ((receptor-brother (Rete-child-entry-brother receptor-child-entry))
-					(receptor-side (rete-child-entry-side receptor-child-entry))
-					(receptor-child (Rete-child-entry-child receptor-child-entry))
-					(receptor-merge-id (Rete-merge-node-merge-id receptor-child)))
-				   (when (and (eql donator-brother receptor-brother)
-					      (eql donator-side receptor-side)
-					      (equal donator-merge-id receptor-merge-id))
-				     (loop for receptor-brother-child-entry in (basic-rete-node-children receptor-brother)
-					   when (typep receptor-brother-child-entry 'Rete-child-entry)
-					     do (let ((receptor-brother-child (rete-child-entry-child receptor-brother-child-entry))
-						      (receptor-brother-side (rete-child-entry-side receptor-brother-child-entry))
-						      (receptor-brother-brother (rete-child-entry-brother
-										  receptor-brother-child-entry)))
-						  (when (and (eql receptor-brother-child donator-child)
-							     (eql receptor-brother-brother receptor)
-							     (not (eql receptor-brother-side receptor-side)))
-						    (setf (basic-rete-node-children receptor-brother)
-							  (delete receptor-brother-child-entry (basic-rete-node-children receptor-brother)))
-						    (return (values)))))
-				     (intern-Rete-nodes donator-child receptor-child)
-				     (return (values))))
-			    finally (push donator-child-entry (basic-rete-node-children receptor))
-				    (add-to-new-nodes donator-child receptor donator-child-entry)))
-	       else do (push donator-child-entry (basic-rete-node-children receptor))
-		       (add-to-new-nodes (basic-rete-child-entry-child donator-child-entry) receptor donator-child-entry)))
-       (add-to-new-nodes (donator-child receptor donator-child-entry)
-	 (unless (assoc donator-child new-nodes)
-	   (push (list donator-child receptor donator-child-entry) new-nodes)
-	   (when (basic-rete-node-p donator-child)
-	     (loop for child-entry in (basic-rete-node-children donator-child) do
-	       (remove-children (basic-rete-child-entry-child child-entry))))))
-       (remove-children (child)
-	 (setq new-nodes (delete child new-nodes :key #'car))
-	 (when (basic-rete-node-p child)
-	   (loop for child-entry in (basic-rete-node-children child) do
-	     (remove-children (basic-rete-child-entry-child child-entry))))))
+	((intern-Rete-match-nodes (donator receptor)
+	   (unless (eql donator receptor)
+	     ;; intern match nodes so that triggers which are variants of each other
+	     ;; share a node and don't do duplicate unifications.
+	     (intern-Rete-nodes donator receptor)
+	     (flet ((equal-matchids (match-id1 match-id2)
+		      (and (eql (match-id-rule-name match-id1)
+				(match-id-rule-name match-id2))
+			   (variant (match-id-pattern match-id1)
+				    (match-id-pattern match-id2)))))
+	       (loop for match-id in (Rete-match-node-match-ids donator)
+		  doing (pushnew match-id (Rete-match-node-match-ids receptor)
+				 :test #'equal-matchids)))))
+	 (intern-Rete-nodes (donator receptor)
+	   ;; make sure you use the new code
+	   (unless (eql donator receptor)
+	     (pushnew (cons donator receptor) alist :key #'car)
+	     (setq new-nodes (delete donator new-nodes :key #'car))
+	     (setf (Rete-node-code receptor) (Rete-node-code donator))
+	     (setf (Rete-node-semi-unification-code receptor) (Rete-node-semi-unification-code donator))
+	     ;; make all references in the child links point to canonical nodes
+	     (loop for child-entry in (basic-Rete-node-children donator)
+		when (typep child-entry 'Rete-child-entry)
+		do
+		  (let ((brother (Rete-child-entry-brother child-entry)))
+		    (loop for brother-child-entry in (basic-Rete-node-children brother)
+		       when (and (typep brother-child-entry 'Rete-child-entry)
+				 (eq (Rete-child-entry-brother brother-child-entry) donator))
+		       do (setf (Rete-child-entry-brother brother-child-entry) receptor))))
+					;(setf (basic-rete-node-merges-underneath receptor) t)
+	     (attempt-to-merge-children donator receptor)))
+	 (attempt-to-merge-children (donator receptor)
+	   (loop for donator-child-entry in (basic-rete-node-children donator)
+	      if (typep donator-child-entry 'Rete-child-entry)
+	      do (let* ((donator-brother (Rete-child-entry-brother donator-child-entry))
+			(donator-side (rete-child-entry-side donator-child-entry))
+			(donator-child (Rete-child-entry-child donator-child-entry))
+			(donator-merge-id (Rete-merge-node-merge-id donator-child)))
+		   (loop for receptor-child-entry in (basic-rete-node-children receptor)
+		      when (typep receptor-child-entry 'Rete-child-entry)
+		      do (let* ((receptor-brother (Rete-child-entry-brother receptor-child-entry))
+				(receptor-side (rete-child-entry-side receptor-child-entry))
+				(receptor-child (Rete-child-entry-child receptor-child-entry))
+				(receptor-merge-id (Rete-merge-node-merge-id receptor-child)))
+			   (when (and (eql donator-brother receptor-brother)
+				      (eql donator-side receptor-side)
+				      (equal donator-merge-id receptor-merge-id))
+			     (loop for receptor-brother-child-entry in (basic-rete-node-children receptor-brother)
+				when (typep receptor-brother-child-entry 'Rete-child-entry)
+				do (let ((receptor-brother-child (rete-child-entry-child receptor-brother-child-entry))
+					 (receptor-brother-side (rete-child-entry-side receptor-brother-child-entry))
+					 (receptor-brother-brother (rete-child-entry-brother
+								    receptor-brother-child-entry)))
+				     (when (and (eql receptor-brother-child donator-child)
+						(eql receptor-brother-brother receptor)
+						(not (eql receptor-brother-side receptor-side)))
+				       (setf (basic-rete-node-children receptor-brother)
+					     (delete receptor-brother-child-entry (basic-rete-node-children receptor-brother)))
+				       (return (values)))))
+			     (intern-Rete-nodes donator-child receptor-child)
+			     (return (values))))
+		      finally (push donator-child-entry (basic-rete-node-children receptor))
+			(add-to-new-nodes donator-child receptor donator-child-entry)))
+	      else do (push donator-child-entry (basic-rete-node-children receptor))
+		(when (typep donator-child-entry 'basic-rete-child-entry)
+		  (add-to-new-nodes (basic-rete-child-entry-child donator-child-entry) receptor donator-child-entry))))
+	 (add-to-new-nodes (donator-child receptor donator-child-entry)
+	   (unless (assoc donator-child new-nodes)
+	     (push (list donator-child receptor donator-child-entry) new-nodes)
+	     (when (basic-rete-node-p donator-child)
+	       (loop for child-entry in (basic-rete-node-children donator-child)
+		  when (typep child-entry 'basic-rete-child-entry)
+		  do (remove-children (basic-rete-child-entry-child child-entry))))))
+	 (remove-children (child)
+	   (setq new-nodes (delete child new-nodes :key #'car))
+	   (when (basic-rete-node-p child)
+	     (loop for child-entry in (basic-rete-node-children child)
+		when (typep child-entry 'basic-rete-child-entry)  
+		do (remove-children (basic-rete-child-entry-child child-entry))))))
       (loop for (donator . receptor) in alist
-	    doing (typecase receptor
-		    (rete-match-node
-		      (intern-rete-match-nodes donator receptor))
-		    (otherwise (intern-rete-nodes donator receptor))))
+	 doing (typecase receptor
+		 (rete-match-node
+		  (intern-rete-match-nodes donator receptor))
+		 (otherwise (intern-rete-nodes donator receptor))))
       (values new-nodes alist))))
  
 
@@ -1239,7 +1246,7 @@
 		 (loop for child-entry in (basic-Rete-node-children node)
 		       when (typep child-entry 'basic-Rete-child-entry)
 			 ;; this kid is not terminal, so clear him too.
-			 do (clear-Rete-node (Rete-child-entry-child child-entry)))))))
+		    do (clear-Rete-node (basic-Rete-child-entry-child child-entry)))))))
     ;; clear each Rete node given
     (loop for node in Rete-nodes do (clear-Rete-node node))))
 
@@ -1306,7 +1313,7 @@
 		   finally (setf (basic-rete-node-children brother) good-children))))
 
 (defun get-rid-of-terminal-entries (rete-node rule-name)
-  (declare (values im-still-useful))
+  #-sbcl(declare (values im-still-useful))
   ;; Disarming the triggers has to go through the network under this rule's
   ;; match nodes and get rid of any terminal entry for this rule
   ;; so its body function will never run.
@@ -1423,7 +1430,7 @@
 
 ;;;; Subst's used in the rete network execution model
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline add-to-suspended-brother-states)))
 (defun add-to-suspended-brother-states (my-state-entry node)
   (loop for child-entry in (basic-rete-node-children node)
@@ -1440,7 +1447,7 @@
 			 for his-state in his-states
 			 doing (push pair (rete-internal-state-stimulate-list his-state))))))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline rete-merge-with-brothers)))
 (defun rete-merge-with-brothers (my-state-entry child-entry)
   (block rete-merge-with-brothers
@@ -1729,6 +1736,6 @@
 
 
 ;;; The graph rete net code is now in ptypes-and-commands
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(special *forward-rules*)))
 

@@ -1,4 +1,4 @@
-;;; -*- Base: 10; Mode: LISP; Syntax: Joshua-ansi; Package: JOSHUA-USER -*-
+;;; -*- Base: 10; Mode: LISP; Syntax: Joshua-ansi; Package: JOSHUA-USER; readtable: joshua -*-
 
 (in-package "JU")
 

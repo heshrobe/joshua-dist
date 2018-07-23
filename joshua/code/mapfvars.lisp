@@ -87,6 +87,11 @@
 	    (lambda (arg-template ))
 	    (let (arg-template parallel-let declare . body))
 	    (let* (arg-template ((repeat let)) declare . body))
+	    ;; This was left out of the previous version
+	    ;; SBCL uses it in the expansion of handler-bind and handler-case
+	    ;; It's not clear whether this should be eval or quote.  But for
+	    ;; Joshua's use either it probably OK.
+	    (load-time-value (arg-template eval eval))
 	    (locally (declare . body))
 	    (multiple-value-list (arg-template eval))
 	    (multiple-value-bind (arg-template (order (2 ((repeat (if null quote let))))
@@ -258,8 +263,8 @@
 	    ;; The if our binding is a macro return it otherwise
 	    ;; nil.
 	    (when (and (listp temp)
-		       (eq (first function) 'special))
-	      (second function))
+		       (eq (first temp) 'special))
+	      (second temp))
 	    ;; use the real world's global definition
 	    (macro-function function nil))
 	))))

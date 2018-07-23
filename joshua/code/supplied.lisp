@@ -940,7 +940,7 @@
   (flet ((handler (condition) 
            (declare (ignore condition))
            (throw 'ji::ask-variable-predicate-escape (values))))
-    (declare (dynamic-extent handler))
+    (declare (dynamic-extent #'handler))
     (handler-bind ((error #'handler))
       (ask (predication-maker '((logic-variable-maker ?anonymous1) . 
                                 (logic-variable-maker ?anonymous2)))
