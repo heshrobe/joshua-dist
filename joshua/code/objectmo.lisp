@@ -625,6 +625,11 @@
 
 (defvar *all-object-types* (make-hash-table :size 20))
 
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (proclaim '(inline object-type-named)))
+(defun object-type-named (type-name)
+  (gethash type-name *all-object-types*))
+
 (defclass object-type
 	  ()
     ((typical-instance :initform nil :accessor object-type-typical-instance)
@@ -984,11 +989,6 @@
   (if typical-instance-p
       (setq typical-instance nil)
       (setq instances (delete object instances)))))
-
-(eval-when (:compile-toplevel :execute :load-toplevel)
-  (proclaim '(inline object-type-named)))
-(defun object-type-named (type-name)
-  (gethash type-name *all-object-types*))
 
 (defmethod copy-rule-triggers ((self object-type))
   (with-slots (typical-instance) self
@@ -1386,6 +1386,8 @@
     (declare (dynamic-extent #'impose-one-equality))
     (loop for (from to) in equality-list
 	  do (impose-one-equality from to))))
+
+(defun object-named (name) (subpart-named *root* name))
 
 ;; Signal goes to KMP error?
 (defun follow-path (path &optional (fetch-value t) (error-if-bad-path t))

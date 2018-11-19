@@ -69,6 +69,9 @@
 (defun run-ascript (script-pathname function args)
   (let ((command (format nil "osascript ~a ~a ~{\"~a\"~^ ~}" script-pathname function args)))
     ;; (format t "~%~a" command)
+    #+sbcl
+    (uiop:run-program command)
+    #+allegro
     (excl:shell command)
     command))
 
@@ -94,11 +97,14 @@
 
 ;;; Makes the RPC call to the script server
 (defun call-ascript-server (host port script function &rest args)
+  #-allegro(declare (ignore port))
   (if (string-equal host "localhost")
       (run-ascript script function args)
+      #+allegro
     (net.xml-rpc:xml-rpc-call
      (net.xml-rpc:encode-xml-rpc-call "runascript" script function args)
-     :url (get-host-url host port))))
+     :url (get-host-url host port))
+    ))
 
 ; (defun call-osasubr-server (&key host (port *default-port*)
 ; 				 script
@@ -132,9 +138,11 @@
 (defparameter *station-alist*
     `(("WBUR" . "http://wbur-sc.streamguys.com:80/")
       ("WUMB" . "http://wumb.streamguys1.com/wumb919fast")
-      ("WGBH" . "http://64.71.145.107:8000")))
+      ("WGBH" . "https://streams.audio.wgbh.org:8200/wgbh-aac")))
 
-(clim-env:define-lisp-listener-command (com-play-radio :name t)
+;;; Maybe this should be +CLIM -Mcclim
+#+(and clim (not mcclim))
+(clim-env:define-lisp-listener-command  (com-play-radio :name t)
     ((station `(clim:member-alist ,*station-alist*))
      &key
      (host `(clim:member-alist ,*host-alist* :test string-equal)
@@ -143,6 +151,28 @@
   (let ((file-name "~/scripts/itunes.scpt"))
     ;; (format t "~%Invoking script ~a on host ~a with arg ~a" file-name host "play")
     (call-ascript-server host port file-name "play" station)))
+
+#+mcclim
+(clim:define-command (com-play-radio :name t
+				     :command-table clim-listener::lisp-commands)
+    ((station `(clim:member-alist ,*station-alist*)))
+  (play-radio station))
+
+(defun play-radio (station)
+  (let ((file-name "~/scripts/itunes.scpt"))
+      (run-ascript file-name "play" (list station))
+      ))
+
+#+mcclim
+(clim:define-command (com-stop-radio :name t
+				     :command-table clim-listener::lisp-commands)
+    ()
+  (stop-radio))
+
+(defun stop-radio ()
+  (let ((file-name "~/scripts/itunes.scpt"))
+    ;; (format t "~%Invoking script ~a on host ~a port ~a with arg ~a" file-name host port "stop")
+    (run-ascript file-name "stop" (list ""))))
 
 (clim-env:define-lisp-listener-command (com-stop-radio :name t)
     (
@@ -294,6 +324,10 @@
 (clim-env::define-lisp-listener-command (com-show-radio-commands :name t)
     ()
   (radio-commands))
+
+;;;(clim-env::define-lisp-listener-command (com-hide-radio-commands :name t)
+;;;    ()
+;;;  (kill-radio-commands))
 
 
 #||

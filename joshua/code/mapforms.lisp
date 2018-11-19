@@ -1295,8 +1295,8 @@ an argument of T when an iteration is entered and NIL when it is left."
   (let ((vars already-known))
     (mapforms
       #'(lambda (form kind usage state)
-	  ;; (format t "~&Form ~a Kind ~s Usage ~s Bound ~a" Form kind usage jlt::*MAPFORMS-BOUND-VARIABLES*)
 	  (declare (ignore state))
+	  ;;(format t "~&Form ~a Kind ~s Usage ~s Bound ~a" Form kind usage jlt::*MAPFORMS-BOUND-VARIABLES*)
 	  (when (and (eql kind 'symeval) (eql usage 'eval))
 	    (Unless (member form *MAPFORMS-BOUND-VARIABLES*)
 	      (when (or (eql from-set :any) (member form from-set))

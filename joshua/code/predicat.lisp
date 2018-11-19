@@ -1046,7 +1046,8 @@
 ;;; Now the guys who are the programmer-visible tip of this iceberg.
 ;;;
 
-(defparameter *models* nil "List of all known models.")
+(eval-when (:load-toplevel :execute)
+(defparameter *models* nil "List of all known models."))
 
 (defun undefine-predicate-model (name)
   ;; remove this model

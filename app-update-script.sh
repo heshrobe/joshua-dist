@@ -3,7 +3,7 @@ git commit -a -m "Updating all apps"
 git push origin
 git push mit
 
-cd ~/Research-Projects/new-awdrat/
+cd ~/Research-Projects/awdrat/
 git commit -a -m "Updating all apps"
 git push origin
 git push mit

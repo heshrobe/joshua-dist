@@ -376,6 +376,23 @@
   `(destructuring-bind ,arglist (cdr (predication-maker-statement ,statement))
      ,@body))
 
+;;; On non-Genera machines, it's unbound when its value cell refers to
+;;; the structure itself.
+
+(defstruct (joshua-logic-variable
+	     (:print-function
+	       (lambda (self stream depth)
+		 (declare (ignore depth))
+		 ;; This might like to print the pointer too, but it's imp-dependent...
+		 (if (eql (joshua-logic-variable-value-cell self) self)
+		     (format stream "#<~:[unbound ~;~]LV named ~a~@[ ~o~]>"
+			     (not (eq (joshua-logic-variable-value-cell self) self))
+			     (joshua-logic-variable-name self)
+			     nil)
+		   (let ((value (joshua-logic-variable-value self)))
+		     (princ value stream))))))
+  name
+  value-cell)
 
 ;;; On bootless and unhorsed LISPs (i.e. those without invisible
 ;;; pointers), we must "dereference" LVs the hard way.  This operator
@@ -530,24 +547,6 @@
 
 ;;; this is the boxed structure for holding a logic variable's pname
 ;;; and value cell.
-
-;;; On non-Genera machines, it's unbound when its value cell refers to
-;;; the structure itself.
-
-(defstruct (joshua-logic-variable
-	     (:print-function
-	       (lambda (self stream depth)
-		 (declare (ignore depth))
-		 ;; This might like to print the pointer too, but it's imp-dependent...
-		 (if (eql (joshua-logic-variable-value-cell self) self)
-		     (format stream "#<~:[unbound ~;~]LV named ~a~@[ ~o~]>"
-			     (not (eq (joshua-logic-variable-value-cell self) self))
-			     (joshua-logic-variable-name self)
-			     nil)
-		   (let ((value (joshua-logic-variable-value self)))
-		     (princ value stream))))))
-  name
-  value-cell)
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline joshua-logic-variable-unbound-p))

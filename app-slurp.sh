@@ -1,7 +1,7 @@
 cd ~/josh-dist/
 git pull
 
-cd ~/Research-Projects/new-awdrat/
+cd ~/Research-Projects/awdrat/
 git pull
 
 cd ~/Research-Projects/attack-planning/

@@ -33,7 +33,7 @@
   (load "~/Research-Projects/natural-software/code/defsystem.lisp")
   (load-system 'natsoft)
   
-  (load "~/Research-Projects/new-awdrat/code/defsystem.lisp")
+  (load "~/Research-Projects/awdrat/code/defsystem.lisp")
   (load-system 'awdrat)
   
   (load "~/Research-Projects/control-system/defsystem.lisp")

@@ -1271,6 +1271,8 @@ Given the way backward trigger expands (in the updated Joshua) these aren't nece
 
 |#
 
+(defvar *lv-gensym-counter* 0)
+
 (define-predicate-method (expand-backward-rule-trigger cc-mixin) (truth-value if-part)
   (declare (ignore truth-value))
   (let ((forms-discovered nil)
@@ -1280,7 +1282,7 @@ Given the way backward trigger expands (in the updated Joshua) these aren't nece
       (loop for thing in rest
 	  do (typecase thing
 	       (logic-variable-maker (push thing new-trigger))
-	       (list (let* ((name (cl:intern (gensym (concatenate 'string "?" (string (first thing))))))
+	       (list (let* ((name (cl:intern (format nil "?~a-~d" (string (first thing)) (incf *lv-gensym-counter*))))
 			    (new-logic-variable `(logic-variable-maker ,name)))
 		       (push new-logic-variable new-trigger)
 		       (push `(predication-maker '(or 

@@ -29,6 +29,10 @@
 (defmethod definition-undefining-form (fspec (type (eql :method))) 
   `(fmakunbound ',(fixed-defmethod-fspec fspec)))
 
+(defmethod definition-undefining-form (fspec (type (eql 'joshua:define-object-type)))
+  `(ji::undefine-object-type ',fspec)
+  )
+
 (defun fixed-defmethod-fspec (form) 
   (let (qualifiers)
     (do ((x (cddr form) (cdr x)))
