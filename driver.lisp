@@ -57,7 +57,7 @@
   
    (load "~/Research-Projects/control-system/defsystem.lisp")
   
-   (load "~/Research-Projects/attack-planning/defsystem.lisp")
+   (load "~/Research-Projects/attack-planning/code/defsystem.lisp")
    )
 
   

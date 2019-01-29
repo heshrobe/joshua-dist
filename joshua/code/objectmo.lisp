@@ -48,7 +48,7 @@
      (current-object . #-lucid (:reader bad-path-current-object :initarg :current-object) #+lucid nil)
      (remaining-path . #-lucid (:reader bad-path-remaining-path :initarg :remaining-path) #+lucid nil))
     (:report (lambda (self stream)
-	       (format stream "The path ~s is incorrect.~%There is no part of ~s named ~s.~%The rest of the path is ~s"
+	       (format stream "The path ~s is incorrect.~%There is no part or slot of ~s named ~s.~%The rest of the path is ~s"
 		       (bad-path-whole-path self)
 		       (bad-path-current-object self)
 		       (bad-path-first-bad-token self)
@@ -1393,31 +1393,33 @@
 (defun follow-path (path &optional (fetch-value t) (error-if-bad-path t))
   (if (null path)
       *root*
-      (multiple-value-bind (initial-object list-of-keys)
-	  (if (symbolp (car path))
-	      (values *root* path)
-	      (values (car path) (cdr path)))
-	(loop for keys on list-of-keys
-	      for key = (first keys)
-	      for current-object = initial-object then next-object
-	      until (null (cdr keys))
-	      for next-object = (subpart-named current-object key)
-	      when (and error-if-bad-path (null next-object))
-		do (error 'bad-path
-			   :remaining-path keys
-			   :whole-path path
-			   :first-bad-token key
-			   :current-object current-object)
-	      finally (return
-			(cond ((subpart-named current-object key))
-			      ((member key (all-slot-names current-object))
-			       (funcall key current-object fetch-value))
-			      ((null error-if-bad-path) nil)
-			      (t (error 'bad-path
-					 :remaining-path keys
-					 :whole-path path
-					 :first-bad-token key
-					 :current-object current-object))))))))
+    (multiple-value-bind (initial-object list-of-keys)
+	(if (symbolp (car path))
+	    (values *root* path)
+	  (values (car path) (cdr path)))
+      (loop for keys on list-of-keys
+	  for key = (first keys)
+	  for current-object = initial-object then next-object
+	  until (null (cdr keys))
+	  for next-object = (or (subpart-named current-object key)
+				(and (member key (all-slot-names current-object))
+				     (funcall key current-object)))
+	  when (and error-if-bad-path (null next-object))
+	  do (error 'bad-path
+		    :remaining-path keys
+		    :whole-path path
+		    :first-bad-token key
+		    :current-object current-object)
+	  finally (return
+		    (cond ((subpart-named current-object key))
+			  ((member key (all-slot-names current-object))
+			   (funcall key current-object fetch-value))
+			  ((null error-if-bad-path) nil)
+			  (t (error 'bad-path
+				    :remaining-path keys
+				    :whole-path path
+				    :first-bad-token key
+				    :current-object current-object))))))))
 
 ;;; for internal use only - always returns a slot
 
@@ -1433,7 +1435,10 @@
             for key = (car keys)
             for current-object = initial-object then next-object
             until (null (cdr keys))
-            for next-object = (subpart-named current-object key)
+	  for next-object = (or (subpart-named current-object key)
+				(and (member key (all-slot-names current-object))
+				     (funcall key current-object)))
+				
             when (null next-object)
             do (if error-if-bad-path
                  (error 'bad-path

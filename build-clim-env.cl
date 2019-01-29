@@ -39,7 +39,7 @@
   (load "~/Research-Projects/control-system/defsystem.lisp")
   (load-system 'controls)
   
-  (load "~/Research-Projects/attack-planning/defsystem.lisp")
+  (load "~/Research-Projects/attack-planning/code/defsystem.lisp")
   (load-system 'aplan)
 
   )

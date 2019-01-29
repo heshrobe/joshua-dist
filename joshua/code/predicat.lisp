@@ -941,10 +941,17 @@
 
 ;;; The following stolen from SYSDEF.lisp
 (eval-when (:compile-toplevel :execute :load-toplevel)
-(defconstant *arg-desc-max-args* (byte 8 0))	;sys:%%arg-desc-max-args
-(defconstant *arg-desc-min-args* (byte 8 8))	;sys:%%arg-desc-min-args
-(defconstant *arg-desc-rest-arg* (byte 1 16))	;sys:%%arg-desc-rest-arg
-)
+  ;; This is required for SBCL which insists that defconstant maintains eql'ness
+  ;; if it happends more than once.  Since the system-definition compiles and then
+  ;; loads each file, we do see this twice during compilation.  There is a specific 
+  ;; error thrown with an appropriate restart, but this is simpler.
+  (defmacro define-constant (name value &optional doc)
+    `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
+       ,@(when doc (list doc))))
+  (define-constant *arg-desc-max-args* (byte 8 0)) ;sys:%%arg-desc-max-args
+  (define-constant *arg-desc-min-args* (byte 8 8)) ;sys:%%arg-desc-min-args
+  (define-constant *arg-desc-rest-arg* (byte 1 16)) ;sys:%%arg-desc-rest-arg
+  )
 
 (defstruct (predicate-descriptor)
   args-info
