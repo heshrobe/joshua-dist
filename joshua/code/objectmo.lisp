@@ -248,7 +248,7 @@
 (defmethod notice-new-value ((self set-valued-slot-mixin) value predication old-truth-value)
   (declare (ignore old-truth-value))
   (with-slots (current-value current-predication) self
-    (cond ((eql (predication-truth-value predication) *true*)
+    (cond ((eql (predication-truth-value predication) +true+)
 	   (pushnew value current-value)
 	   (pushnew predication current-predication))
 	  (t (setq current-value (delete value current-value))
@@ -262,7 +262,7 @@
 	    when (eql (predication-predicate predication) query-predicate)
             doing (with-unification
                     (unify value-in-query value)
-                    (stack-let ((backward-support `(,query ,*true* ,predication)))
+                    (stack-let ((backward-support `(,query ,+true+ ,predication)))
                       (funcall continuation backward-support)))))))
 
 ;;; The mixin for slots which are allowed to have only a unique value
@@ -293,13 +293,13 @@
       (when new
 	(loop for (nil . other-predication) in all-predications
 	      unless (eql canonical-pred other-predication)
-		do (justify other-predication *false* 'unique-valued-slot (list canonical-pred))))
+		do (justify other-predication +false+ 'unique-valued-slot (list canonical-pred))))
       (values canonical-pred new))))
 
 (defmethod notice-new-value :before ((self value-overriding-unique-valued-slot-mixin) value predication old-truth-value)
   (declare (ignore old-truth-value))
   (with-slots (current-value current-predication) self
-    (when (and (eql (predication-truth-value predication) *true*)
+    (when (and (eql (predication-truth-value predication) +true+)
 	       (slot-boundp self 'current-value)
 	       (not (eql value current-value)))
       ;; Should this be UNTELL?   [as opp. unjustify, maybe?  -Weav]
@@ -308,7 +308,7 @@
 (defmethod notice-new-value ((self unique-valued-slot-mixin) value predication old-truth-value)
   (with-slots (current-value current-predication number-of-true-predications) self
     (cond
-      ((eql (predication-truth-value predication) *true*)
+      ((eql (predication-truth-value predication) +true+)
        ;; just blindly overwrite the value cell.  if this is the
        ;; unique true value, that's what we want.
        ;; If there turns out to be more than one true pred
@@ -318,7 +318,7 @@
        (incf number-of-true-predications))
       ;; Only if the old truth-value was true
       ;; then we need to determine if there are any true predications left
-      ((eql old-truth-value *true*)
+      ((eql old-truth-value +true+)
        (decf number-of-true-predications)
        (when (zerop number-of-true-predications)
 	 ;; If there are now no true predications, then
@@ -333,7 +333,7 @@
       (when (eql (predication-predicate current-predication) (predication-predicate query))
 	(with-unification
 	  (unify value-in-query current-value)
-	  (stack-let ((backward-support `(,query ,*true* ,current-predication)))
+	  (stack-let ((backward-support `(,query ,+true+ ,current-predication)))
 	    (funcall continuation backward-support)))))))
 
 (defun build-justification-from-backward-support (backward-support)
@@ -346,14 +346,14 @@
 		     (cond
 		       ((typep type 'predication)
 			(truth-value-case truth-value
-			  (*true* (push type true))
-			  (*false* (push type false))
-			  (*unknown* (push type unknown))))
+			  (+true+ (push type true))
+			  (+false+ (push type false))
+			  (+unknown+ (push type unknown))))
 		       (cached-result-in-query
 			(truth-value-case truth-value
-			  (*true* (push cached-result-in-query true))
-			  (*false* (push cached-result-in-query false))
-			  (*unknown* (push cached-result-in-query unknown))))
+			  (+true+ (push cached-result-in-query true))
+			  (+false+ (push cached-result-in-query false))
+			  (+unknown+ (push cached-result-in-query unknown))))
 		       (t (loop for thing in stuff
 				doing (build-justification-from-backward-support-internal thing)))))))))
       (declare (dynamic-extent #'build-justification-from-backward-support-internal))
@@ -397,11 +397,11 @@
 
 (defmethod act-on-new-value progn ((self slot-with-equalities-mixin) predication old-truth-value)
   (declare (ignore old-truth-value))
-  (when (eql (predication-truth-value predication) *true*)
+  (when (eql (predication-truth-value predication) +true+)
     (with-slots (equal-cells current-value) self
       (loop for entry in equal-cells
 	    for (cell justification) = entry
-	    if (or (eql (predication-truth-value justification) *true*)
+	    if (or (eql (predication-truth-value justification) +true+)
 		   (truth-maintained? self))
 	      do (propagate-equality current-value cell predication justification)
 	    else do (push (cons current-value predication) (third entry))))))
@@ -487,7 +487,7 @@
 ;;;  This should be PROGN combination, if VD PCL had it.
 (defmethod act-on-new-value progn ((self slot-with-attached-actions-mixin) predication old-truth-value)
   (with-slots (current-value actions) self
-    (let ((value (if (and (eql (predication-truth-value predication) *true*)
+    (let ((value (if (and (eql (predication-truth-value predication) +true+)
 			  (slot-boundp self 'current-value))
 		     current-value
 		     (with-statement-destructured (ignore value) predication
@@ -1113,7 +1113,11 @@
   (declare (ignore part-object))
   (remhash role-name (slot-value self 'subparts)))
 
-(defmethod initialize-instance :after ((self basic-object) &rest plist)
+;;; The &key &allow-other-keys is here to keep SBCL from complaining about a slot initialization that gets
+;;; passed through to the make-instance method, which it interprets very strictly as
+;;; not allowing a keyword arg that isn't either a slot initializer or a default-init-plist kind of thing.
+
+(defmethod initialize-instance :after ((self basic-object) &rest plist &key &allow-other-keys)
   (apply #'rebuild-object self plist)
   (trigger-rules-when-created self))
 
@@ -1242,7 +1246,7 @@
   (let ((pred `[ltms:object-type-of ,object ,(object-type-of object)]))
     (setf (my-predication object) pred
 	  (been-in-database-p pred) t)
-    (justify pred *true* :premise)
+    (justify pred +true+ :premise)
   ))
 
 
@@ -1593,7 +1597,7 @@
 ;;; successful rule or question firing (i.e. it TELL's the answer).
 
 (define-predicate-method (ask slot-value-mixin) (truth-value continuation do-backward-rules do-questions)
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error 'model-can-only-handle-positive-queries
 	    :query self
 	    :model (type-of self)))
@@ -1801,8 +1805,8 @@
 	nil))))
 
 (define-predicate-method (locate-backward-rule-trigger slot-value-mixin) (truth-value continuation context rule-name)
-  (unless (eql truth-value *true*)
-    (error "this ~s pattern for rule ~s has a truth value which isn't *true*" self rule-name))
+  (unless (eql truth-value +true+)
+    (error "this ~s pattern for rule ~s has a truth value which isn't +true+" self rule-name))
   (with-statement-destructured (full-path other-stuff) self
     (declare (ignore other-stuff))
     (destructuring-bind (object &rest path) full-path
@@ -1854,8 +1858,8 @@
 	  canonical-node-to-return)))))
 
 (define-predicate-method (locate-backward-question-trigger slot-value-mixin) (truth-value continuation context question-name)
-  (unless (eql truth-value *true*)
-    (error "The ~s question's pattern ~s has a truth value which isn't *true*" question-name self))
+  (unless (eql truth-value +true+)
+    (error "The ~s question's pattern ~s has a truth value which isn't +true+" question-name self))
   (with-statement-destructured (full-path ignore) self
     (declare (ignore ignore))
     (destructuring-bind (object &rest path) full-path
@@ -1952,8 +1956,8 @@
 (define-predicate-method (add-forward-rule-trigger slot-value-mixin)
 			 (truth-value forward-trigger context rule-name)
   ;; add a trigger to the index of forward rules
-  (unless (eql truth-value *true*)
-    (error "this rule's pattern ~s has a truth value which isn't *true*" self))
+  (unless (eql truth-value +true+)
+    (error "this rule's pattern ~s has a truth value which isn't +true+" self))
   (with-statement-destructured (full-path ignore) self
     (declare (ignore ignore))
     (let ((type-name (find-object-type-in-trigger-pattern self (first full-path) context)))
@@ -1988,8 +1992,8 @@
       finally (return (values (cons new-Rete-node triggers) t new-rete-node))))
 
 (define-predicate-method (locate-forward-rule-trigger slot-value-mixin) (truth-value continuation context rule-name)
-  (unless (eql truth-value *true*)
-    (error "this rule's pattern ~s has a truth value which isn't *true*" self))
+  (unless (eql truth-value +true+)
+    (error "this rule's pattern ~s has a truth value which isn't +true+" self))
   (with-statement-destructured (full-path ignore) self
     (declare (ignore ignore))
     (destructuring-bind (object &rest path) full-path
@@ -2061,8 +2065,8 @@
 
 (define-predicate-method (locate-forward-rule-trigger type-of-mixin) (truth-value continuation context rule-name)
   (declare (ignore context rule-name))
-  (unless (eql truth-value *true*)
-    (error "this rule's pattern ~s has a truth value which isn't *true*" self))
+  (unless (eql truth-value +true+)
+    (error "this rule's pattern ~s has a truth value which isn't +true+" self))
   (with-statement-destructured (object type-name) self
     (declare (ignore object))
     (let ((type (object-type-named type-name)))
@@ -2107,7 +2111,7 @@
 	when (or (symbolp (car token)) (numberp (car token))) collect token))
 
 (define-predicate-method (ask-data type-of-mixin) (truth-value continuation)
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error 'model-can-only-handle-positive-queries
 	    :query self
 	    :model (type-of self)))
@@ -2122,7 +2126,7 @@
 			    unless (basic-object-typical-instance-of-type? (ultimate-superpart instance))
 			    do (with-unification
 				 (unify instance the-object)
-				 (stack-let ((backward-support (list self *true* '(ask-data object-type-of)
+				 (stack-let ((backward-support (list self +true+ '(ask-data object-type-of)
 								     (make-predication
 								       `(,(predication-predicate self)
 									 ,instance
@@ -2139,11 +2143,11 @@
                                 #'(lambda (supertype)
                                     (with-unification
                                       (unify type supertype)
-                                      (stack-let ((backward-support (list self *true* '(ask-data object-type-of))))
+                                      (stack-let ((backward-support (list self +true+ '(ask-data object-type-of))))
                                         (funcall continuation backward-support))))))                      
            
 	  (t (when (typep the-object type)
-	       (stack-let ((backward-support (list self *true* '(ask-data object-type-of))))
+	       (stack-let ((backward-support (list self +true+ '(ask-data object-type-of))))
 		 (funcall continuation backward-support)))))))
 
 (defun find-all-uses-of-object-type-in-trigger-pattern (object context)
@@ -2197,13 +2201,13 @@
 
 (define-predicate-method (expand-forward-rule-trigger type-of-mixin) (support-variable-name truth-value context bound-variables)
   (declare (ignore context bound-variables))
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error "The rule pattern ~s does not have a truth-value of true" self))
   `(:object-match ,self ,support-variable-name ,truth-value))
 
 (define-predicate-method (expand-backward-rule-action type-of-mixin) (support-variable-name truth-value other-ask-args context)
   (declare (ignore other-ask-args))
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error "The rule pattern ~s does not have a truth-value of true" self))
   (with-predication-maker-destructured (thing type) self
     (multiple-value-bind (all-types uses-as-value uses-in-path)
@@ -2215,7 +2219,7 @@
       (if (or uses-as-value (and (null uses-as-value) uses-in-path))
 	  `(:procedure
 	     ,(if (or (logic-variable-maker-p type) (logic-variable-maker-p thing))
-		 `(ask-data ,self *true* #'(lambda (ignore) (declare (ignore ignore)) (succeed)))
+		 `(ask-data ,self +true+ #'(lambda (ignore) (declare (ignore ignore)) (succeed)))
 		 `(typep ,thing ',type))
 	     ,support-variable-name)
 	`(:ignore)))))
@@ -2234,7 +2238,7 @@
 (define-predicate-model part-of-mixin () (tell-error-model ask-data-only-mixin))
 
 (define-predicate-method (ask-data part-of-mixin) (truth-value continuation)
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error 'model-can-only-handle-positive-queries
 	    :query self
 	    :model (type-of self)))
@@ -2250,7 +2254,7 @@
 	       (with-unification
 		   (unify parent-object superpart)
 		 (unify child-object object)
-		 (stack-let ((backward-support (list self *true* '(ask-data part-of))))
+		 (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
 			    (funcall continuation backward-support))))))
        *root*))
      ;; Parent is unbound, child must be bound but might need dereferencing
@@ -2260,7 +2264,7 @@
 	(when object
 	  (with-unification
 	      (unify parent-object object)
-	    (stack-let ((backward-support (list self *true* '(ask-data part-of))))
+	    (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
 		       (funcall continuation backward-support))))))
      ;; child is unbound, parent must be bound but might need dereferencing
      ((unbound-logic-variable-p child-object)
@@ -2271,14 +2275,14 @@
 		       (declare (ignore key))
 		       (with-unification
 			   (unify child-object child)
-			 (stack-let ((backward-support (list self *true* '(ask-data part-of))))
+			 (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
 				    (funcall continuation backward-support))))
 		   (basic-object-subparts parent-object)))
 	 ((listp parent-object)
 	  (let ((path-result (follow-path parent-object)))
 	    (with-unification
 		(unify path-result child-object)
-	      (stack-let ((backward-support (list self *true* '(ask-data part-of))))
+	      (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
 			 (funcall continuation backward-support))))))))
      (t
       ;; Both Parent and Child is now known to be instantiated but may need to be dereferenced
@@ -2295,21 +2299,21 @@
 		return (values)
 		finally (with-unification
 			    (unify (first parent-object) next-parent)
-			  (stack-let ((backward-support (list self *true* '(ask-data part-of))))
+			  (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
 				     (funcall continuation backward-support))))))
 	 ((listp parent-object)
 	  (let ((path-result (follow-path parent-object)))
 	    (when (eql path-result child-object)
-	      (stack-let ((backward-support (list self *true* '(ask-data part-of))))
+	      (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
 			 (funcall continuation backward-support)))))
 	 ;; here they are both instantiated and atomic
 	 ((eql (basic-object-superpart-object child-object) parent-object)
-	  (stack-let ((backward-support (list self *true* '(ask-data part-of))))
+	  (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
 		     (funcall continuation backward-support)))))))))
 
 (define-predicate-method (expand-forward-rule-trigger part-of-mixin) (support-variable-name truth-value context bound-variables)
   (declare (ignore context))
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error "The rule pattern ~s does not have a truth-value of true" self))
   `(:procedure
      (ask ,self
@@ -2324,7 +2328,7 @@
 (define-predicate-model named-part-of-mixin () (tell-error-model ask-data-only-mixin))
 
 (define-predicate-method (ask-data named-part-of-mixin) (truth-value continuation)
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error 'model-can-only-handle-positive-queries
 	   :query self
 	   :model (type-of self)))
@@ -2341,7 +2345,7 @@
 		   (unify parent-object superpart)
 		 (unify child-object object)
 		 (unify name (role-name object))
-		 (stack-let ((backward-support (list self *true* '(ask-data named-part-of))))
+		 (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
 			    (funcall continuation backward-support))))))
        *root*))
      ;; parent isn't bound, child must be, but needs to be dereferenced
@@ -2352,7 +2356,7 @@
 	  (with-unification
 	      (unify parent-object object)
 	    (unify name (role-name child-object))
-	    (stack-let ((backward-support (list self *true* '(ask-data named-part-of))))
+	    (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
 		       (funcall continuation backward-support))))))
      ;; child isn't so parent must be, but needs to be dereferenced
      ((unbound-logic-variable-p child-object)
@@ -2361,7 +2365,7 @@
 		     (with-unification
 			 (unify name key)
 		       (unify child-object child)
-		       (stack-let ((backward-support (list self *true* '(ask-data named-part-of))))
+		       (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
 				  (funcall continuation backward-support))))
 		 (basic-object-subparts 
 		  ;; parent is either provided or a pathname
@@ -2383,7 +2387,7 @@
 		  finally (with-unification
 			      (unify (first parent-object) next-parent)
 			    (unify name (role-name child-object))
-			    (stack-let ((backward-support (list self *true* '(ask-data named-part-of))))
+			    (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
 				       (funcall continuation backward-support))))))
 	   ((listp parent-object)
 	    (let* ((partial-path-result (follow-path parent-object))
@@ -2391,18 +2395,18 @@
 	      (when (eql path-result child-object)
 		(with-unification
 		    (unify name (role-name child-object))
-		  (stack-let ((backward-support (list self *true* '(ask-data named-part-of))))
+		  (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
 			     (funcall continuation backward-support))))))
 	   ;; here they are both instantiated and atomic
 	   ((eql (basic-object-superpart-object child-object) parent-object)
 	    (with-unification
 		(unify name (role-name child-object))
-	      (stack-let ((backward-support (list self *true* '(ask-data named-part-of))))
+	      (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
 			 (funcall continuation backward-support))))))))))
 
 (define-predicate-method (expand-forward-rule-trigger named-part-of-mixin) (support-variable-name truth-value context bound-variables)
   (declare (ignore context))
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error "The rule pattern ~s does not have a truth-value of true" self))
   `(:procedure
      (ask ,self
@@ -2443,7 +2447,7 @@
 (define-predicate-model equated-mixin () (no-variables-in-data-mixin))
 
 (define-predicate-method (ask-data equated-mixin) (truth-value continuation)
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error 'model-can-only-handle-positive-queries
 	    :query self
 	    :model (type-of self)))
@@ -2455,7 +2459,7 @@
 		   do (with-unification
 			(unify (predication-predicate self) (predication-predicate supporting-predication))
 			(unify other-cell other)
-			(stack-let ((backward-support (list self *true* supporting-predication )))
+			(stack-let ((backward-support (list self +true+ supporting-predication )))
 			  (funcall continuation backward-support))))))
       (declare (dynamic-extent #'do-one-cell))
     (cond
@@ -2472,7 +2476,7 @@
 
 (define-predicate-method (expand-forward-rule-trigger equated-mixin) (support-variable-name truth-value context bound-variables)
   (declare (ignore context))
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error "The rule pattern ~s does not have a truth-value of true" self))
   `(:procedure
     (progn
@@ -2498,7 +2502,7 @@
 
 (define-predicate-method (act-on-truth-value-change equated-mixin) (old-truth-value &optional old-state)
   (declare (ignore old-truth-value old-state))
-  (when (eql (predication-truth-value self) *true*)
+  (when (eql (predication-truth-value self) +true+)
     (with-statement-destructured (cell1 cell2) self
       (let ((entry-for-cell2 (find cell2 (slot-equal-cells cell1) :key #'second)))
 	(when entry-for-cell2

@@ -1,5 +1,7 @@
 ;;; -*- Mode: LISP; Syntax: Ansi-common-lisp; Package: Cl-user -*-
 
+(in-package :cl-user)
+
 #+Genera
 (scl:defsystem joshua-portable-tests
     (:pretty-name "Joshua Portable Tests"
@@ -21,7 +23,7 @@
 
 #+allegro
 (defsystem joshua-tests
-    (:pretty-name "Joshua Portable Tests"
+    (:pretty-name "Joshua Tests"
      :default-module-class joshua-module
      :default-pathname "joshua:tests;")
   (:serial

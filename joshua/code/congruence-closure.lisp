@@ -417,7 +417,7 @@
 	  ;; Now we have to check if c2 had any non-congruence assertions
 	  ;; and if so map them up to c1
 	  (loop for assertion being the hash-values of (parent-assertions c2) using (hash-key target)
-	      when (eql (predication-truth-value assertion) *false*)
+	      when (eql (predication-truth-value assertion) +false+)
 	      do (tell `[not [congruent ,original-c1 ,target]]
 		       :justification `(congruence-closure (,triggering-congruence) (,assertion))))
 	  ;; Now rewrite all terms and predications that mention c2
@@ -459,7 +459,7 @@
      ;; and update his pointers to point there
      (loop with best-parent and best-parent-justification
 	 for parent being the hash-keys of (parent-assertions victim) using (hash-value parent-assertion)
-	 when (and (eql (predication-truth-value parent-assertion) *true*)
+	 when (and (eql (predication-truth-value parent-assertion) +true+)
 		   (or (null best-parent)
 		       (eql (parent best-parent) parent)))
 	 do (setq best-parent parent
@@ -657,12 +657,12 @@
 ;;; statements mapping items to their equivalence sets
 ;;; (note that at this point the predication is in canonical flat form)
 (define-predicate-method (act-on-truth-value-change cc-mixin :after) (old-truth-value &optional old-state)
-  (when (and (eql old-truth-value *unknown*)
+  (when (and (eql old-truth-value +unknown+)
 	     (zerop (predication-bits-ive-been-in-before old-state)))
     (loop for item in (rest (predication-statement self))
 	  if (typep item 'equivalence-class)
 	do (loop for parent-justification being the hash-values of (parent-assertions item)
-	       when (eql (predication-truth-value parent-justification) *true*)
+	       when (eql (predication-truth-value parent-justification) +true+)
 	       do (with-statement-destructured (child parent) parent-justification
 		    ;; swap parent and child if they're in the wrong order
 		    ;; To Do: This has the effect of rewriting down
@@ -775,7 +775,7 @@
      ((or (unbound-logic-variable-p child) (unbound-logic-variable-p parent))
       ;; put the unknown one into canonical position
       (when (unbound-logic-variable-p parent) (rotatef child parent))
-      (if (eql truth-value *false*)
+      (if (eql truth-value +false+)
 	  (ask-data-one-variable-false self child (intern parent) continuation)
 	(ask-data-one-variable-true self child parent continuation)))
      (t ;; both are specific, need to use walk-term on both
@@ -791,7 +791,7 @@
 			      (push entry already-seen)
 			      (push (reverse entry) already-seen)
 			      (if (eql parent child)
-				  (with-stack-list (bs self *true* '(rule congruence-closure))
+				  (with-stack-list (bs self +true+ '(rule congruence-closure))
 				    (funcall continuation bs))
 				(let ((parent-assertion (gethash (intern parent) (parent-assertions (intern child)))))
 				  (cond
@@ -802,15 +802,15 @@
 				    (with-stack-list (backward-support self truth-value parent-assertion)
 				      (funcall continuation backward-support)))
 				   ;; Not explicitly asserted
-				   ((eql truth-value *true*)
+				   ((eql truth-value +true+)
 				    ;; If not, when we're looking for TRUE assertions see if parent and child are in the same class
 				    (with-stack-list (rule-form 'rule 'congruence-closure)
 				      (multiple-value-bind (child-set child-set-assertion) (find child)
 					(multiple-value-bind (parent-set parent-set-assertion) (find parent)
 					  (when (eql child-set parent-set)
 					    ;; query had no variables so no with-unification
-					    (with-stack-list (piece1 child-set-assertion *true* child-set-assertion)
-					      (with-stack-list (piece2 parent-set-assertion *true* parent-set-assertion)
+					    (with-stack-list (piece1 child-set-assertion +true+ child-set-assertion)
+					      (with-stack-list (piece2 parent-set-assertion +true+ parent-set-assertion)
 						(with-stack-list (backward-support self
 										   truth-value
 										   rule-form
@@ -842,7 +842,7 @@
 		     (when class-justification
 		       (with-unification
 			   (unify child class)
-			 (with-stack-list (backward-support the-congruence *true* class-justification)
+			 (with-stack-list (backward-support the-congruence +true+ class-justification)
 			   (funcall continuation backward-support))))
 		     (loop for member in (members class)
 			 for entry = (list parent member)
@@ -850,7 +850,7 @@
 			 when (and (not (eql member parent))
 				   member-just
 				   (not (cl:find entry already-seen :test #'equal))
-				   (eql (predication-truth-value member-just) *true*))
+				   (eql (predication-truth-value member-just) +true+))
 			 do (push entry already-seen)
 			    (push (reverse entry) already-seen)
 			    (with-unification
@@ -861,10 +861,10 @@
 				  ;; That's why I'm doing the tell here to manifest the predication
 				  (let ((new-pred (tell (copy-object-if-necessary the-congruence)
 							:Justification `(congruence-closure (,class-justification ,member-just)))))
-				    (with-stack-list (backward-support the-congruence *true* new-pred)
+				    (with-stack-list (backward-support the-congruence +true+ new-pred)
 				      (funcall continuation backward-support)))
-				(with-stack-list (piece2 member-just *true* member-just)
-				  (with-stack-list (backward-support the-congruence *true* piece2)
+				(with-stack-list (piece2 member-just +true+ member-just)
+				  (with-stack-list (backward-support the-congruence +true+ piece2)
 				    (funcall continuation backward-support)))))))))))
 
 ;;; this needs to use walk-term because the non-vqriable term could be a list with embedded variables
@@ -887,14 +887,14 @@
 	;; Here neither class-1 nor class-2 was the canonical rep of their equivalence classes
 	(let ((non-congruence-assertion (gethash real-class-2 (parent-assertions real-class-1))))
 	  (when (and non-congruence-assertion
-		     (eql (predication-truth-value non-congruence-assertion) *false*))
+		     (eql (predication-truth-value non-congruence-assertion) +false+))
 	    (with-stack-list (rule-form 'rule 'congruence-closure)
 	      ;; query had no variables so no with-unification
-	      (with-stack-list (piece1 class-1-assertion *true* class-1-assertion)
-		(with-stack-list (piece2 class-2-assertion *true* class-2-assertion)
-		  (with-stack-list (piece3 non-congruence-assertion *false* non-congruence-assertion)
+	      (with-stack-list (piece1 class-1-assertion +true+ class-1-assertion)
+		(with-stack-list (piece2 class-2-assertion +true+ class-2-assertion)
+		  (with-stack-list (piece3 non-congruence-assertion +false+ non-congruence-assertion)
 		    (with-stack-list (backward-support query
-						       *false*
+						       +false+
 						       rule-form
 						       piece3
 						       piece1
@@ -909,13 +909,13 @@
 	  (rotatef class-1-assertion class-2-assertion))
 	(let ((non-congruence-assertion (gethash real-class-2 (parent-assertions real-class-1))))
 	  (when (and non-congruence-assertion
-		     (eql (predication-truth-value non-congruence-assertion) *false*))
+		     (eql (predication-truth-value non-congruence-assertion) +false+))
 	    (with-stack-list (rule-form 'rule 'congruence-closure)
 	      ;; query had no variables so no with-unification
-	      (with-stack-list (piece2 class-2-assertion *true* class-2-assertion)
-		(with-stack-list (piece3 non-congruence-assertion *false* non-congruence-assertion)
+	      (with-stack-list (piece2 class-2-assertion +true+ class-2-assertion)
+		(with-stack-list (piece3 non-congruence-assertion +false+ non-congruence-assertion)
 		  (with-stack-list (backward-support query
-						     *false*
+						     +false+
 						     rule-form
 						     piece3
 						     piece2)
@@ -932,10 +932,10 @@
   ;; the parent will also have the same thing.
   ;; first do any specifically asserted non-congruences
   ; (loop for child-assertion being the hash-values of (parent-assertions parent) using (hash-key this-child)
-  ;     when (eql (predication-truth-value child-assertion) *false*)
+  ;     when (eql (predication-truth-value child-assertion) +false+)
   ;     do (with-unification
   ; 	     (unify this-child child)
-  ; 	   (with-stack-list (backward-support pred *false* child-assertion)
+  ; 	   (with-stack-list (backward-support pred +false+ child-assertion)
   ; 	     (funcall continuation backward-support))))
   ;; next check whether there are any implied due to the class
   ;; being asserted not congruent to another class
@@ -947,13 +947,13 @@
       ;; continuation once for each class.  To Do: But it could call it once for each member of each such class
       ;; which would be consistent with what we do for the 2 variable case.
       (loop for child-assertion being the hash-values of (parent-assertions his-parent) using (hash-key this-child)
-	  when (eql (predication-truth-value child-assertion) *false*)
+	  when (eql (predication-truth-value child-assertion) +false+)
 	  do (with-unification
 		 (unify this-child child)
 	       (with-stack-list (rule-form 'rule 'congruence-closure)
-		 (with-stack-list (piece1 parent-assertion *true* parent-assertion)
-		   (with-stack-list (piece2 child-assertion *false* child-assertion)
-		     (with-stack-list (backward-support pred *false* rule-form piece1 piece2)
+		 (with-stack-list (piece1 parent-assertion +true+ parent-assertion)
+		   (with-stack-list (piece2 child-assertion +false+ child-assertion)
+		     (with-stack-list (backward-support pred +false+ rule-form piece1 piece2)
 		       (funcall continuation backward-support))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -964,8 +964,8 @@
 
 (define-predicate-method (notice-truth-value-change congruence-model :after) (old-truth-value)
   ;; clean up after a retraction
-  (when (and (eql (predication-truth-value self) *unknown*)
-	     (eql old-truth-value *true*))
+  (when (and (eql (predication-truth-value self) +unknown+)
+	     (eql old-truth-value +true+))
     ;; Only true assertions cause structural change to the union-find data structure
     ;; false assertions just get indexed.  So if a false assertion goes out, everything
     ;; that needs to happen will be handled by the TMS.
@@ -977,8 +977,8 @@
 (define-predicate-method (act-on-truth-value-change congruence-model :after) (old-truth-value &optional old-state)
   (declare (ignore old-state))
   (cond
-   ((and (eql (predication-truth-value self) *true*)
-	 (eql old-truth-value *unknown*)
+   ((and (eql (predication-truth-value self) +true+)
+	 (eql old-truth-value +unknown+)
 	 ;; See note below
 	 ;; (zerop (predication-bits-ive-been-in-before old-state))
 	 )
@@ -1003,8 +1003,8 @@
    ;; eql then signal contradiction.  This will work because
    ;; if two guys are in the same class, then both their parents
    ;; will be the same thing.
-   ((and (eql (predication-truth-value self) *false*)
-	 (eql old-truth-value *unknown*))
+   ((and (eql (predication-truth-value self) +false+)
+	 (eql old-truth-value +unknown+))
     (with-statement-destructured (class-1 class-2) self
       (multiple-value-bind (real-class-1 class-1-justification) (find class-1)
 	(multiple-value-bind (real-class-2 class-2-justification) (find class-2)

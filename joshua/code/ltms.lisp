@@ -102,7 +102,7 @@
 
 
 (ji::defbitfields ltms-bits
- (old-truth		*unknown* :byte (byte 2 0))
+ (old-truth		+unknown+ :byte (byte 2 0))
  (in-noticer-queue	   0	  :byte (byte 1 2))
  (in-reprocess-queue	   0	  :byte (byte 1 3))
  (in-action-queue          0      :byte (byte 1 4)))
@@ -232,13 +232,13 @@
     (flet ((destructure-for-consequent (the-consequent)
 	     (let ((old-truth-value (predication-truth-value the-consequent)))
 	       (cond
-		 ((eql old-truth-value *true*)
+		 ((eql old-truth-value +true+)
 		  (values (clause-name self)
 			  the-consequent
 			  (clause-negative-literals self)
 			  (remove the-consequent (clause-positive-literals self))
 			  nil))
-		 ((eql old-truth-value *false*)
+		 ((eql old-truth-value +false+)
 		  (values (clause-name self)
 			  the-consequent
 			  (remove the-consequent (clause-negative-literals self))
@@ -251,10 +251,10 @@
 	      (destructure-for-consequent
 	        (or
 		  (loop for pos in (clause-positive-literals self)
-			when (= (predication-truth-value pos) *true*)
+			when (= (predication-truth-value pos) +true+)
 			  do (return pos))
 		  (loop for neg in (clause-negative-literals self)
-			when (= (predication-truth-value neg) *false*)
+			when (= (predication-truth-value neg) +false+)
 			  do (return neg)))))
 	     (t (values (clause-name self))))))))
 
@@ -406,18 +406,18 @@
   (with-slots (NAME NUMBER-OF-SATISFIABLE-LITERALS POSITIVE-LITERALS NEGATIVE-LITERALS CONSEQUENT CREATING-PREDICATION) self
   (flet ((force-satisfaction ()
 	   (dolist (pos positive-literals)
-	     (when (= (predication-truth-value pos) *unknown*)
-	       (justify pos *true* '(:assumption :choice) (list creating-predication))
+	     (when (= (predication-truth-value pos) +unknown+)
+	       (justify pos +true+ '(:assumption :choice) (list creating-predication))
 	       (return-from force-satisfaction (values))))
 	   (dolist (neg negative-literals)
-	     (when (= (predication-truth-value neg) *unknown*)
-	       (justify neg *false* '(:assumption :choice) (list creating-predication))
+	     (when (= (predication-truth-value neg) +unknown+)
+	       (justify neg +false+ '(:assumption :choice) (list creating-predication))
 	       (return-from force-satisfaction (values))))
 	   ;; after this, normal clause propagation will save your cookies
 	   )
 	 (clause-is-satisfied ()
-	   (or (loop for pos in positive-literals thereis (= (predication-truth-value pos) *true*))
-	       (loop for neg in negative-literals thereis (= (predication-truth-value neg) *false*)))))
+	   (or (loop for pos in positive-literals thereis (= (predication-truth-value pos) +true+))
+	       (loop for neg in negative-literals thereis (= (predication-truth-value neg) +false+)))))
     (unless (or (= number-of-satisfiable-literals 0) (clause-is-satisfied))
       (force-satisfaction)))))
 
@@ -425,11 +425,11 @@
   (with-slots (bits clauses-i-enter-into-positively clauses-i-enter-into-negatively) self
   "Force :ONE-OF clauses to make choices."
   (dolist (clause clauses-i-enter-into-positively)
-    (unless (eql (predication-bits-truth-value bits) *true*)
+    (unless (eql (predication-bits-truth-value bits) +true+)
       (when (eql (clause-name clause) :ONE-OF)
 	(one-of-propagation clause))))
   (dolist (clause clauses-i-enter-into-negatively)
-    (unless (eql (predication-bits-truth-value bits) *false*)
+    (unless (eql (predication-bits-truth-value bits) +false+)
       (when (eql (clause-name clause) :ONE-OF)
 	(one-of-propagation clause))))))
 
@@ -444,9 +444,9 @@
   (when unknown-support
     (error "Unknown support ~s provided but illegal for the LTMS" unknown-support))
   (cond
-    ((eql truth-value *true*)
+    ((eql truth-value +true+)
      (pushnew self negative-support))
-    ((eql truth-value *false*)
+    ((eql truth-value +false+)
      (pushnew self positive-support)))
   (when reason
     (let* ((number-of-literals (+ (length positive-support) (length negative-support)))
@@ -479,12 +479,12 @@
   (loop for positive-supporter in positive-literals
 	for actual-truth-value = (predication-truth-value positive-supporter)
 	do (push self (predication-clauses-i-enter-into-positively positive-supporter))
-	when (/= actual-truth-value *false*)
+	when (/= actual-truth-value +false+)
 	  do (incf number-of-satisfiable-literals))
   (loop for negative-supporter in negative-literals
 	for actual-truth-value = (predication-truth-value negative-supporter)
 	do (push self (predication-clauses-i-enter-into-negatively negative-supporter))
-	when (/= actual-truth-value *true*)
+	when (/= actual-truth-value +true+)
 	  do (incf number-of-satisfiable-literals))
   (propagate self cause)
   (when (eql name :one-of)
@@ -494,7 +494,7 @@
   ;; clause, since he'll never go away.
   (when (and (is-unit-clause self) (eql (clause-name self) :premise))
     (let ((victim (or (first positive-literals) (first negative-literals))))
-      (when (not (eql (predication-truth-value victim) *unknown*))
+      (when (not (eql (predication-truth-value victim) +unknown+))
 	(setf (predication-supporting-clause victim) self
 	      (clause-consequent self) victim)))))
   self)
@@ -513,14 +513,14 @@
     (cond ((= number-of-satisfiable-literals 1)
 	   ;; check for positive guys
 	   (loop for pred in positive-literals
-		 when (= (predication-truth-value pred) *unknown*)
-		   do (bring-in-with-truth-value pred self *true*)
+		 when (= (predication-truth-value pred) +unknown+)
+		   do (bring-in-with-truth-value pred self +true+)
 		      ;; if he wins leave
 		      (return (values))
 		      ;; if no positive guy wins check negatives
 		 finally (loop for pred in negative-literals
-			       when (= (predication-truth-value pred) *unknown*)
-				 do (bring-in-with-truth-value pred self *false*)
+			       when (= (predication-truth-value pred) +unknown+)
+				 do (bring-in-with-truth-value pred self +false+)
 				    (return (values)))))
 	  ((= number-of-satisfiable-literals 0)
 	   ;; when it's a unit clause initialize consequent since that's unambiguous
@@ -533,22 +533,22 @@
     ;; called by propagate to change the truth-value of a predication.
     (let ((old-truth-value (predication-bits-truth-value bits))
 	  (old-state (predication-bits self)))
-      (cond ((= old-truth-value *unknown*)
+      (cond ((= old-truth-value +unknown+)
 	     ;; the easy case, he's unknown and we want to set him
 	     (setf (predication-bits-truth-value bits) truth-value)
 	     ;; if i've become true (false) then i affect the satisfiability count
 	     ;; of any clause that i enter into negatively (positively)
 	     ;; because I can't satisfy that clause any longer
-	     (enqueue-noticer self *unknown* old-state)
+	     (enqueue-noticer self +unknown+ old-state)
 	     (setf (clause-consequent new-clause) self)
 	     (setq supporting-clause new-clause)
 	     (notice-truth-value-change self old-truth-value)
 	     (cond
-	       ((eql  truth-value *true*)
+	       ((eql  truth-value +true+)
 		(loop for clause in clauses-i-enter-into-negatively
 		      while (= (predication-bits-truth-value bits) truth-value)
 		      do (propagate-changed-truth-value-through-clause clause self)))
-	       ((eql  truth-value *false*)
+	       ((eql  truth-value +false+)
 		(loop for clause in clauses-i-enter-into-positively
 		      while (= (predication-bits-truth-value bits) truth-value)
 		      do (propagate-changed-truth-value-through-clause clause self)))))
@@ -603,18 +603,18 @@
 	    (old-state (predication-bits self)))
       (when (not (= 0 (logand previous-truth-value old-truth-value)))
 	;; Currently has the definite truth value being removed, there's work to do.
-	(setf (predication-bits-truth-value bits) *unknown*)
+	(setf (predication-bits-truth-value bits) +unknown+)
 	;; indent as though this were a rule. The tracer still obeys this (JMH).
 	(ji::with-another-rule
 	  ;; clause your supporting clause field
 	  (setq supporting-clause nil)
 	  (cond
-	    ((eql old-truth-value *true*)
+	    ((eql old-truth-value +true+)
 	     ;; This guy used to be true and now he's retracted.
 	     ;; Right now we'll recursively retract all his dependents
 	     (loop for clause in clauses-i-enter-into-negatively
 		   do (update-clause-to-reflect-retraction clause self)))
-	    ((eql old-truth-value *false*)
+	    ((eql old-truth-value +false+)
 	     (loop for clause in clauses-i-enter-into-positively
 		   do (update-clause-to-reflect-retraction clause self)))))
 	;; make queue entry to see later if there is other well founded support
@@ -637,24 +637,24 @@
 
 (defmethod try-to-reestablish ((self ltms-mixin))
   (with-slots (bits clauses-i-enter-into-positively clauses-i-enter-into-negatively) self
-    ;; Don't try to reestablish if you already have a truth-value other than *unknown*
+    ;; Don't try to reestablish if you already have a truth-value other than +unknown+
     ;; something has caused you to come in before we got here
-    (when (= (predication-bits-truth-value bits) *unknown*)
+    (when (= (predication-bits-truth-value bits) +unknown+)
       (let ((old-truth-value (old-truth self)))
 	(cond
-	 ((eql old-truth-value *true*)
+	 ((eql old-truth-value +true+)
 	  (loop for clause in clauses-i-enter-into-positively
-	      until (/= (logand *true* (predication-bits-truth-value bits)) 0)
+	      until (/= (logand +true+ (predication-bits-truth-value bits)) 0)
 	      do (propagate clause))
 	  ;; Finally check if you just made some clause have exactly one
 	  ;; satisfiable literal so that it should make someone else come in.
 	  ;; this happens if the clause was contradictory just before your retraction.
 	  (loop for clause in clauses-i-enter-into-negatively
 	      do (propagate clause self)))
-	 ((eql old-truth-value *false*)
+	 ((eql old-truth-value +false+)
 	  ;; see explanation for the true case
 	  (loop for clause in clauses-i-enter-into-negatively
-	      until (/= (logand *false* (predication-bits-truth-value bits)) 0)
+	      until (/= (logand +false+ (predication-bits-truth-value bits)) 0)
 	      do (propagate clause))
 	  (loop for clause in clauses-i-enter-into-positively
 	      do (propagate clause self))))))))
@@ -723,10 +723,10 @@
   (with-slots (bits clauses-i-enter-into-positively clauses-i-enter-into-negatively) self
     (let ((old-bits (predication-bits-truth-value bits)))
       (cond
-	((eql old-bits *true*)
+	((eql old-bits +true+)
 	 (loop for clause in clauses-I-enter-into-negatively
 	       append (consequences clause)))
-	((eql old-bits *false*)
+	((eql old-bits +false+)
 	 (loop for clause in clauses-I-enter-into-positively
 	       append (consequences clause)))))))
 
@@ -774,8 +774,8 @@
 (defmethod possibly-refuting-clauses ((self ltms-mixin))
   (with-slots (bits clauses-i-enter-into-positively clauses-i-enter-into-negatively) self
     (let ((old-bits (predication-bits-truth-value bits)))
-      (cond ((eql old-bits *false*) clauses-i-enter-into-positively)
-	    ((eql old-bits *true*) clauses-i-enter-into-negatively)))))
+      (cond ((eql old-bits +false+) clauses-i-enter-into-positively)
+	    ((eql old-bits +true+) clauses-i-enter-into-negatively)))))
 
 ;;; Given the primitive support, unjustify some of it, hopefully removing
 ;;; the contradiction.  Also build a nogood if more than one supporter
@@ -836,28 +836,28 @@
   (with-statement-destructured (&rest disjuncts) self
     (unless disjuncts
       (error "You can't mean ~S; it has to have some disjuncts." self))
-    (unless (= truth-value *true*)
-      (error "You can't TELL ~S with a non-*TRUE* truth-value." self))
+    (unless (= truth-value +true+)
+      (error "You can't TELL ~S with a non-+TRUE+ truth-value." self))
     (loop for disjunct in disjuncts
 	  for disjunct-truth-value = (case (predication-predicate disjunct)
-				       ((not) *false*)
+				       ((not) +false+)
 				       ((or and known provable)
 					(error "Can't use ~S in ~S"
 					       disjunct self))
-				       (otherwise *true*))
+				       (otherwise +true+))
 	  for canonicalized-disjunct = (tell disjunct :justification :none)
-	  if (= disjunct-truth-value *true*)
+	  if (= disjunct-truth-value +true+)
 	    collect canonicalized-disjunct into true-guys
 	  else collect canonicalized-disjunct into false-guys
 	  finally
-	    (justify self *false* :one-of false-guys true-guys nil))))
+	    (justify self +false+ :one-of false-guys true-guys nil))))
 
 (define-predicate-method (say one-of) (&optional (stream *standard-output*))
   ;; how to talk about ONE-OF's
   (with-statement-destructured (&rest disjuncts) self
     (princ "One of " stream)
     (ji::format-textual-list disjuncts #'say :conjunction "or" :stream stream)
-    (princ " must be *TRUE*." stream)))
+    (princ " must be +TRUE+." stream)))
 
 (define-predicate contradiction () (ltms-predicate-model))
 
@@ -867,8 +867,8 @@
   ;; if you ever assert [CONTRADICTION].
   (declare (ignore old-truth-value))
   (with-slots (bits) self
-  (when (= (predication-bits-truth-value bits) *true*)
-    ;; we only care when this becomes *true*, in which case we call the LTMS's backtracker
+  (when (= (predication-bits-truth-value bits) +true+)
+    ;; we only care when this becomes +true+, in which case we call the LTMS's backtracker
     (backtrack self)))) 
 
 (define-predicate-method (say contradiction) (&optional (stream *standard-output*))

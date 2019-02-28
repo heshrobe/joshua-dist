@@ -156,13 +156,13 @@
 
 ;;; Bit 0 is for true, bit 1 is for false.  If both are on, that's contradictory.
 (eval-when (:compile-toplevel :execute :load-toplevel) ;used in macroexpanders of macros used below
-  (defconstant *unknown*       0)
-  (defconstant *true*          1)
-  (defconstant *false*         2)
-  (defconstant *contradictory* 3)	;for the TMS
+  (defconstant +unknown+       0)
+  (defconstant +true+          1)
+  (defconstant +false+         2)
+  (defconstant +contradictory+ 3)	;for the TMS
   )
 
-(defparameter *truth-value-table* '#(*unknown* *true* *false* *contradictory*)
+(defparameter *truth-value-table* '#(+unknown+ +true+ +false+ +contradictory+)
   "For figuring out the name of a truth value")
 
 (defmacro truth-value-case (key &rest clauses)
@@ -181,12 +181,12 @@
   ;; return the symbol that names a truth-value
   (aref *truth-value-table* truth-value))
 
-(defun negate-truth-value (truth-value &optional (if-unknown *unknown*))
+(defun negate-truth-value (truth-value &optional (if-unknown +unknown+))
   ;; negation only defined for true, false and unknown
   (truth-value-case truth-value
-    (*true* *false*)
-    (*false* *true*)
-    (*unknown* if-unknown)
+    (+true+ +false+)
+    (+false+ +true+)
+    (+unknown+ if-unknown)
     (otherwise
      (check-type truth-value (integer 0 2)
 		 "a truth value of true, false, or unknown"))))

@@ -329,7 +329,7 @@
 
 ;;; DEFBITFIELDS is defined in BORROWINGS, although it isn't one strictly speaking.
 (defbitfields predication-bits
-  (truth-value   *unknown* :byte (byte 2 0))	;the current state in the database
+  (truth-value   +unknown+ :byte (byte 2 0))	;the current state in the database
   (has-been-in-database 0  :byte (byte 1 2))	;tells whether truth-value is interesting
   (has-logic-variables 0   :byte (byte 1 3))	;set by the make-instance method
   (spare               0   :byte (byte 1 4))
@@ -601,14 +601,14 @@
   (when (and (not (zerop (predication-bits-has-been-in-database bits)))
 	     *print-predication-top-level-p*)
     (truth-value-case (predication-bits-truth-value bits)
-      (*true*)
-      (*false* (write-char #\~ stream))
-      (*unknown* (write-char #\? stream))
-      (*contradictory* (write-string "<>" stream))))
+      (+true+)
+      (+false+ (write-char #\~ stream))
+      (+unknown+ (write-char #\? stream))
+      (+contradictory+ (write-string "<>" stream))))
   (print-predication-internal self stream)))
 
 (defmethod print-without-truth-value ((self predication) &optional (stream *standard-output*))
-  ;; Print the predication as if it were *TRUE*.  If stream is NIL, print to a string
+  ;; Print the predication as if it were +TRUE+.  If stream is NIL, print to a string
    (if (null stream)
 	;; wants to print to a string
 	(with-output-to-string (stream)
@@ -948,9 +948,9 @@
   (defmacro define-constant (name value &optional doc)
     `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
        ,@(when doc (list doc))))
-  (define-constant *arg-desc-max-args* (byte 8 0)) ;sys:%%arg-desc-max-args
-  (define-constant *arg-desc-min-args* (byte 8 8)) ;sys:%%arg-desc-min-args
-  (define-constant *arg-desc-rest-arg* (byte 1 16)) ;sys:%%arg-desc-rest-arg
+  (define-constant +arg-desc-max-args+ (byte 8 0)) ;sys:%%arg-desc-max-args
+  (define-constant +arg-desc-min-args+ (byte 8 8)) ;sys:%%arg-desc-min-args
+  (define-constant +arg-desc-rest-arg+ (byte 1 16)) ;sys:%%arg-desc-rest-arg
   )
 
 (defstruct (predicate-descriptor)
@@ -960,26 +960,26 @@
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicate-max-args))
   (defun predicate-max-args (args-info)
-    (ldb *arg-desc-max-args* args-info)))
+    (ldb +arg-desc-max-args+ args-info)))
 
 (define-setf-method predicate-max-args  (x)
-  (defbitfields-setf-expander x `',*arg-desc-max-args* 'predicate-max-args))
+  (defbitfields-setf-expander x `',+arg-desc-max-args+ 'predicate-max-args))
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicate-min-args))
   (defun predicate-min-args (args-info)
-    (ldb *arg-desc-min-args* args-info)))
+    (ldb +arg-desc-min-args+ args-info)))
 
 (define-setf-method predicate-min-args (x)
-  (defbitfields-setf-expander x `',*arg-desc-min-args* 'predicate-min-args))
+  (defbitfields-setf-expander x `',+arg-desc-min-args+ 'predicate-min-args))
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline predicate-rest-arg))
   (defun predicate-rest-arg (args-info)
-    (ldb *arg-desc-rest-arg* args-info)))
+    (ldb +arg-desc-rest-arg+ args-info)))
 
 (define-setf-method predicate-rest-arg (x)
-  (defbitfields-setf-expander x `',*arg-desc-rest-arg* 'predicate-rest-arg))
+  (defbitfields-setf-expander x `',+arg-desc-rest-arg+ 'predicate-rest-arg))
 
 (defun find-predicate-arglist (predicate)
   ;; given the name, find the arglist or nil if none.
@@ -1233,7 +1233,7 @@
 (defmacro tell (predication &key justification)
   ;; convert to positional form, defaulting correctly.
   #-sbcl(declare (values canonical-version new-or-old))
-  `(tell-internal ,predication *true* , justification))
+  `(tell-internal ,predication +true+ , justification))
 
 
 ;;; Data-stack frobozzery elided for the bootless and unhorsed...
@@ -1253,8 +1253,8 @@
 			    #+(or cloe genera) (declare (sys:downward-function))
 			    ,@body))
 		     (declare (dynamic-extent #'continuation))
-		     (ask-internal ,query *true* #'continuation ,do-backward-rules ,do-questions)))
-		`(ask-internal ,query *true* ,continuation ,do-backward-rules ,do-questions))))
+		     (ask-internal ,query +true+ #'continuation ,do-backward-rules ,do-questions)))
+		`(ask-internal ,query +true+ ,continuation ,do-backward-rules ,do-questions))))
       (when new-lvs-in-thing
 	(setq new-form `(with-unbound-logic-variables ,new-lvs-in-thing
 			 (macrolet ((known-lvs () ',all-lvs))
@@ -1299,9 +1299,9 @@
 
 (defun print-query-internal (backward-support stream)
   (truth-value-case (ask-query-truth-value backward-support)
-    (*true*
+    (+true+
      (prin1 (ask-query backward-support) stream))
-    (*false*
+    (+false+
      (write-string "[not " stream)
      (print-without-truth-value (ask-query backward-support) stream)
      (write-string "]" stream))))
@@ -1392,10 +1392,10 @@
 				     (print-query-results sub-support :stream stream))))))
 		  ((known provable)
 		   (truth-value-case truth-value
-		     (*true*
+		     (+true+
 		      (PROGN
 			(print-query-results (first rest) :stream stream)))
-		     (*false*
+		     (+false+
 		      (princ "it was not " stream)
 		      (princ type stream))))))))))
       (otherwise

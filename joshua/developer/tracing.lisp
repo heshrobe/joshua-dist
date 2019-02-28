@@ -172,13 +172,13 @@
 ;;; A little utility function
 (defun print-with-truth-value-as-not (predication truth-value &optional (stream *standard-output*))
   (cond
-    ((=  truth-value *true*)
+    ((=  truth-value +true+)
      (print-without-truth-value predication stream))
-    ((= truth-value *false*)
+    ((= truth-value +false+)
      (princ "[not " stream)
      (print-without-truth-value predication stream)
      (princ "]" stream))
-    ((= truth-value *unknown*)
+    ((= truth-value +unknown+)
      (prin1 predication stream)))) 
 
 ;;; these are the internal definitions except it evaluates the function-name
@@ -1380,7 +1380,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
         (loop for pred in predications
 	      when  (some #'(lambda (p) (with-unification
 					  (unify-predications-with-explicit-t-vs
-					   p *true* pred (predication-truth-value pred))))
+					   p +true+ pred (predication-truth-value pred))))
 			  traced-forward-rule-triggers)
 	      do (return t)))))
 
@@ -1677,7 +1677,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
         (some #'(lambda (p)
 		  (with-unification
 		    (unify-predications-with-explicit-t-vs
-		     p *true* predication truth-value)))
+		     p +true+ predication truth-value)))
 	      traced-backward-rule-triggers))))
 
 (defvar *backward-rule-trace-events* '(:fire-backward-rule :exit-backward-rule 
@@ -1936,7 +1936,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
         (some #'(lambda (p)
 		  (with-unification
 		    (unify-predications-with-explicit-t-vs
-		     p *true* predication truth-value))
+		     p +true+ predication truth-value))
 		  )
 	      traced-patterns))))
 
@@ -1947,11 +1947,11 @@ Allegro also has a facility called fwrapper which is more general, but not avail
                                      ))
 
 (defun print-with-truth-value  (predication truth-value &optional (stream *standard-output*))
-  (unless (= truth-value *true*)
+  (unless (= truth-value +true+)
     (write-char (cond 
-		  ((= truth-value *unknown*) #\?)
- 		  ((= truth-value *false*)  #\-)
-		  ((= truth-value *contradictory*) #\x))
+		  ((= truth-value +unknown+) #\?)
+ 		  ((= truth-value +false+)  #\-)
+		  ((= truth-value +contradictory+) #\x))
 		stream))
   (print-database-predication-without-truth-value predication stream))
 
@@ -2426,7 +2426,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	     (traced-predicate-p self (type-of predication))
 	     (some #'(lambda (p)
 		       (with-unification
-		         (unify-predications-with-explicit-t-vs p *true* predication truth-value)))
+		         (unify-predications-with-explicit-t-vs p +true+ predication truth-value)))
 		   traced-patterns)))))
 
 (defvar *TMS-trace-events* '(:contradiction :bring-in :retract))
@@ -2439,7 +2439,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
                  (if print-with-t-v-p 
                    (clim:present predication 'database-predication :stream *standard-output*)
                    (print-database-predication-without-truth-value predication *standard-output*)))
-               (unless (or (= *true* truth-value) print-with-t-v-p)
+               (unless (or (= +true+ truth-value) print-with-t-v-p)
                  (format *standard-output* " as ")
                  (clim:with-text-style (*standard-output* *emphasis-character-style*)
                    (clim:present truth-value 'truth-value :stream *standard-output*))))

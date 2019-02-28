@@ -79,7 +79,7 @@
 (define-predicate-model default-protocol-implementation-model
 	;; STIMULATE-LIST is a list of actions to take the next time
 	;; this predication comes in, i.e., gets a truth-value of
-	;; something other than *UNKNOWN*
+	;; something other than +UNKNOWN+
 	((rete-states :initform nil :accessor predication-rete-states :Initarg :rete-states)
 	 (stimulate-list :initform nil :accessor predication-stimulate-list :initarg :stimulate-list))
 	(default-rule-compilation-model default-ask-model default-tell-model)
@@ -128,11 +128,6 @@
 	while entry
 	doing (funcall function entry)))
 
-;;; Removing the subst, turn it it to something I can encapsulate
-(defun enqueue-backward (queue entry importance)
-  ;; stick this in a backward queue
-  (heap-insert queue entry (number-from-importance importance)))
-
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline number-from-importance)))
 
@@ -144,6 +139,11 @@
     (number importance)
     (symbol (symbol-value importance))
     (function (funcall importance))))
+
+;;; Removing the subst, turn it it to something I can encapsulate
+(defun enqueue-backward (queue entry importance)
+  ;; stick this in a backward queue
+  (heap-insert queue entry (number-from-importance importance)))
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline enqueue-forward-rule)))
@@ -225,9 +225,9 @@
       ;; not supplied, so default it from *support*
       (loop for supporter in *support* 
 	    for truth-value = (predication-truth-value supporter)
-	    if (= truth-value *true*) collect supporter into true-support
-	    else if (= truth-value *false*) collect supporter into false-support
-	    else if (= truth-value *unknown*) collect supporter into unknown-support
+	    if (= truth-value +true+) collect supporter into true-support
+	    else if (= truth-value +false+) collect supporter into false-support
+	    else if (= truth-value +unknown+) collect supporter into unknown-support
 	    else do (error "Contradictory truth-value of ~S in *support*: ~S" supporter *support*)
 	    finally (return (values *running-rule* true-support false-support unknown-support))))
     (symbol
@@ -256,7 +256,7 @@
 						     :tms-bits -1
 						     :ive-been-untold -1))
 		    ;; and set them to
-		    (make-predication-bits :truth-value *unknown*
+		    (make-predication-bits :truth-value +unknown+
 					   :has-been-in-database 1
 					   :ive-been-in-before 0
 					   :tms-bits 0
@@ -331,7 +331,7 @@
 (define-predicate-method (act-on-truth-value-change default-protocol-implementation-model :before) (old-truth-value &optional old-state)
   (declare (ignore old-state))
   (with-slots (bits) self
-    (when (and (eql old-truth-value *unknown*)
+    (when (and (eql old-truth-value +unknown+)
 	       ;; we only want to do this mapping the first time the guy
 	       ;; has a real truth value.
 	       (zerop (predication-bits-ive-been-in-before bits)))
@@ -375,8 +375,8 @@
   (declare (ignore old-truth-value))
   (with-slots (bits) self
     (let ((truth-value (predication-bits-truth-value bits)))
-      (when (not (= truth-value *unknown*))
-	;; if value is now not *unknown*, see if postponed rules want to fire.
+      (when (not (= truth-value +unknown+))
+	;; if value is now not +unknown+, see if postponed rules want to fire.
 	(stimulate self truth-value)))))
 
 (define-predicate-method (unjustify predication :around) (&optional justification)
@@ -392,8 +392,8 @@
   (declare (ignore justification))
   (with-slots (bits) self
     (let* ((old-truth-value (predication-bits-truth-value bits))
-	   (truth-changed-p (not (eql old-truth-value *unknown*))))
-      (setf (predication-bits-truth-value bits) *unknown*)
+	   (truth-changed-p (not (eql old-truth-value +unknown+))))
+      (setf (predication-bits-truth-value bits) +unknown+)
       (when truth-changed-p
 	(notice-truth-value-change self old-truth-value)
 	;; truth-value has changed, allow noticers to run
@@ -422,8 +422,8 @@
 
 (define-predicate-method (ask default-ask-model) (truth-value continuation do-backward-rules do-questions)
   ;;
-  ;; notice that by the time this guy runs he has a definite truth value (*true* or *false*)
-  ;; (no queries for *unknown* please).  Therefore, when he goes through the rete network
+  ;; notice that by the time this guy runs he has a definite truth value (+true+ or +false+)
+  ;; (no queries for +unknown+ please).  Therefore, when he goes through the rete network
   ;; code later on, he won't get postponed until coming in.
   ;;
   ;; first get stuff from the database and call the continuation on that.
@@ -459,6 +459,13 @@
                                                       truth-value
                                                       database-predication)
 		     (funcall continuation backward-support))))))))
+
+
+;;; the entries in the backward trigger discrimination net
+;;; Needs to be here to come before its first use.
+(defstruct backward-trigger
+  rule
+  importance)
 
 (define-predicate-method (ask-rules default-ask-model) (truth-value continuation do-questions)
   (let ((backward-importance-queue nil))	;only make it if you need it (speed bum)
@@ -526,10 +533,6 @@
 	      (make-discrimination-net-node :token '*begin-backward-trigger*)
   "Default general purpose indexing scheme for trigger patterns of backward rules.")
 
-;;; the entries in the backward trigger discrimination net
-(defstruct backward-trigger
-  rule
-  importance)
 
 (defparameter *question-discrimination-net*
 	      (make-discrimination-net-node :token '*begin-backward-question*)
@@ -667,7 +670,7 @@
   ;; default method for compiling forward actions
   (declare (ignore then-part rule-name environment))
   ;; maintain *support* as justification
-  `(tell-internal ,self  *true* nil))
+  `(tell-internal ,self  +true+ nil))
 
 (define-predicate-method (expand-forward-rule-trigger default-rule-compilation-model) (name truth-value context bound-variables)
   (declare (ignore context bound-variables))

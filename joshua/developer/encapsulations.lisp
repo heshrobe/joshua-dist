@@ -99,7 +99,7 @@
 (define-joshua-encapsulation (encaps-bring-in-with-truth-value ltms::bring-in-with-truth-value t '(:bring-in))
   :arglist (predication new-clause truth-value)
   :before-body
-  (when (= (predication-truth-value predication) *unknown*)
+  (when (= (predication-truth-value predication) +unknown+)
      (trace-bring-in predication
                      :truth-value truth-value
                      :old-truth-value (predication-truth-value predication)
@@ -113,7 +113,7 @@
       (when (listp cause) (setf cause (car cause)))
       (when (zerop (ltms::clause-number-of-satisfiable-literals clause))
 	(trace-contradiction cause 
-			     :truth-value (if (= (predication-truth-value cause) *true*) *false* *true*)
+			     :truth-value (if (= (predication-truth-value cause) +true+) +false+ +true+)
 			     :old-truth-value (predication-truth-value cause)
 			     :justification clause))))
 
@@ -331,9 +331,9 @@
 	  (loop with rule-name = (rete-terminal-entry-rule-name child-entry)
 		for supporter in (rete-internal-state-predications state-entry)
 		for truth-value = (predication-truth-value supporter)
-		if (= truth-value *true*) collect supporter into true-support
-		else if (= truth-value *false*) collect supporter into false-support
-		else if (= truth-value *unknown*) collect supporter into unknown-support
+		if (= truth-value +true+) collect supporter into true-support
+		else if (= truth-value +false+) collect supporter into false-support
+		else if (= truth-value +unknown+) collect supporter into unknown-support
 		else do (error "Contradictory truth-value of ~S in *support*: ~S" supporter *support*)
 		finally (with-stack-list (justification rule-name true-support false-support unknown-support)
 			  (funcall rule-name

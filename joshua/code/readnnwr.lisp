@@ -382,7 +382,7 @@
 (defstruct (joshua-logic-variable
 	     (:print-function
 	       (lambda (self stream depth)
-		 (declare (ignore depth))
+		 (declare (ignore depth)(notinline joshua-logic-variable-value))
 		 ;; This might like to print the pointer too, but it's imp-dependent...
 		 (if (eql (joshua-logic-variable-value-cell self) self)
 		     (format stream "#<~:[unbound ~;~]LV named ~a~@[ ~o~]>"

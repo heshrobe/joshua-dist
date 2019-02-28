@@ -229,8 +229,8 @@
 
 
 (clim:define-presentation-method clim:accept ((type truth-value) stream (view clim:textual-view) &key)
-  (clim:accept `(clim:member-alist (("true" . ,*true*) ("false" . ,*false*)
-                                    ("unknown" . ,*unknown*) ("contradictory" . ,*contradictory*)))
+  (clim:accept `(clim:member-alist (("true" . ,+true+) ("false" . ,+false+)
+                                    ("unknown" . ,+unknown+) ("contradictory" . ,+contradictory+)))
           :stream stream
           :prompt nil
           :history nil
@@ -239,10 +239,10 @@
 (clim:define-presentation-method clim:present (obj (type truth-value) stream (view clim:textual-view) &key)
   (princ 
    (cond
-    ((eql obj *true*) "true")
-    ((eql obj *false*) "false")
-    ((eql obj *unknown*) "unknown")
-    ((eql obj *contradictory*) "contradictory"))
+    ((eql obj +true+) "true")
+    ((eql obj +false+) "false")
+    ((eql obj +unknown+) "unknown")
+    ((eql obj +contradictory+) "contradictory"))
    stream))
 
 (clim:define-presentation-method clim:accept ((type tracing-event) stream (view clim:textual-view) &key)
@@ -964,14 +964,14 @@
 						   (predicationp (third backward-support)))
 					  (let ((test-object (second backward-support)))
 					    (cond
-					     ((eql test-object *true*)
+					     ((eql test-object +true+)
 					      (push (third backward-support) true-answers))
-					     ((eql test-object *false*)
+					     ((eql test-object +false+)
 					      (push (third backward-support) false-answers))))))
 				    nil nil))))))
-	  (do-truth-value *true*)
+	  (do-truth-value +true+)
 	  (when other-truth-value-too-p
-	    (do-truth-value *false*))
+	    (do-truth-value +false+))
 	  (when (or true-answers other-truth-value-too-p (null false-answers))
 	    (print-entries "True things" (nreverse true-answers)))
 	  (when (or false-answers other-truth-value-too-p (null true-answers))
@@ -1310,7 +1310,7 @@
           (when certainty-factor
             (format stream " with certainty ~d" (abs certainty-factor))))
         (when (or (null depth) (not (= depth 1)))
-          (unless (= truth-value *unknown*)
+          (unless (= truth-value +unknown+)
             (clim:indenting-output (stream '(2 :character))
               (terpri stream)
               (let ((current-justification (current-justification predication)))

@@ -66,7 +66,7 @@
 
 (define-predicate-method (ask false-query-error-model :before) (truth-value continuation do-backward-rules do-questions)
   (declare (ignore continuation do-backward-rules do-questions))
-  (unless (eql truth-value *true*)
+  (unless (eql truth-value +true+)
     (error 'model-can-only-handle-positive-queries
 	    :query self
 	    :model (type-of self))))
@@ -111,7 +111,7 @@
       (error 'model-cant-handle-query
 	  :query self
 	  :model 'unification-model))
-    (if (eql truth-value *true*)
+    (if (eql truth-value +true+)
 	(with-unification
 	    (when (unify first second)
 	      (with-stack-list (just self truth-value self)
@@ -182,9 +182,9 @@
 (define-predicate-method (expand-forward-rule-trigger and-model) (var-name truth-value context bound-variables)
   (declare (ignore var-name bound-variables))
   (let ((statement (predication-maker-statement self)))
-    (cond ((eql truth-value *true*)
-	   `(:and ,@(parse-pattern-for-expand-forward-trigger statement *true* context)))
-	  (t `(:or ,@(parse-pattern-for-expand-forward-trigger statement *false* context))))))
+    (cond ((eql truth-value +true+)
+	   `(:and ,@(parse-pattern-for-expand-forward-trigger statement +true+ context)))
+	  (t `(:or ,@(parse-pattern-for-expand-forward-trigger statement +false+ context))))))
 
 (defun parse-pattern-for-expand-forward-trigger (statement truth-value context)
   (loop with triggers = (cdr statement)
@@ -212,9 +212,9 @@
 (define-predicate-method (expand-backward-rule-action and-model) (support-variable truth-value other-ask-args context)
   (declare (ignore support-variable other-ask-args))
   (let ((statement (predication-maker-statement self)))
-    (cond ((eql truth-value *true*)
-	   `(:and ,@(parse-pattern-for-expand-backward-action statement *true* context)))
-	  (t `(:or ,@(parse-pattern-for-expand-backward-action statement *false* context))))))
+    (cond ((eql truth-value +true+)
+	   `(:and ,@(parse-pattern-for-expand-backward-action statement +true+ context)))
+	  (t `(:or ,@(parse-pattern-for-expand-backward-action statement +false+ context))))))
 
 (defun parse-pattern-for-expand-backward-action (statement truth-value context)
   (loop with triggers = (cdr statement)
@@ -247,16 +247,16 @@
 (define-predicate-method (tell and-model) (truth-value justification)
   (with-slots (predications) self
     (truth-value-case truth-value
-      (*true*
+      (+true+
        (loop for predication in predications
-	     doing (tell-internal predication *true* justification)))
-      (*false*
+	     doing (tell-internal predication +true+ justification)))
+      (+false+
        (cond ((null predications)
 	      ;; (tell [not [and]])
 	      (error "[NOT [AND]] is a contradiction."))
 	     ((and (consp predications) (null (rest predications)))
 	      ;; (tell [not [and <single thing>])
-	      (tell-internal (first predications) *false* justification))
+	      (tell-internal (first predications) +false+ justification))
 	     (t
 	      (error "I don't know how to TELL [NOT [AND <two or more things>]]."))))))
   ;; return the conjunct
@@ -278,7 +278,7 @@
 		     (funcall continuation and-derivation))
 		   ;; ASK about one predication, then the rest
 		   (ask-internal (first preds)
-				 *true*
+				 +true+
 				 #'(lambda (derivation)
 				     (let ((more-derivations `(,derivation ,@derivations)))
 				       (ask-and (rest preds) more-derivations)))
@@ -289,12 +289,12 @@
 	  :query self
 	  :model 'and-model))
       (truth-value-case truth-value
-	(*true*
+	(+true+
 	 (ask-and predications nil))
-	(*false*
+	(+false+
 	 (loop for predication in predications
 	       do (ask-internal predication
-				*false*
+				+false+
 				continuation
 				do-backward-rules do-questions))))
       (values))))
@@ -329,32 +329,32 @@
 (define-predicate-method (expand-forward-rule-trigger or-model) (var-name truth-value context bound-variables)
   (declare (ignore var-name bound-variables))
   (let ((statement (predication-maker-statement self)))
-    (cond ((eql truth-value *true*)
-	   `(:or ,@(parse-pattern-for-expand-forward-trigger statement *true* context)))
-	  (t `(:and ,@(parse-pattern-for-expand-forward-trigger statement *false* context))))))
+    (cond ((eql truth-value +true+)
+	   `(:or ,@(parse-pattern-for-expand-forward-trigger statement +true+ context)))
+	  (t `(:and ,@(parse-pattern-for-expand-forward-trigger statement +false+ context))))))
 
 (define-predicate-method (expand-backward-rule-action or-model) (support-variable-name truth-value other-ask-args context)
   (declare (ignore support-variable-name other-ask-args))
   (let ((statement (predication-maker-statement self)))
-    (cond ((eql truth-value *true*)
-	   `(:or ,@(parse-pattern-for-expand-backward-action statement *true* context)))
-	  (t `(:and ,@(parse-pattern-for-expand-backward-action statement *false* context))))))
+    (cond ((eql truth-value +true+)
+	   `(:or ,@(parse-pattern-for-expand-backward-action statement +true+ context)))
+	  (t `(:and ,@(parse-pattern-for-expand-backward-action statement +false+ context))))))
 
 (define-predicate-method (tell or-model) (truth-value justification)
   (with-slots (predications) self
     (truth-value-case truth-value
-      (*true*
+      (+true+
        (cond ((null predications)
 	      ;; (tell [or])
 	      (error "[OR] is a contradiction."))
 	     ((and (consp predications) (null (rest predications)))
 	      ;; (tell [or <single thing>])
-	      (tell-internal (first predications) *true* justification))
+	      (tell-internal (first predications) +true+ justification))
 	     (t
 	      (error "I don't know how to TELL [OR <two or more things>]."))))
-      (*false*
+      (+false+
        (loop for predication in predications
-	     doing (tell-internal predication *false* justification)))))
+	     doing (tell-internal predication +false+ justification)))))
   ;; return the conjunct
   self)
 
@@ -372,19 +372,19 @@
 		     (funcall continuation and-derivation))
 		   ;; ASK about one predication, then the rest
 		   (ask-internal (first preds)
-				 *false*
+				 +false+
 				 #'(lambda (derivation)
                                      (with-stack-list* (more-derivations derivation derivations)
 				       (ask-and (rest preds) more-derivations)))
 				 do-backward-rules do-questions))))
       (truth-value-case truth-value
-	(*true*
+	(+true+
 	 (loop for predication in predications
 	       do (ask-internal predication
-				*true*
+				+true+
 				continuation
 				do-backward-rules do-questions)))
-	(*false*
+	(+false+
 	 (ask-and predications nil)))
       (values))))
 
@@ -571,7 +571,7 @@
 (define-predicate-method (expand-forward-rule-trigger known-model) (support-variable-name truth-value context bound-variables)
   (declare (ignore context))
   (when (null support-variable-name) (setq support-variable-name (gensym)))
-  (let ((query (if (eql truth-value *true*) self `(predication-maker '(not ,self)))))
+  (let ((query (if (eql truth-value +true+) self `(predication-maker '(not ,self)))))
     `(:procedure
        (ask ,query
 	    #'(lambda (bs) 
@@ -589,23 +589,23 @@
 	:query self
 	:model 'known-model))
     (truth-value-case truth-value
-      (*true*
+      (+true+
        (flet ((known-continuation (derivation)
                 (with-stack-list (known-derivation self truth-value 'known derivation)
 		  (funcall continuation known-derivation))))
-	 (ask-internal predication *true* #'known-continuation
+	 (ask-internal predication +true+ #'known-continuation
 		       do-backward-rules do-questions)
-	 (handler-case (ask-internal predication *false* #'known-continuation
+	 (handler-case (ask-internal predication +false+ #'known-continuation
 				     do-backward-rules do-questions)
 	   (model-can-only-handle-positive-queries () nil))))
-      (*false*
+      (+false+
        (when (block try-queries
 	       (flet ((unknown-continuation (b-s)
 			(declare (ignore b-s))
 			(return-from try-queries nil)))
-		 (ask-internal predication *true* #'unknown-continuation
+		 (ask-internal predication +true+ #'unknown-continuation
 			       do-backward-rules do-questions)
-		 (handler-case (ask-internal predication *false* #'unknown-continuation
+		 (handler-case (ask-internal predication +false+ #'unknown-continuation
 					     do-backward-rules do-questions)
 		   (model-can-only-handle-positive-queries () nil))	       
 		 t))
@@ -627,15 +627,15 @@
 	:query self
 	:model 'provable-model))
     (truth-value-case truth-value
-      (*true*
-       (ask-internal predication *true*
+      (+true+
+       (ask-internal predication +true+
 		     #'(lambda (derivation)
                          (with-stack-list (provable-derivation self truth-value 'provable derivation)
 			   (funcall continuation provable-derivation)))
 		     do-backward-rules do-questions))
-      (*false*
+      (+false+
        (when (block try-queries
-	       (ask-internal predication *true*
+	       (ask-internal predication +true+
 			     #'(lambda (b-s)
 				 (declare (ignore b-s))
 				 (return-from try-queries nil))
@@ -899,9 +899,9 @@
   (let (true-support false-support unknown-support)
     (loop for pred in predications
           do (truth-value-case (predication-truth-value pred)
-              (*true* (push pred true-support))
-              (*false* (push pred false-support))
-              (*unknown* (push pred unknown-support))))
+              (+true+ (push pred true-support))
+              (+false+ (push pred false-support))
+              (+unknown+ (push pred unknown-support))))
     (values true-support false-support unknown-support)))
 
 ;;; Find the primitive support with a specific mnemonic

@@ -226,7 +226,7 @@
        ;; each possibly followed by a :support ?x.
        ;; Process them and make up entry structures that are dispatched on by
        ;; make-rete-network.
-       (let ((real-triggers (expand-forward-rule-trigger if-part nil *true* if-part nil)))
+       (let ((real-triggers (expand-forward-rule-trigger if-part nil +true+ if-part nil)))
 	 (setq if-part (convert-analysis-to-pred-maker real-triggers))
 	 (labels ((find-and-analyze-trigger (trigger)
 		    (case (car trigger)
@@ -328,7 +328,7 @@
 						     append (list :support support)))))
 	       ((:match :object-match)
 		(destructuring-bind (pred support-variable truth-value) (rest part)
-		  (values (if (= truth-value *true*) pred `(predication-maker '(not ,pred)))
+		  (values (if (= truth-value +true+) pred `(predication-maker '(not ,pred)))
 			  (when support-variable `(logic-variable-maker ,support-variable)))))
 	       (:procedure (destructuring-bind (code support-variable bound-variables original-expression) (rest part)
 			     (declare (ignore bound-variables code))
@@ -510,7 +510,7 @@
        (when (eq predicate 'and)
 	 (error "Backward rules don't deal with conjunctive triggers yet.")))
      ;; write a function to install this rule.
-     (let ((truth-value (if trigger-negated '*false* '*true*)))
+     (let ((truth-value (if trigger-negated '+false+ '+true+)))
        `(setf (get ',rule-name 'install-triggers) 
 	  #'(lambda ()
 	      #+(or genera cloe-developer)
@@ -544,7 +544,7 @@
     importance					;get rid of compiler warning
     certainty
     (multiple-value-bind (trigger if-part) (expand-backward-rule-trigger trigger trigger-negated if-part)
-      (let ((actions (expand-backward-rule-action if-part nil *true* nil if-part)))
+      (let ((actions (expand-backward-rule-action if-part nil +true+ nil if-part)))
       ;; at this point, actions is a tree of nested rule-action expressions.
       (let* (#+ignore (data-stack-p nil)
 	     (variables (union (logic-variable-makers-in-thing if-part)
@@ -645,7 +645,7 @@
 			      (if (null remaining-actions)
                                 `(with-stack-list (rule-support ,@(if top-level?
                                                                     `(.goal. .truth-value. '(rule ,rule-name))
-                                                                    `('and *true* 'and))
+                                                                    `('and +true+ 'and))
                                                                 ,@(reverse support-list))
 				     (funcall ,continuation rule-support))
 				  (let (next-node lv-name)
@@ -710,7 +710,7 @@
 	       #-sbcl (declare (dynamic-extent .continuation.))
 	       (declare (ignorable .do-questions.))
 	       (when (eql .truth-value.
-			  ,(if trigger-negated '*false* '*true*))
+			  ,(if trigger-negated '+false+ '+true+))
 		 (let ((*running-rule* ',rule-name)
                        (*goal* .goal.))
 		   ,body-form)))
@@ -790,11 +790,11 @@
 	     (y-or-n-p "Is it ~a that ~a?"
 		       (if (contains-logic-variables-p query)
 			   (truth-value-case truth-value
-			      (*true* "EVER true")
-			      (*false* "ALWAYS false"))
+			      (+true+ "EVER true")
+			      (+false+ "ALWAYS false"))
 			   (truth-value-case truth-value
-			     (*true* "true")
-			     (*false* "false")))
+			     (+true+ "true")
+			     (+false+ "false")))
 		       query #'say)
 	     ;; user says yes
 	     (funcall what-to-funcall)))
@@ -904,7 +904,7 @@
 				 (macrolet ((known-lvs () ',variables))
 				   ,body-form))))
 	  ;; now ready to emit code.
-	  (let ((truth-value (if trigger-negated '*false* '*true*)))
+	  (let ((truth-value (if trigger-negated '+false+ '+true+)))
 	  `(progn #+(or genera cloe-developer)
 		  (record-source-file-name ',name 'defquestion)
 		  (undefquestion ',name)
@@ -919,7 +919,7 @@
 		    (declare #+(or genera cloe-developer) (zl:::sys:function-parent ,name defquestion)
 			     #-sbcl (dynamic-extent ,(third args)))
 		    (when (eql ,(second args)
-			       ,(if trigger-negated '*false* '*true*))
+			       ,(if trigger-negated '+false+ '+true+))
 		      ,body-form))
 		  (add-backward-question-trigger ,trigger ,truth-value ',name ',context ',name)
 		  (pushnew ',name *backward-questions*)

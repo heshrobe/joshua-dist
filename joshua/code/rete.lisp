@@ -1376,9 +1376,9 @@
           with certainty-factor = (rule-debug-info-certainty debug-info)
           for supporter in (rete-internal-state-predications state-entry)
           for truth-value = (predication-truth-value supporter)
-          if (= truth-value *true*) collect supporter into true-support
-          else if (= truth-value *false*) collect supporter into false-support
-          else if (= truth-value *unknown*) collect supporter into unknown-support
+          if (= truth-value +true+) collect supporter into true-support
+          else if (= truth-value +false+) collect supporter into false-support
+          else if (= truth-value +unknown+) collect supporter into unknown-support
           else do (error "Contradictory truth-value of ~S in *support*: ~S" supporter *support*)
           finally 
           (when certainty-factor

@@ -41,7 +41,7 @@
 	 #+mcl :external-format #+mcl :unix)
    (load (make-pathname :directory `(:absolute ,@directory "joshua" "code")
 			:device (pathname-device loading-file)
-			:name "joshua-defsystem" :type "lisp")
+			:name "joshua" :type "asd")
 	 #+mcl :external-format #+mcl :unix)
    (load (make-pathname :directory `(:absolute ,@directory "joshua" "developer")
 			:device (pathname-device loading-file)
