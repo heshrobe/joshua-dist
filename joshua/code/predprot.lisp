@@ -191,6 +191,21 @@
   :definer eql-dispatched-method-protocol-definer
   :shower property-protocol-shower)
 
+(define-protocol-function after-clear (model &optional clear-database undefrules)
+  ;; this is not a method, not because it has to be around at compile time (which it isn't),
+  ;; but because there's no instance to hand the generic fn to when you do (clear).  It doesn't
+  ;; need to be around at compile time.
+  :documentation "Tell a model to do whatever cleanup it wants to do after everything else has been done for clear"
+  :internal-name after-clear-model
+  :function ((model &optional clear-database undefrules)
+	     (progn model clear-database undefrules)
+	     ;; this guy gets called if this model doesn't
+	     ;; have his own clear method.  It's the last
+	     ;; resort handler and it does nothing.
+	     nil)
+  :definer eql-dispatched-method-protocol-definer
+  :shower property-protocol-shower)
+
 (define-protocol-function untell (database-predication)
   :documentation "Tell the database to remove all vestiges of a predication."
   )

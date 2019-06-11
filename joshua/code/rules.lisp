@@ -988,5 +988,6 @@
       ;; clear the rules of the state in the database
       (mapc #'clear-rule *forward-rules*)
       (mapc #'clear-rule *backward-rules*))
+    (loop for model in *models* doing (after-clear-model model clear-database undefrule-rules))
     ;; return a harmless value
     t))

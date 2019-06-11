@@ -1675,6 +1675,16 @@
     (declare (ignore ignore-2))
     (map-over-values my-slot self continuation value-in-query)))
 
+(define-predicate-method (fetch slot-value-mixin) (continuation)
+  (with-statement-destructured (path value-in-query) self
+    (let ((slot (follow-path path nil)))
+      (with-slots (all-predications) slot
+	(loop for (value . predication) in all-predications
+	    if (or (unbound-logic-variable-p value-in-query)
+		   (eql value value-in-query))
+	    do (funcall continuation predication))))))
+	      
+
 (define-predicate-method (map-over-backward-rule-triggers slot-value-mixin) (continuation)
   (map-over-slot-backward-rule-triggers my-slot continuation))
 

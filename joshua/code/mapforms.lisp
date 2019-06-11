@@ -550,6 +550,19 @@ an argument of T when an iteration is entered and NIL when it is left."
 						      (ATOM L))
 						  (MAPFORMS-BIND-SINGLE
 						   LL NIL ALLOW-SUPPLIED-P LAMBDA)
+						  ;; SBCL will produce a compiler note here saying deleted unreachable
+						  ;; code.  This isn't what it appears to be.  Mapfoms-rplaca is a macro
+						  ;; which when expanded yields this:
+						  ;; (LET ((#:G722 (MAPFORMS-BIND-SINGLE L NIL NIL LAMBDA)))
+						    ;; (COND
+						    ;;  ((NOT (EQ (CAR L) #:G722))
+						    ;;   (RPLACA
+						    ;;    (IF (EQ L L)
+						    ;;        (MULTIPLE-VALUE-SETQ (L L) (MAPFORMS-RPLACA-COPY L L))
+						    ;;        L)
+						  ;;    #:G722))))
+						  ;; Notice the (eql l l) line above which is always true, so the false branch
+						  ;; of the if is never taken.  That's what the note is trying to say (poorly).
 						  (MAPFORMS-RPLACA
 						   L L L (MAPFORMS-BIND-SINGLE L NIL NIL LAMBDA))))
 					     (WHEN *MAPFORMS-ITERATION-HOOK*

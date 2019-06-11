@@ -15,7 +15,7 @@
       (buffer-definition-at-point buffer start-point end-point)
     (when (and (eql type :operator) (listp fspec) (eql (first fspec) 'method))
 	      (setq type :method))
-    (if* (eq :none fspec)
+    (if* (eq fspec :none)
        then (error "can't find buffer definition at point")
        else (let ((uform (definition-undefining-form fspec type)))
 	      (when doit (eval uform))
@@ -26,12 +26,26 @@
 (defmethod definition-undefining-form (fspec (type (eql :operator)))
   `(fmakunbound ',fspec))
 
-(defmethod definition-undefining-form (fspec (type (eql :method))) 
+(defmethod definition-undefining-form (fspec (type (eql :method)))
   `(fmakunbound ',(fixed-defmethod-fspec fspec)))
 
 (defmethod definition-undefining-form (fspec (type (eql 'joshua:define-object-type)))
   `(ji::undefine-object-type ',fspec)
   )
+
+(defun define-predicate-method-parser (form)
+  (list 'joshua::define-predicate-method
+	(second form)
+	(third form)))
+
+(excl::define-simple-parser joshua::define-predicate-method define-predicate-method-parser 'joshua:define-predicate-method)
+
+(defmethod definition-undefining-form (fspec (type (eql 'joshua:define-predicate-method)))
+  (let* ((method (third (macroexpand `(joshua::define-predicate-method ,(second fspec) ,(third fspec)))))
+	 (real-fspec (excl::defmethod-parser method))
+	 (signature (fixed-defmethod-fspec real-fspec)))
+    `(fmakunbound ',signature)
+    ))
 
 (defun fixed-defmethod-fspec (form) 
   (let (qualifiers)
@@ -52,4 +66,4 @@
 		value))
 	  specializer))
     specializer))
- 
+
