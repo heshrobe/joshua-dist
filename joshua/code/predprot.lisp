@@ -177,9 +177,6 @@
   :declaration (declare (dynamic-extent continuation)))
 
 (define-protocol-function clear (model &optional clear-database undefrules)
-  ;; this is not a method, not because it has to be around at compile time (which it isn't),
-  ;; but because there's no instance to hand the generic fn to when you do (clear).  It doesn't
-  ;; need to be around at compile time.
   :documentation "Tell a model to forget everything it knows.  Should only be called by CLEAR."
   :internal-name clear-model
   :function ((model &optional clear-database undefrules)
@@ -196,7 +193,7 @@
   ;; but because there's no instance to hand the generic fn to when you do (clear).  It doesn't
   ;; need to be around at compile time.
   :documentation "Tell a model to do whatever cleanup it wants to do after everything else has been done for clear"
-  :internal-name after-clear-model
+  :internal-name after-clear
   :function ((model &optional clear-database undefrules)
 	     (progn model clear-database undefrules)
 	     ;; this guy gets called if this model doesn't

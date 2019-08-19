@@ -1035,6 +1035,7 @@
 	  ()
     ((superpart-object :initform nil :initarg :superpart-object :accessor basic-object-superpart-object)
      (role-name :initform nil :initarg :role-name :accessor basic-object-role-name)
+     (my-predication :initform nil :initarg :my-predication :accessor basic-object-my-predication)
      (subparts :initform (make-hash-table :size 10) :accessor basic-object-subparts)
      (type :reader basic-object-type)
      (typical-instance-of-type? :initform nil :initarg :typical-instance-of-type? :reader basic-object-typical-instance-of-type?)
@@ -1677,11 +1678,10 @@
 
 (define-predicate-method (fetch slot-value-mixin) (continuation)
   (with-statement-destructured (path value-in-query) self
+    (declare (ignore value-in-query))
     (let ((slot (follow-path path nil)))
       (with-slots (all-predications) slot
-	(loop for (value . predication) in all-predications
-	    if (or (unbound-logic-variable-p value-in-query)
-		   (eql value value-in-query))
+	(loop for (nil . predication) in all-predications
 	    do (funcall continuation predication))))))
 	      
 
@@ -2337,6 +2337,12 @@
 
 (define-predicate-model named-part-of-mixin () (tell-error-model ask-data-only-mixin))
 
+;;; I added code here to manifest an actual predication for this relationship
+;;; This was motivated by the stateful predication stuff in the attack planner
+;;; which should get moved into Joshua per se.  But it then turns out that 
+;;; since name-part-of relationships never change and are only true in the initial
+;;; state, there's really no need for an interned predication around which to 
+;;; organize a state map.  But I've left this code in place anyhow.
 (define-predicate-method (ask-data named-part-of-mixin) (truth-value continuation)
   (unless (eql truth-value +true+)
     (error 'model-can-only-handle-positive-queries
@@ -2352,11 +2358,17 @@
 	   (let ((superpart (basic-object-superpart-object object)))
 	     (when superpart
 	       (with-unification
-		   (unify parent-object superpart)
-		 (unify child-object object)
-		 (unify name (role-name object))
-		 (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
-			    (funcall continuation backward-support))))))
+		(unify parent-object superpart)
+		(unify child-object object)
+		(unify name (role-name object))
+		(let ((child-predication (basic-object-my-predication object)))
+		  (setf child-predication nil
+			(basic-object-my-predication object) nil)
+		  (unless child-predication
+		    (setq child-predication (make-predication `(named-part-of ,superpart ,(role-name object) ,object)))
+		    (setf (basic-object-my-predication object) child-predication))
+		  (stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
+		    (funcall continuation backward-support)))))))
        *root*))
      ;; parent isn't bound, child must be, but needs to be dereferenced
      ((unbound-logic-variable-p parent-object)
@@ -2365,18 +2377,26 @@
 	(when object
 	  (with-unification
 	      (unify parent-object object)
-	    (unify name (role-name child-object))
-	    (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
-		       (funcall continuation backward-support))))))
+	      (unify name (role-name child-object))
+	      (let ((child-predication (basic-object-my-predication object)))
+		(unless child-predication
+		  (setq child-predication (make-predication `(named-part-of ,object ,(role-name child-object) ,child-object)))
+		  (setf (basic-object-my-predication object) child-predication))
+		(stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
+		  (funcall continuation backward-support)))))))
      ;; child isn't so parent must be, but needs to be dereferenced
      ((unbound-logic-variable-p child-object)
       (let ((parent-object (joshua-logic-variable-value parent-object)))
 	(maphash #'(lambda (key child)
 		     (with-unification
 			 (unify name key)
-		       (unify child-object child)
-		       (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
-				  (funcall continuation backward-support))))
+			 (unify child-object child)
+			 (let ((child-predication (basic-object-my-predication child)))
+			   (unless child-predication
+			     (setq child-predication (make-predication `(named-part-of ,parent-object ,key ,child)))
+			     (setf (basic-object-my-predication child) child-predication))
+			   (stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
+				      (funcall continuation backward-support)))))
 		 (basic-object-subparts 
 		  ;; parent is either provided or a pathname
 		  (if (typep parent-object 'basic-object)
@@ -2395,24 +2415,36 @@
 		  unless (eql (subpart-named next-parent reverse-key) parent)
 		  return (values)
 		  finally (with-unification
-			      (unify (first parent-object) next-parent)
-			    (unify name (role-name child-object))
-			    (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
-				       (funcall continuation backward-support))))))
+			      (unify (first parent-object) next-parent)`
+			      (unify name (role-name child-object))
+			      (let ((child-predication (basic-object-my-predication child-object)))
+				(unless child-predication
+				  (setq child-predication (make-predication `(named-part-of ,parent-object ,(role-name child-object) ,child-object)))
+				  (setf (basic-object-my-predication child-object) child-predication))
+				`(stack-let ((backward-support (list self +true+ child-predication child-predication '(ask-data named-part-of))))
+				 `      (funcall continuation backward-support)))))))
 	   ((listp parent-object)
 	    (let* ((partial-path-result (follow-path parent-object))
 		   (path-result (follow-path (list partial-path-result name))))
 	      (when (eql path-result child-object)
 		(with-unification
-		    (unify name (role-name child-object))
-		  (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
-			     (funcall continuation backward-support))))))
+		 (unify name (role-name child-object))
+		 (let ((child-predication (basic-object-my-predication child-object)))
+		   (unless child-predication
+		     (setq child-predication (make-predication `(named-part-of ,(basic-object-superpart-object child-object) ,(role-name child-object) ,child-object)))
+		     (setf (basic-object-my-predication child-object) child-predication))
+		   `(stack-let ((backward-support (list self +true+ child-predication child-predication '(ask-data named-part-of))))
+			       `      (funcall continuation backward-support)))))))
 	   ;; here they are both instantiated and atomic
 	   ((eql (basic-object-superpart-object child-object) parent-object)
 	    (with-unification
-		(unify name (role-name child-object))
-	      (stack-let ((backward-support (list self +true+ '(ask-data named-part-of))))
-			 (funcall continuation backward-support))))))))))
+	     (unify name (role-name child-object))
+	     (let ((child-predication (basic-object-my-predication child-object)))
+	       (unless child-predication
+		 (setq child-predication (make-predication `(named-part-of ,parent-object ,(role-name child-object) ,child-object)))
+		 (setf (basic-object-my-predication child-object) child-predication))
+	       `(stack-let ((backward-support (list self +true+ child-predication child-predication '(ask-data named-part-of))))
+			   `      (funcall continuation backward-support)))))))))))
 
 (define-predicate-method (expand-forward-rule-trigger named-part-of-mixin) (support-variable-name truth-value context bound-variables)
   (declare (ignore context))

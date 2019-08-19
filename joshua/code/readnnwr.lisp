@@ -352,6 +352,9 @@
 (defun logic-variable-maker-name (lv-maker)
   (second lv-maker))
 
+(defun make-predication-maker (form)
+  `(predication-maker ',form))
+
 (defun predication-maker-p (form)
   (and (consp form) (eq (car form) 'predication-maker)))
 
