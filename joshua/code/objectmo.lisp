@@ -1462,6 +1462,56 @@
                         (return nil))
                       (return (funcall key current-object nil)))))))
 
+
+;;; This is what should be used by the ask-data method for value-of predicates
+(defun follow-path-to-slot* (path &optional continuation (error-if-bad-path t))
+  (if (typep path 'basic-slot)
+      path
+      (labels 
+	  ((do-one-more (current-object list-of-keys)
+	     (let ((key (pop list-of-keys)))
+	       (cond
+		;; If this is the last key then this has to be a slot name or
+		;; or a part of the object
+		;; or we'll error if asked to		
+		((null list-of-keys)
+		 (cond 
+		  ((member key (all-slot-names current-object))
+		   (funcall continuation (funcall key current-object nil)))
+		  ((subpart-named current-object key)
+		   (funcall continuation (subpart-named current-object key)))
+		  (error-if-bad-path
+		   (error 'bad-path
+			  :remaining-path list-of-keys
+			  :whole-path path
+			  :first-bad-token key
+			  :current-object current-object))))
+		(t (let ((next-object (or (subpart-named current-object key)
+					  (and (member key (all-slot-names current-object))
+					       ;; get the slot not the value
+					       (apply key current-object (list nil))))))
+		     (when (null next-object)
+		       (if error-if-bad-path
+			   (error 'bad-path
+				  :remaining-path list-of-keys
+				  :whole-path path
+				  :first-bad-token key
+				  :current-object current-object)
+			 (return-from follow-path-to-slot* nil)))
+		     (typecase next-object
+		       (basic-slot
+			(if (slot-is-set-valued next-object)
+			    (loop for thing in (slot-current-value next-object) do (do-one-more thing list-of-keys))
+			  (do-one-more (slot-current-value next-object) list-of-keys)))
+		       (t (do-one-more current-object list-of-keys)))))))))
+	(multiple-value-bind (initial-object list-of-keys)
+	    (if (symbolp (car path))
+		(values *root* path)
+	      (values (joshua-logic-variable-value (car path)) (cdr path)))
+	  (do-one-more initial-object list-of-keys)))))
+
+
+
 (defun map-over-object-hierarchy (function-to-apply &optional initial-object)
   #-sbcl (declare (dynamic-extent function-to-apply))
   (labels ((handle-object (object)
@@ -1602,8 +1652,7 @@
     (error 'model-can-only-handle-positive-queries
 	    :query self
 	    :model (type-of self)))
-  (with-statement-destructured (path other-stuff) self
-    (declare (ignore other-stuff))
+  (with-statement-destructured (path value-in-query) self
     (flet ((handle-one-slot (slot)
              #+cloe (declare (sys:downward-function))
 	     (setq my-slot slot)
@@ -1664,11 +1713,25 @@
 	   *root*))
 	(t ;; we have a real initial object.
 	 ;; What about variables later in the path?
-	 (let ((final-slot (follow-path-to-slot path nil)))
-	   (when (typep final-slot 'basic-slot)
-	     (handle-one-slot final-slot)))))))
+	 (flet ((slot-continuation (final-slot)
+		  (typecase final-slot
+		    (basic-slot (handle-one-slot final-slot))
+		    ;; If resolving the path takes you to an actual object
+		    ;; then you just call the continuation.  Notice, this is
+		    ;; different than the case where the final thing is a slot
+		    ;; whose value is an object.  In that case, the path specifies a slot
+		    ;; whose value could change.  In this case, the last step takes
+		    ;; you to a "part" of the previous object.  Parts are fixed parts of the hierarchy
+		    ;; and can't be deduced by backward rules (I think).  Also in this case it's not set valued
+		    ;; so we just call the continuation after unifying the value part of the query to the object
+		    (basic-object
+		     (with-unification
+		      (unify final-slot value-in-query )
+		      (stack-let ((backward-support `(,self ,+true+ ,predication)))
+			(funcall continuation backward-support)))))))
+	   (follow-path-to-slot* path #'slot-continuation nil)))))
   ;; make it clear that there is no interesting return value
-  (values))
+  (values)))
 
 (define-predicate-method (ask-data slot-value-mixin) (truth-value continuation)
   (declare (ignore truth-value))
