@@ -1288,7 +1288,7 @@
     :definer
   ((name &key slots parts equalities initializations included-object-types
 	 tms
-         other-instance-variables other-flavors other-classes)
+         other-instance-variables other-flavors other-classes base-classes)
    (multiple-value-bind (slot-names slot-options)
        (loop for s-d in slots
            if (symbolp s-d)
@@ -1324,7 +1324,7 @@
             (when old-type-object
               (clean-up-for-redefinition old-type-object)))
           (defclass ,name
-              (,@other-flavors ,@other-classes ,@included-object-types ,@(when tms (list 'tms-object-mixin)) basic-object)
+              (,@other-flavors ,@other-classes ,@included-object-types ,@(when tms (list 'tms-object-mixin)) ,@base-classes basic-object)
             (,@slot-names ,@other-instance-variables))
           ,@(loop for slot-name in slot-names
                 collect `(defmethod ,slot-name ((self ,name) &optional (value t))
@@ -1727,7 +1727,7 @@
 		    (basic-object
 		     (with-unification
 		      (unify final-slot value-in-query )
-		      (stack-let ((backward-support `(,self ,+true+ ,predication)))
+		      (stack-let ((backward-support `(,self ,+true+ ,final-slot)))
 			(funcall continuation backward-support)))))))
 	   (follow-path-to-slot* path #'slot-continuation nil)))))
   ;; make it clear that there is no interesting return value
@@ -1738,15 +1738,6 @@
   (with-statement-destructured (ignore-2 value-in-query) self
     (declare (ignore ignore-2))
     (map-over-values my-slot self continuation value-in-query)))
-
-(define-predicate-method (fetch slot-value-mixin) (continuation)
-  (with-statement-destructured (path value-in-query) self
-    (declare (ignore value-in-query))
-    (let ((slot (follow-path path nil)))
-      (with-slots (all-predications) slot
-	(loop for (nil . predication) in all-predications
-	    do (funcall continuation predication))))))
-	      
 
 (define-predicate-method (map-over-backward-rule-triggers slot-value-mixin) (continuation)
   (map-over-slot-backward-rule-triggers my-slot continuation))
