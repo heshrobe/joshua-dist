@@ -16,48 +16,61 @@
 
 (ql:quickload :cl-json)
 
+(defparameter *missing-systems* nil)
+
+(defmacro load-if-there (name pathname-spec)
+  `(handler-case (load ,pathname-spec)
+     (:no-error (foo) 
+       (declare (ignore foo))
+       (format t "~%~a loaded" ',name))
+     (error () 
+       (format t "~%~a Not Found" ',name)
+       (pushnew ',name *missing-systems*))))
+
+(defmacro if-there (name &body forms)
+  `(unless (member ',name *missing-systems*)
+    ,@forms))
+
+
 (let* ((loading-file *load-truename*)
        (directory (cdr (pathname-directory loading-file))))
   (print loading-file)
   ;;; note that this one doesn't need the mcl :external-format because it's for allegro
   ;;; only
   #+allegro
-   (load (make-pathname :directory `(:absolute ,@directory)
+  (load (make-pathname :directory `(:absolute ,@directory)
 			:device (pathname-device loading-file)
 			:name "system-class" :type "lisp"))
-   (load (make-pathname :directory `(:absolute ,@directory "xml-parser")
-			:device (pathname-device loading-file)
-			:name "xml-parser-defsystem" :type "lisp"))
-   (load (make-pathname :directory `(:absolute ,@directory "sample-xml-rpc-server")
-			:device (pathname-device loading-file)
-			:name "defsystem" :type "lisp"))
+  (load-if-there Xml-parser (make-pathname :directory `(:absolute ,@directory "xml-parser")
+		      :device (pathname-device loading-file)
+		      :name "xml-parser-defsystem" :type "lisp"))
+  (load-if-there Xml-Server
+		 (make-pathname :directory `(:absolute ,@directory "sample-xml-rpc-server")
+							 :device (pathname-device loading-file)
+							 :name "defsystem" :type "lisp"))
    (load (make-pathname :directory `(:absolute ,@directory "clim-fixes") 
 			:device (pathname-device loading-file)
-			:name "clim-fixes-defsystem" :type "lisp")
-	 #+mcl :external-format #+mcl :unix)
+			:name "clim-fixes-defsystem" :type "lisp"))
    (load (make-pathname :directory `(:absolute ,@directory "clim-env" "portable-lisp-environment") 
 			:device (pathname-device loading-file)
-			:name "load-env" :type "lisp")
-	 #+mcl :external-format #+mcl :unix)
+			:name "load-env" :type "lisp"))
    (load (make-pathname :directory `(:absolute ,@directory "joshua" "code")
 			:device (pathname-device loading-file)
-			:name "joshua-defsystem" :type "lisp")
-	 #+mcl :external-format #+mcl :unix)
+			:name "joshua-defsystem" :type "lisp"))
    (load (make-pathname :directory `(:absolute ,@directory "joshua" "developer")
 			:device (pathname-device loading-file)
-			:name "jd-defsystem" :type "lisp")
-	 #+mcl :external-format #+mcl :unix)
+			:name "jd-defsystem" :type "lisp"))
    (load (make-pathname :directory `(:absolute ,@directory "ideal")
 			:device (pathname-device loading-file)
 			:name "load-ideal" :type "lisp"))
    ;; load the defsystems for the all the current apps
-   (load "~/Research-Projects/natural-software/code/defsystem.lisp")
+   (load-if-there Natsoft  "~/Research-Projects/natural-software/code/defsystem.lisp")
   
-   (load "~/Research-Projects/awdrat/code/defsystem.lisp")
+   (load-if-there AWDRAT  "~/Research-Projects/awdrat/code/defsystem.lisp")
   
-   (load "~/Research-Projects/control-system/defsystem.lisp")
+   (load-if-there Control-System "~/Research-Projects/control-system/defsystem.lisp")
   
-   (load "~/Research-Projects/attack-planning/code/defsystem.lisp")
+   (load-if-there Attack-Planner "~/Research-Projects/attack-planning/code/defsystem.lisp")
    )
 
   
@@ -86,25 +99,30 @@
     (compile-system 'ideal :recompile recompile))
   (load-system 'ideal)
   ;; xml-parser
-  (when xml-server
-    (when compile
-      (compile-system 'xml-parser :recompile recompile))
-    (load-system 'xml-parser)
-    ;; xml-rpc-server
-    (when compile
-      (compile-system 'sample-xml-rpc-server :recompile recompile))
-    (load-system 'sample-xml-rpc-server))
+  (when xml-server`
+    (if-there xml-parser
+	      (when compile
+		(compile-system 'xml-parser :recompile recompile))
+	      (load-system 'xml-parser))
+    (if-there xml-server
+	      (when compile
+		(compile-system 'sample-xml-rpc-server :recompile recompile))
+	      (load-system 'sample-xml-rpc-server)))
   (when apps
-    (when compile
-      (compile-system 'natsoft :recompile recompile))
-    (load-system 'natsoft)
-    (when compile
-      (compile-system 'awdrat :recompile recompile))
-    (load-system 'awdrat)
-    (when compile
-      (compile-system 'controls :recompile recompile))
-    (load-system 'controls)
-    (when compile
-      (compile-system 'aplan :recompile recompile))
-    (load-system 'aplan))    
+    (if-there natsoft
+	      (when compile
+		(compile-system 'natsoft :recompile recompile))
+	      (load-system 'natsof))
+    (if-there awdrat
+	      (when compile
+		(compile-system 'awdrat :recompile recompile))
+	      (load-system 'awdrat))
+    (if-there control-system
+	      (when compile
+		(compile-system 'controls :recompile recompile))
+	      (load-system 'controls))
+    (id-there attack-planner
+	      (when compile
+		(compile-system 'aplan :recompile recompile))
+	      (load-system 'aplan)))
   )
