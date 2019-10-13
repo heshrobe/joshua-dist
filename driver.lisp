@@ -121,7 +121,7 @@
 	      (when compile
 		(compile-system 'controls :recompile recompile))
 	      (load-system 'controls))
-    (id-there attack-planner
+    (if-there attack-planner
 	      (when compile
 		(compile-system 'aplan :recompile recompile))
 	      (load-system 'aplan)))
