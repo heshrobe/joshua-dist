@@ -17,15 +17,18 @@
 (ql:quickload :cl-json)
 
 (defparameter *missing-systems* nil)
+(defparameter *existing-systems* nil)
 
 (defmacro load-if-there (name pathname-spec)
-  `(handler-case (load ,pathname-spec)
-     (:no-error (foo) 
-       (declare (ignore foo))
+  `(let ((pathname ,pathname-spec))
+     (cond 
+      ((probe-file pathname)
+       (load pathname)
+       (pushnew ',name *existing-systems*)
        (format t "~%~a loaded" ',name))
-     (error () 
+      (t
        (format t "~%~a Not Found" ',name)
-       (pushnew ',name *missing-systems*))))
+       (pushnew ',name *missing-systems*)))))
 
 (defmacro if-there (name &body forms)
   `(unless (member ',name *missing-systems*)
@@ -112,7 +115,7 @@
     (if-there natsoft
 	      (when compile
 		(compile-system 'natsoft :recompile recompile))
-	      (load-system 'natsof))
+	      (load-system 'natsoft))
     (if-there awdrat
 	      (when compile
 		(compile-system 'awdrat :recompile recompile))

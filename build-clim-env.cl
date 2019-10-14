@@ -14,33 +14,32 @@
 (load "~/josh-dist/driver.lisp")
 
 (handler-bind ((fasl-casemode-mismatch #'(lambda (c) (invoke-restart 'excl::fasl-casemode-mismatch-continue)))) 
-  (build-it :xml-server #+MacOSX t #-MacOSX nil)
-
+  (build-it :xml-server #+MacOSX t #-MacOSX nil :apps t)
+  ;;
+  ;; I think that loading driver.lisp takes care of all of the loading
+  ;;
   ;; (load "~/josh-dist/xml-parser/xml-parser-defsystem.lisp")
   ;; (load-system 'xml-parser)
   ;; covered by :xml-server switch to build-it
   ;; (load-system 'sample-xml-rpc-server)
 
-  (load "~/josh-dist/ideal/load-ideal.lisp")
-  (load-system 'ideal)
+  ;; (load "~/josh-dist/ideal/load-ideal.lisp")
+  ;; (load-system 'ideal)
 
   (push "~/my-logical-pathnames.lisp"
 	(logical-pathname-translations-database-pathnames))
 
-  ;; I don't think I have a need for this anymore
-  ;; (load "test-eli.fasl")
-
-  (load "~/Research-Projects/natural-software/code/defsystem.lisp")
-  (load-system 'natsoft)
+  ;; (load "~/Research-Projects/natural-software/code/defsystem.lisp")
+  ;; (load-system 'natsoft)
   
-  (load "~/Research-Projects/awdrat/code/defsystem.lisp")
-  (load-system 'awdrat)
+  ; (load "~/Research-Projects/awdrat/code/defsystem.lisp")
+  ; (load-system 'awdrat)
   
-  (load "~/Research-Projects/control-system/defsystem.lisp")
-  (load-system 'controls)
+  ; (load "~/Research-Projects/control-system/defsystem.lisp")
+  ; (load-system 'controls)
   
-  (load "~/Research-Projects/attack-planning/code/defsystem.lisp")
-  (load-system 'aplan)
+  ; (load "~/Research-Projects/attack-planning/code/defsystem.lisp")
+  ; (load-system 'aplan)
 
   )
 

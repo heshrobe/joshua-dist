@@ -23,7 +23,7 @@ Notes:
 ;;;   DOESN'T BIND *LOAD-PATHNAME*
 ;;;
 
-(setq foobar *load-truename*)
+;; (setq foobar *load-truename*)
 
 (setq *load-pathname* *load-truename*)
 
