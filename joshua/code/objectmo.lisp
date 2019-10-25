@@ -1503,7 +1503,7 @@
 			(if (slot-is-set-valued next-object)
 			    (loop for thing in (slot-current-value next-object) do (do-one-more thing list-of-keys))
 			  (do-one-more (slot-current-value next-object) list-of-keys)))
-		       (t (do-one-more current-object list-of-keys)))))))))
+		       (t (do-one-more next-object list-of-keys)))))))))
 	(multiple-value-bind (initial-object list-of-keys)
 	    (if (symbolp (car path))
 		(values *root* path)

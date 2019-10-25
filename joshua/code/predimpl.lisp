@@ -440,10 +440,10 @@
 (define-predicate-method (ask-data default-ask-model) (truth-value continuation)
   (fetch self
 	 #'(lambda (database-predication)
-	     (let ((database-bits (predication-bits database-predication)))
+	     (let* ((database-bits (predication-bits database-predication))
+		    (his-truth-value (predication-bits-truth-value database-bits)))
 	       (when (or (null truth-value)
-			  (= (predication-bits-truth-value database-bits)
-			     truth-value))
+			 (= his-truth-value truth-value))
 		 ;; the truth value we're looking for matches the database predication
 		 (with-unification
 		   ;; if the database predication has variables, copy it
@@ -456,7 +456,7 @@
 				  (predication-statement database-predication)))))
 		   ;; the unification succeeded, so call the continuation
                    (with-stack-list (backward-support self
-                                                      truth-value
+                                                      his-truth-value
                                                       database-predication)
 		     (funcall continuation backward-support))))))))
 
