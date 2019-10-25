@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cd ~/josh-dist/
 echo "\nDoing Joshua Distribution\n"
 git commit -a -m "Updating all apps"
@@ -6,6 +8,7 @@ git push origin
 echo "\nPushing to MIT Github"
 git push mit
 
+if test -e "~/Research-Projects/awdrat
 echo "\nDoing AWDRAT\n"
 cd ~/Research-Projects/awdrat/
 git commit -a -m "Updating all apps"
@@ -13,6 +16,7 @@ echo "\nPushing to Github.com"
 git push origin
 echo "\nPushing to MIT Github"
 git push mit
+fi
 
 echo "\nDoing Attack Planner\n"
 cd ~/Research-Projects/attack-planning/
