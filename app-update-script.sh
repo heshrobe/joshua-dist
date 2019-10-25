@@ -2,7 +2,7 @@
 
 cd ~/josh-dist/
 echo "\nDoing Joshua Distribution\n"
-git commit -a -m "Updating all apps"
+git commit -a -m "Updating all code"
 echo "\nPushing to Github.com"
 git push origin
 echo "\nPushing to MIT Github"
@@ -16,6 +16,7 @@ echo "\nPushing to Github.com"
 git push origin
 echo "\nPushing to MIT Github"
 git push mit
+else echo "\nAWDRAT not present"
 fi
 
 if test -e "~/Research-Projects/attack-planning"; then
