@@ -20,17 +20,20 @@ git push mit
 else echo "\nAWDRAT not present"
 fi
 
-if test -e "~/Research-Projects/attack-planning"; then
+FILE=~/Research-Projects/attack-planning
+if test -e $FILE; then
 echo "\nDoing Attack Planner\n"
 cd ~/Research-Projects/attack-planning/
 git commit -a -m "Updating all apps"
 echo "\nPushing to Github.com"
 git push origin
-echo "\nPushing to MIT Githu"
+echo "\nPushing to MIT Github"
 git push mit
+else echo "\nAttack Planner not present"
 fi
 
-if test -e "~/Research-Projects/control-system"; then
+FILE=~/Research-Projects/control-system
+if test -e $FILE; then
 echo "\nDoing Control System Demo\n"
 cd ~/Research-Projects/control-system/
 git commit -a -m "Updating all apps"
@@ -38,9 +41,11 @@ echo "\npushing to Github.com"
 git push origin
 echo "\nPushing to MIT Github"
 git push mit
+else echo "\nControl System not present"
 fi
 
-if test -e "~/Research-Projects/natural-software"; then
+FILE=~/Research-Projects/natural-software
+if test -e $FILE; then
 echo "\nDoing NatSoft\n"
 cd ~/Research-Projects/natural-software/
 git commit -a -m "Updating all apps"
@@ -48,4 +53,5 @@ echo "\nPushing to Github.com"
 git push origin
 echo "\nPushing to MIT Github"
 git push mit
+else echo "\nNatural Software not present"
 fi
