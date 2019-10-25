@@ -8,7 +8,7 @@ git push origin
 echo "\nPushing to MIT Github"
 git push mit
 
-if test -e "~/Research-Projects/awdrat"; then
+if test -d "~/Research-Projects/awdrat"; then
 echo "\nDoing AWDRAT\n"
 cd ~/Research-Projects/awdrat/
 git commit -a -m "Updating all apps"
