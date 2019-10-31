@@ -442,6 +442,7 @@
 	 #'(lambda (database-predication)
 	     (let* ((database-bits (predication-bits database-predication))
 		    (his-truth-value (predication-bits-truth-value database-bits)))
+	       ;; A Null truth-value means fetch everything
 	       (when (or (null truth-value)
 			 (= his-truth-value truth-value))
 		 ;; the truth value we're looking for matches the database predication

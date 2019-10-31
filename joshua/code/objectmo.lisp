@@ -206,6 +206,20 @@
 (defmethod print-object ((self basic-slot) stream)
   (format stream "#<SLOT ~a>" (path-name self)))
 
+;;; This is used when querying with a truth-value of NIL at the ask-data level.
+;;; It returns all possible values whether they're the current ones or not.
+;;; This is here for a possible extention for "stateful predications" that can 
+;;; be true in one state of the world and false in another
+(defmethod map-over-all-values ((self basic-slot) query continuation value-in-query)
+  (with-slots (all-predications) self
+    (let ((query-predicate (predication-predicate query)))
+      (loop for (his-value . predication) in all-predications
+	  when (eql (predication-predicate predication) query-predicate)
+	  doing (with-unification
+		 (unify value-in-query his-value)
+		 (stack-let ((backward-support `(,query ,+true+ ,predication)))
+		   (funcall continuation backward-support)))))))
+
 
 (defclass truth-maintained-slot-mixin
 	()
@@ -1733,11 +1747,39 @@
   ;; make it clear that there is no interesting return value
   (values)))
 
+(defmethod map-path (query continuation)
+  (with-statement-destructured (path value-in-query) query
+    (flet ((slot-continuation (final-slot)
+	     (typecase final-slot
+	       (basic-slot (funcall continuation final-slot))
+	       ;; If resolving the path takes you to an actual object
+	       ;; then you just call the continuation.  Notice, this is
+	       ;; different than the case where the final thing is a slot
+	       ;; whose value is an object.  In that case, the path specifies a slot
+	       ;; whose value could change.  In this case, the last step takes
+	       ;; you to a "part" of the previous object.  Parts are fixed parts of the hierarchy
+	       ;; and can't be deduced by backward rules (I think).  Also in this case it's not set valued
+	       ;; so we just call the continuation after unifying the value part of the query to the object
+	       (basic-object
+		(with-unification
+		 (unify final-slot value-in-query )
+		 (stack-let ((backward-support `(,query ,+true+ ,final-slot)))
+		   (funcall continuation backward-support)))))))
+      (follow-path-to-slot* path #'slot-continuation nil)))
+  )
+
+
+
+
+;;; This assumes that my-slot is bound, which would be true if called from ask
+;;; But if called as a top-level, you'll have to follow paths to slots
 (define-predicate-method (ask-data slot-value-mixin) (truth-value continuation)
-  (declare (ignore truth-value))
-  (with-statement-destructured (ignore-2 value-in-query) self
-    (declare (ignore ignore-2))
-    (map-over-values my-slot self continuation value-in-query)))
+  ;; (declare (ignore truth-value))
+  (with-statement-destructured (slot-in-query value-in-query) self
+    ;; (declare (ignore ignore-2))
+    (if (null truth-value)
+	(map-over-all-values slot-in-query self continuation value-in-query)
+      (map-over-values my-slot self continuation value-in-query))))
 
 (define-predicate-method (map-over-backward-rule-triggers slot-value-mixin) (continuation)
   (map-over-slot-backward-rule-triggers my-slot continuation))

@@ -582,6 +582,7 @@
 		 ;; and then build the right justification
 		 (let ((modified-statement (make-predication (cons (first (predication-statement self))
 								   (reverse statement-so-far)))))
+		   ;; truth-value is passed to next-method never checked here
 		   (call-next-method modified-statement truth-value outer-continuation))
 	       (destructuring-bind (first . rest) remaining-tokens
 		 (typecase first
@@ -775,6 +776,7 @@
      ((or (unbound-logic-variable-p child) (unbound-logic-variable-p parent))
       ;; put the unknown one into canonical position
       (when (unbound-logic-variable-p parent) (rotatef child parent))
+      ;; Notice that if truth-value is Null we'll go to the one-variable-true case
       (if (eql truth-value +false+)
 	  (ask-data-one-variable-false self child (intern parent) continuation)
 	(ask-data-one-variable-true self child parent continuation)))
@@ -797,13 +799,17 @@
 				  (cond
 				   ;; see if it's there explicitly
 				   (parent-assertion
-				    (when (eql (predication-truth-value parent-assertion) truth-value))
-				    ;; The explicit case works correctlly for both truth-values
-				    (with-stack-list (backward-support self truth-value parent-assertion)
-				      (funcall continuation backward-support)))
+				    (when 
+					;; Null truth-value means any truth-value will do
+					(or (null truth-value)
+					    (eql (predication-truth-value parent-assertion) truth-value))
+				      ;; The explicit case works correctlly for both truth-values
+				      (with-stack-list (backward-support self truth-value parent-assertion)
+						       (funcall continuation backward-support))))
 				   ;; Not explicitly asserted
-				   ((eql truth-value +true+)
-				    ;; If not, when we're looking for TRUE assertions see if parent and child are in the same class
+				    ((or (null truth-value) (eql truth-value +true+))
+				     ;; If not, when we're looking for TRUE assertions or don't care
+				     ;; about the truth-vaue, see if parent and child are in the same class
 				    (with-stack-list (rule-form 'rule 'congruence-closure)
 				      (multiple-value-bind (child-set child-set-assertion) (find child)
 					(multiple-value-bind (parent-set parent-set-assertion) (find parent)
@@ -828,7 +834,9 @@
       do (loop for parent-assertion being the hash-values of (parent-assertions child)
 	     do (with-statement-destructured (statement-child statement-parent) parent-assertion
 		  (declare (ignore statement-parent))
-		  (when (and (eql (predication-truth-value parent-assertion) truth-value)
+		  ;; Null truth-value means we don't care about truth-value
+		  (when (and (or (null truth-value)
+				 (eql (predication-truth-value parent-assertion) truth-value))
 			     (eql statement-child child))
 		    (funcall continuation parent-assertion))))))
 
