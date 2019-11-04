@@ -41,38 +41,50 @@
   ;;; note that this one doesn't need the mcl :external-format because it's for allegro
   ;;; only
   #+allegro
+  ;; This provides a class for the Allegro version of defsystem that allows me to control where the binaries
+  ;; go
   (load (make-pathname :directory `(:absolute ,@directory)
 			:device (pathname-device loading-file)
 			:name "system-class" :type "lisp"))
-  (load-if-there Xml-parser (make-pathname :directory `(:absolute ,@directory "xml-parser")
-		      :device (pathname-device loading-file)
-		      :name "xml-parser-defsystem" :type "lisp"))
+  ;; XML Parser
+  (load-if-there Xml-parser 
+		 (make-pathname :directory `(:absolute ,@directory "xml-parser")
+				:device (pathname-device loading-file)
+				:name "xml-parser-defsystem" :type "lisp"))
+  ;; XML Server for XML-RPC
   (load-if-there Xml-Server
 		 (make-pathname :directory `(:absolute ,@directory "sample-xml-rpc-server")
 							 :device (pathname-device loading-file)
 							 :name "defsystem" :type "lisp"))
+  ;; Clim Fixes
    (load (make-pathname :directory `(:absolute ,@directory "clim-fixes") 
 			:device (pathname-device loading-file)
 			:name "clim-fixes-defsystem" :type "lisp"))
+   ;; Clim Env
    (load (make-pathname :directory `(:absolute ,@directory "clim-env" "portable-lisp-environment") 
 			:device (pathname-device loading-file)
 			:name "load-env" :type "lisp"))
+   ;; Joshua
    (load (make-pathname :directory `(:absolute ,@directory "joshua" "code")
 			:device (pathname-device loading-file)
 			:name "joshua-defsystem" :type "lisp"))
+   ;; Joshua Developer Tools
    (load (make-pathname :directory `(:absolute ,@directory "joshua" "developer")
 			:device (pathname-device loading-file)
 			:name "jd-defsystem" :type "lisp"))
-   (load (make-pathname :directory `(:absolute ,@directory "ideal")
-			:device (pathname-device loading-file)
-			:name "load-ideal" :type "lisp"))
+   ;; Ideal Bayesian Inference Sysetm
+   (load-if-there ideal
+		  (make-pathname :directory `(:absolute ,@directory "ideal")
+				 :device (pathname-device loading-file)
+				 :name "load-ideal" :type "lisp"))
    ;; load the defsystems for the all the current apps
+   ;; Programmer's Apprentice
    (load-if-there Natsoft  "~/Research-Projects/natural-software/code/defsystem.lisp")
-  
+  ;; AWDRAT
    (load-if-there AWDRAT  "~/Research-Projects/awdrat/code/defsystem.lisp")
-  
+  ;; Control System Demo
    (load-if-there Control-System "~/Research-Projects/control-system/defsystem.lisp")
-  
+  ;; Attack Planner
    (load-if-there Attack-Planner "~/Research-Projects/attack-planning/code/defsystem.lisp")
    )
 
@@ -99,14 +111,16 @@
   (load-system 'joshua-developer)
   ;; ideal
   (when compile
-    (compile-system 'ideal :recompile recompile))
+    (if-there ideal
+     (compile-system 'ideal :recompile recompile)))
   (load-system 'ideal)
   ;; xml-parser
-  (when xml-server`
-    (if-there xml-parser
+  (if-there xml-parser
 	      (when compile
 		(compile-system 'xml-parser :recompile recompile))
 	      (load-system 'xml-parser))
+  ;; xml-server
+  (when xml-server
     (if-there xml-server
 	      (when compile
 		(compile-system 'sample-xml-rpc-server :recompile recompile))

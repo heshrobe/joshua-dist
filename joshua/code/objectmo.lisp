@@ -1049,7 +1049,9 @@
 	  ()
     ((superpart-object :initform nil :initarg :superpart-object :accessor basic-object-superpart-object)
      (role-name :initform nil :initarg :role-name :accessor basic-object-role-name)
-     (my-predication :initform nil :initarg :my-predication :accessor basic-object-my-predication)
+     ;; This is the object-type-of predication all objects need this
+     (type-predication :initform nil :initarg :type-predication :accessor basic-object-type-predication)
+     (part-predication :initform nil :initarg :part-predication :accessor basic-object-part-predication)
      (subparts :initform (make-hash-table :size 10) :accessor basic-object-subparts)
      (type :reader basic-object-type)
      (typical-instance-of-type? :initform nil :initarg :typical-instance-of-type? :reader basic-object-typical-instance-of-type?)
@@ -1057,7 +1059,7 @@
 
 (defclass tms-object-mixin
     ()
-  ((my-predication :initform nil :initarg :my-predication :accessor my-predication))
+  ()
   )
 
 (defmethod basic-object-body-builder progn ((self basic-object)) nil)
@@ -1173,41 +1175,40 @@
       (when superpart-object (add-part superpart-object role-name self))
       (when type
 	(with-atomic-action
-	(if *building-prototype*
-	    ;; If we're building prototype structure run the guy who
-	    ;; makes prototype slots
-	    (basic-object-prototype-builder self)
-	  ;; We're building a real object
-	  ;; use the guy who builds instance slots.
-	  (basic-object-body-builder self))
-	;; Delay rule execution until after both the sub-structure is built
-	;; and all of the initializatons have been run.
-
-	    (basic-object-substructure-builder self)
-	  ;; Now that it's completely built
-	  ;; tell the type about it.
-	  (cond (typical-instance-of-type?
-		 ;; This will also collect all rule triggers from the supertypes.
-		 (set-typical-instance type-object self))
-		(t
-		 ;; this links the object slots to those of its prototype.
-		 (add-instance type-object self)
-		 ;; Now that it's rules are linked
-		 (unless *building-prototype*
-		   ;; It might still be part of a prototype even if
-		   ;; it itself isn't the prototype.  If it's not, I.e. if
-		   ;; it's a real object, run the
-		   ;; initializations.
-		   ;; We don't run the initializations until all the sub-structure
-		   ;; is built and linked up to prototypes (for rule triggering).
-		   ;; This is because the initializations do Tell's which require the structure to be there
-		   ;; already. See note below.
-		   ;; So we delay calling this until the top-level guy is built
-		   ;; He then maps down the part hierarchy doing the initializations
-		   ;; for all the sub-structure.
-		   ;; Examine Me: With the "(with-atomic-action wrapping, the explanation above may be wrong
-		   (apply #'basic-object-initializer self plist)
-		   ))))))))
+	 (if *building-prototype*
+	     ;; If we're building prototype structure run the guy who
+	     ;; makes prototype slots
+	     (basic-object-prototype-builder self)
+	   ;; We're building a real object
+	   ;; use the guy who builds instance slots.
+	   (basic-object-body-builder self))
+	 ;; Delay rule execution until after both the sub-structure is built
+	 ;; and all of the initializatons have been run.
+	 (basic-object-substructure-builder self)
+	 ;; Now that it's completely built
+	 ;; tell the type about it.
+	 (cond (typical-instance-of-type?
+		;; This will also collect all rule triggers from the supertypes.
+		(set-typical-instance type-object self))
+	       (t
+		;; this links the object slots to those of its prototype.
+		(add-instance type-object self)
+		;; Now that it's rules are linked
+		(unless *building-prototype*
+		  ;; It might still be part of a prototype even if
+		  ;; it itself isn't the prototype.  If it's not, I.e. if
+		  ;; it's a real object, run the
+		  ;; initializations.
+		  ;; We don't run the initializations until all the sub-structure
+		  ;; is built and linked up to prototypes (for rule triggering).
+		  ;; This is because the initializations do Tell's which require the structure to be there
+		  ;; already. See note below.
+		  ;; So we delay calling this until the top-level guy is built
+		  ;; He then maps down the part hierarchy doing the initializations
+		  ;; for all the sub-structure.
+		  ;; Examine Me: With the "(with-atomic-action wrapping, the explanation above may be wrong
+		  (apply #'basic-object-initializer self plist)
+		  ))))))))
 
 
 ;;; The motivating case: Imaging a rule that talks about the sub-structure of an object 
@@ -1239,9 +1240,12 @@
     (when superpart-object
       (remove-part superpart-object role-name self))))
 
-(defmethod kill :before ((object tms-object-mixin))
-  (let ((predication (my-predication object)))
-    (unjustify predication)))
+(defmethod kill :before ((object basic-object))
+  ;; Kill the part-of relationship
+  (let ((part-predication (basic-object-part-predication object))
+	(type-predication (basic-object-type-predication object)))
+    (when part-predication (unjustify type-predication)
+    (when type-predication (unjustify part-predication)))))
 
 ;;; don't reveal *root* to the casual typer of c-sh-A
 
@@ -1257,12 +1261,26 @@
     (remf new-plist :superpart-object)
     (apply #'make-instance object-type :role-name name :superpart-object superpart-object new-plist)))
 
-(defmethod trigger-rules-when-created :before ((object tms-object-mixin))
-  (let ((pred `[ltms:object-type-of ,object ,(object-type-of object)]))
-    (setf (my-predication object) pred
-	  (been-in-database-p pred) t)
-    (justify pred +true+ :premise)
-  ))
+(defmethod type-of-predicate-for-object-type ((thing basic-object)) 'object-type-of)
+(defmethod type-of-predicate-for-object-type ((thing tms-object-mixin)) 'ltms:object-type-of)
+					      
+
+(defmethod part-of-predicate-for-object-type ((thing basic-object)) 'named-part-of)
+(defmethod part-of-predicate-for-object-type ((thing tms-object-mixin)) 'ltms:named-part-of)
+
+(defmethod trigger-rules-when-created :before ((object basic-object))
+  (let* ((object-type (object-type-of object))
+	 (type-pred `[,(type-of-predicate-for-object-type object) ,object ,object-type])
+	 (superior (basic-object-superpart-object object))
+	 (role-name (role-name object))
+	 (part-of-pred `[,(part-of-predicate-for-object-type object) ,superior ,role-name ,object]))
+    (setf (basic-object-type-predication object) type-pred
+	  (been-in-database-p type-pred) t
+	  (basic-object-part-predication object) part-of-pred
+	  (been-in-database-p part-of-pred) t)
+    (justify part-of-pred +true+ :premise)
+    (justify type-pred +true+ :premise)
+    ))
 
 
 (defmacro part (role-name type)
@@ -1747,38 +1765,54 @@
   ;; make it clear that there is no interesting return value
   (values)))
 
-(defmethod map-path (query continuation)
-  (with-statement-destructured (path value-in-query) query
-    (flet ((slot-continuation (final-slot)
-	     (typecase final-slot
-	       (basic-slot (funcall continuation final-slot))
-	       ;; If resolving the path takes you to an actual object
-	       ;; then you just call the continuation.  Notice, this is
-	       ;; different than the case where the final thing is a slot
-	       ;; whose value is an object.  In that case, the path specifies a slot
-	       ;; whose value could change.  In this case, the last step takes
-	       ;; you to a "part" of the previous object.  Parts are fixed parts of the hierarchy
-	       ;; and can't be deduced by backward rules (I think).  Also in this case it's not set valued
-	       ;; so we just call the continuation after unifying the value part of the query to the object
-	       (basic-object
-		(with-unification
-		 (unify final-slot value-in-query )
-		 (stack-let ((backward-support `(,query ,+true+ ,final-slot)))
-		   (funcall continuation backward-support)))))))
-      (follow-path-to-slot* path #'slot-continuation nil)))
-  )
+;;; This is a utility for taking a path and finding
+;;; all slots that the path maps to (there could be variables in the path)
+;;; and then calling a continuation on each one.
+;;; A complication is that the path might end in a "part" rather than a slot
+;;; In that case you still call the continuation but with enough information
+;;; so that it can make sense of things.
 
-
-
-
+;;; This is duplicating code that's in the ask method
+;;; This allows you to call ask-data directly without going through ask.
+;;; This in turn means you get to pass in the truth-value directly and so 
+;;; you can pass in a Null value, meaning give me everything true or not.
 ;;; This assumes that my-slot is bound, which would be true if called from ask
 ;;; But if called as a top-level, you'll have to follow paths to slots
+;;; If resolving the path takes you to an actual object
+;;; then you just call the continuation.  Notice, this is
+;;; different than the case where the final thing is a slot
+;;; whose value is an object.  In that case, the path specifies a slot
+;;; whose value could change.  In this case, the last step takes
+;;; you to a "part" of the previous object.  Parts are fixed parts of the hierarchy
+;;; and can't be deduced by backward rules (I think).  Also in this case it's not set valued
+;;; so we just call the continuation after unifying the value part of the query to the object
+
+
+
 (define-predicate-method (ask-data slot-value-mixin) (truth-value continuation)
   ;; (declare (ignore truth-value))
   (with-statement-destructured (slot-in-query value-in-query) self
-    ;; (declare (ignore ignore-2))
     (if (null truth-value)
-	(map-over-all-values slot-in-query self continuation value-in-query)
+	;; In this case the caller is asking for all possible answers regardess of truth-value
+	;; that match the query.  So first of all get to the slot or if the path ends at a part
+	;; then the object
+	(follow-path-to-slot* slot-in-query
+		  #'(lambda (thing)
+		      (typecase thing
+			(basic-slot
+			 ;; if a slot then map over all possible values in the slot
+			 ;; (not the current value)
+			 (map-over-all-values thing self continuation value-in-query))
+			;; This happens if the path resolves to a sub-part of the object
+			;; rather than a slot of the object
+			(basic-object
+			 ;; There's nothing more to do at this point other than to
+			 ;; invoke the caller's continuation
+			 (stack-let ((backward-support `(,self ,+true+  ,(basic-object-part-predication thing)
+							       (ask-data ,(part-of-predicate-for-object-type thing))
+							       ,thing)))
+			   (funcall continuation backward-support))
+			 ))))
       (map-over-values my-slot self continuation value-in-query))))
 
 (define-predicate-method (map-over-backward-rule-triggers slot-value-mixin) (continuation)
@@ -2457,12 +2491,12 @@
 		(unify parent-object superpart)
 		(unify child-object object)
 		(unify name (role-name object))
-		(let ((child-predication (basic-object-my-predication object)))
-		  (setf child-predication nil
-			(basic-object-my-predication object) nil)
-		  (unless child-predication
-		    (setq child-predication (make-predication `(named-part-of ,superpart ,(role-name object) ,object)))
-		    (setf (basic-object-my-predication object) child-predication))
+		(let ((child-predication (basic-object-part-predication object)))
+		  ;; (setf child-predication nil
+		  ;; 	(basic-object-my-predication object) nil)
+		  ;; (unless child-predication
+		  ;;   (setq child-predication (make-predication `(named-part-of ,superpart ,(role-name object) ,object)))
+		  ;;   (setf (basic-object-my-predication object) child-predication))
 		  (stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
 		    (funcall continuation backward-support)))))))
        *root*))
@@ -2472,27 +2506,27 @@
 	     (object (basic-object-superpart-object child-object)))
 	(when object
 	  (with-unification
-	      (unify parent-object object)
-	      (unify name (role-name child-object))
-	      (let ((child-predication (basic-object-my-predication object)))
-		(unless child-predication
-		  (setq child-predication (make-predication `(named-part-of ,object ,(role-name child-object) ,child-object)))
-		  (setf (basic-object-my-predication object) child-predication))
-		(stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
-		  (funcall continuation backward-support)))))))
+	   (unify parent-object object)
+	   (unify name (role-name child-object))
+	   (let ((child-predication (basic-object-part-predication object)))
+	     ;; (unless child-predication
+	     ;;   (setq child-predication (make-predication `(named-part-of ,object ,(role-name child-object) ,child-object)))
+	     ;;   (setf (basic-object-my-predication object) child-predication))
+	     (stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
+	       (funcall continuation backward-support)))))))
      ;; child isn't so parent must be, but needs to be dereferenced
      ((unbound-logic-variable-p child-object)
       (let ((parent-object (joshua-logic-variable-value parent-object)))
 	(maphash #'(lambda (key child)
 		     (with-unification
-			 (unify name key)
-			 (unify child-object child)
-			 (let ((child-predication (basic-object-my-predication child)))
-			   (unless child-predication
-			     (setq child-predication (make-predication `(named-part-of ,parent-object ,key ,child)))
-			     (setf (basic-object-my-predication child) child-predication))
-			   (stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
-				      (funcall continuation backward-support)))))
+		      (unify name key)
+		      (unify child-object child)
+		      (let ((child-predication (basic-object-part-predication child)))
+			;; (unless child-predication
+			;;   (setq child-predication (make-predication `(named-part-of ,parent-object ,key ,child)))
+			;;   (setf (basic-object-my-predication child) child-predication))
+			(stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
+			  (funcall continuation backward-support)))))
 		 (basic-object-subparts 
 		  ;; parent is either provided or a pathname
 		  (if (typep parent-object 'basic-object)
@@ -2511,36 +2545,36 @@
 		  unless (eql (subpart-named next-parent reverse-key) parent)
 		  return (values)
 		  finally (with-unification
-			      (unify (first parent-object) next-parent)`
-			      (unify name (role-name child-object))
-			      (let ((child-predication (basic-object-my-predication child-object)))
-				(unless child-predication
-				  (setq child-predication (make-predication `(named-part-of ,parent-object ,(role-name child-object) ,child-object)))
-				  (setf (basic-object-my-predication child-object) child-predication))
-				`(stack-let ((backward-support (list self +true+ child-predication child-predication '(ask-data named-part-of))))
-				 `      (funcall continuation backward-support)))))))
+			   (unify (first parent-object) next-parent)`
+			   (unify name (role-name child-object))
+			   (let ((child-predication (basic-object-part-predication child-object)))
+			     ;; (unless child-predication
+			     ;;   (setq child-predication (make-predication `(named-part-of ,parent-object ,(role-name child-object) ,child-object)))
+			     ;;   (setf (basic-object-my-predication child-object) child-predication))
+			     (stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
+			       (funcall continuation backward-support)))))))
 	   ((listp parent-object)
 	    (let* ((partial-path-result (follow-path parent-object))
 		   (path-result (follow-path (list partial-path-result name))))
 	      (when (eql path-result child-object)
 		(with-unification
 		 (unify name (role-name child-object))
-		 (let ((child-predication (basic-object-my-predication child-object)))
-		   (unless child-predication
-		     (setq child-predication (make-predication `(named-part-of ,(basic-object-superpart-object child-object) ,(role-name child-object) ,child-object)))
-		     (setf (basic-object-my-predication child-object) child-predication))
-		   `(stack-let ((backward-support (list self +true+ child-predication child-predication '(ask-data named-part-of))))
-			       `      (funcall continuation backward-support)))))))
+		 (let ((child-predication (basic-object-part-predication child-object)))
+		   ;; (unless child-predication
+		   ;;   (setq child-predication (make-predication `(named-part-of ,(basic-object-superpart-object child-object) ,(role-name child-object) ,child-object)))
+		   ;;   (setf (basic-object-my-predication child-object) child-predication))
+		   (stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
+		      (funcall continuation backward-support)))))))
 	   ;; here they are both instantiated and atomic
 	   ((eql (basic-object-superpart-object child-object) parent-object)
 	    (with-unification
 	     (unify name (role-name child-object))
-	     (let ((child-predication (basic-object-my-predication child-object)))
-	       (unless child-predication
-		 (setq child-predication (make-predication `(named-part-of ,parent-object ,(role-name child-object) ,child-object)))
-		 (setf (basic-object-my-predication child-object) child-predication))
-	       `(stack-let ((backward-support (list self +true+ child-predication child-predication '(ask-data named-part-of))))
-			   `      (funcall continuation backward-support)))))))))))
+	     (let ((child-predication (basic-object-part-predication child-object)))
+	       ;; (unless child-predication
+	       ;; 	 (setq child-predication (make-predication `(named-part-of ,parent-object ,(role-name child-object) ,child-object)))
+	       ;; 	 (setf (basic-object-my-predication child-object) child-predication))
+	       (stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
+		  (funcall continuation backward-support)))))))))))
 
 (define-predicate-method (expand-forward-rule-trigger named-part-of-mixin) (support-variable-name truth-value context bound-variables)
   (declare (ignore context))

@@ -1571,8 +1571,10 @@
       (incf *successful-match-count*)
       (let ((state-entry (make-rete-internal-state
 			   :environment match-env
-			   :predications (when (typep object 'tms-object-mixin)
-					   (list (my-predication object)))
+			   :predications (if (typep object 'tms-object-mixin)
+					     (list (basic-object-type-predication object)
+						   (basic-object-part-predication object))
+					   (list (basic-object-type-predication object)))					   
 			   :has-logic-variables (if has-logic-variables 1 0)
 			   :my-node node)))
 	(add-rete-state object state-entry)

@@ -50,6 +50,7 @@ Notes:
 		     :defaults wild-core))
       )))
 
+#+Allegro
 (with-open-file (F #P"ideal:home;my-logical-pathnames.lisp" :direction :output :if-exists :supersede :if-does-not-exist :create)
       (format f "~%;;; ideal")
       (format f "~2%~s" "ideal")
@@ -58,6 +59,7 @@ Notes:
       (terpri f)
       )
 
+#+Allegro
 (pushnew (namestring (truename #P"ideal:home;my-logical-pathnames.lisp"))
 	 (logical-pathname-translations-database-pathnames)
 	 :test #'string-equal)
