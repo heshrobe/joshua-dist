@@ -1812,7 +1812,8 @@
 							       (ask-data ,(part-of-predicate-for-object-type thing))
 							       ,thing)))
 			   (funcall continuation backward-support))
-			 ))))
+			 )))
+		  nil)
       (map-over-values my-slot self continuation value-in-query))))
 
 (define-predicate-method (map-over-backward-rule-triggers slot-value-mixin) (continuation)
@@ -2378,7 +2379,7 @@
 (define-predicate-model part-of-mixin () (tell-error-model ask-data-only-mixin))
 
 (define-predicate-method (ask-data part-of-mixin) (truth-value continuation)
-  (unless (eql truth-value +true+)
+  (unless (or (eql truth-value +true+) (eql truth-value nil))
     (error 'model-can-only-handle-positive-queries
 	    :query self
 	    :model (type-of self)))
@@ -2394,7 +2395,7 @@
 	       (with-unification
 		   (unify parent-object superpart)
 		 (unify child-object object)
-		 (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
+		 (stack-let ((backward-support (list self +true+ (basic-object-part-predication object) '(ask-data part-of))))
 			    (funcall continuation backward-support))))))
        *root*))
      ;; Parent is unbound, child must be bound but might need dereferencing
@@ -2404,7 +2405,7 @@
 	(when object
 	  (with-unification
 	      (unify parent-object object)
-	    (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
+	    (stack-let ((backward-support (list self +true+ (basic-object-part-predication child-object) '(ask-data part-of))))
 		       (funcall continuation backward-support))))))
      ;; child is unbound, parent must be bound but might need dereferencing
      ((unbound-logic-variable-p child-object)
@@ -2415,14 +2416,15 @@
 		       (declare (ignore key))
 		       (with-unification
 			   (unify child-object child)
-			 (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
+			   (stack-let ((backward-support (list self +true+ (basic-object-part-predication child) 
+							       '(ask-data part-of))))
 				    (funcall continuation backward-support))))
 		   (basic-object-subparts parent-object)))
 	 ((listp parent-object)
 	  (let ((path-result (follow-path parent-object)))
 	    (with-unification
 		(unify path-result child-object)
-	      (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
+	      (stack-let ((backward-support (list self +true+ (basic-object-part-predication child-object) '(ask-data part-of))))
 			 (funcall continuation backward-support))))))))
      (t
       ;; Both Parent and Child is now known to be instantiated but may need to be dereferenced
@@ -2439,16 +2441,17 @@
 		return (values)
 		finally (with-unification
 			    (unify (first parent-object) next-parent)
-			  (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
+			    (stack-let ((backward-support (list self +true+ (basic-object-part-predication child-object) 
+								'(ask-data part-of))))
 				     (funcall continuation backward-support))))))
 	 ((listp parent-object)
 	  (let ((path-result (follow-path parent-object)))
 	    (when (eql path-result child-object)
-	      (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
+	      (stack-let ((backward-support (list self +true+ (basic-object-part-predication child-object) '(ask-data part-of))))
 			 (funcall continuation backward-support)))))
 	 ;; here they are both instantiated and atomic
 	 ((eql (basic-object-superpart-object child-object) parent-object)
-	  (stack-let ((backward-support (list self +true+ '(ask-data part-of))))
+	  (stack-let ((backward-support (list self +true+ (basic-object-part-predication child-object) '(ask-data part-of))))
 		     (funcall continuation backward-support)))))))))
 
 (define-predicate-method (expand-forward-rule-trigger part-of-mixin) (support-variable-name truth-value context bound-variables)
