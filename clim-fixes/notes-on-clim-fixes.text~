@@ -1,0 +1,8 @@
+Command Menu Enabled:
+  This is in the CLIM manual but missing from the Allegro source.
+
+Frame-document-highlighted-presentation-1
+ The Clim Environment wants this to be a method, not a function.
+  This is used in the Lisp Listener which provides it's own primary 
+    for this which doesn't do much but then uses call-next-method to 
+    invoke the real main method.

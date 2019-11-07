@@ -1,0 +1,93 @@
+File Allegro background: Probably not a candidate for general patching.
+  Sets the standard font for fix-roman-normal (my preference, I guess)
+  In initialize-instance :after for acl-port: sets default background color to white.
+
+FIle Patch-clim-franz: 
+Command Menu Enabled:
+  This is in the CLIM manual but missing from the Allegro source.
+
+Frame-document-highlighted-presentation-1
+ The Clim Environment wants this to be a method, not a function.
+  This is used in the Lisp Listener which provides it's own primary 
+    for this which doesn't do much but then uses call-next-method to 
+    invoke the real main method.
+
+The above two patches are also in the file called allegro-patches in the
+ Clim-environment distribution as well as in highlighted-presentation-1.
+
+
+File Allegro-gestures: 
+   Key-press-event-p key-press-release-p are defined, used by clim-environment's
+      lisp listener 
+   Gestures control a for show arglist
+                  control shift v for show-value
+                  control shift d for show-documentation
+
+   Stream-read-gesture: fixes the windows version bug that goes into infinite
+   loop when reading the : for keyword arguments.
+
+File erase-output-record:
+  Fixes a bug in erasing an output record arising from use of position relative
+  to parent; by the time the repainting is done, parent is gone and the address
+  is screwed up.  This bug is still in the current Allegro sources.
+
+FIle Extended-Help:
+  I'm not sure I understand this one.  It seems to have something to do with
+  customizing help on complete-input.  Need to explore it more.
+
+Fix Postscript Prologue: has something to do with making the prologue part of a
+postscript file have the information in the right format.  My defsystem says
+that the ACL implementation of clim postscript isn't as buggy as the others and
+doesn't need this patch.
+
+Fix Redisplay Bug: The has to do with incremental-redisplay.  Code is
+ CAPITALIZED in areas where the fix occurs.  In detail:
+   invoke-with-new-output-record if you cons a new record, then set its
+    generation-tick to the current generation-tick.  Other than marked new code,
+    consistent with Allegro source.
+   output-record-set-position :around: this guy notes that an output record
+   moved (for redisplay purposes).
+   bounding-rectangle-set-edges: completely replaces existing method, although
+   shares some code.  Figures out of the guy moved or changed shape or both.  If
+   something changed but width & height stay the same, unless it's a newly
+   created record, save the display state.  If it's a reshaping, turn off
+   output-ok.  If something changed, have parent update it's extent and note
+   that it moved.
+   Compute-difference-set: One line change noted in my source. Allegro sources
+   have bunch of debugging code in it.
+ 
+FIle Graph-formatting-fix: This was specifically for MCL, then Allegro grapher seems
+to be a different source stream and doesn't have the bug.
+
+FIle Highlighted-presentation-1: already described above.
+
+File Input-editing-fix: Word-start-and-end is parameterized by having a global
+value *word-start-atom-break-chars* initialized to the same 4 chars that are
+inlined in the Allegro source.  Comment says "for better control of arglist
+gestures", presumably in clim-environment?  It doesn't appear that anybody
+actually uses this.  Maybe some user is in my code or is lost?
+
+FIle Patch draw pixmap: Think Franz incorporated this.
+
+File patch-read-token-franz: Change is marked.  Allegro beeps at the end, while
+my patch does (return-token gesture).  I don' remember what this was about, but
+might have been related to the problem in ACL on PC, but I think this is
+actually about a different problem.
+
+FIle yank-pretty-print: forces yanked input to be pretty-printed.
+
+File ruled-tables: provides an appropriate record type to format tables with
+lines between the cells.
+
+File Sequence-Element-replace-input: binds buffer-start before going in and uses
+that as the buffer-start argument to presentation-replace-input.  Seems to be
+the right thing to fix some screw-up on input-editing.
+
+
+
+
+
+
+
+
+

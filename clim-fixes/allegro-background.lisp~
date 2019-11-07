@@ -1,0 +1,27 @@
+;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: SILICA; Base: 10; Lowercase: Yes -*-
+
+(in-package :silica)
+
+
+#+mswindows
+(let* ((port (clim:find-port)))
+  (setf (getf (acl-clim::port-default-resources port) :background)
+    clim:+white+))
+
+#+mswindows
+(setq acl-clim::*windows-system-text-style* (clim:parse-text-style '(:Fix :roman :normal)))
+
+(defvar frobnotz nil)
+
+
+#|
+(defmethod get-sheet-resources :around ((port acl-clim::acl-port)
+					(sheet t))
+  (call-next-method))
+
+(defmethod get-sheet-resources ((port acl-clim::acl-port)
+                                (sheet sheet-with-resources-mixin))
+  (list :background (clim:find-named-color  "linen" port)
+	:text-style (parse-text-style '(:fix :roman :normal))))
+
+|#

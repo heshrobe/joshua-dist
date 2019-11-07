@@ -1,0 +1,11 @@
+;;; -*- Mode: Common-lisp: Package: clim-internals -*-
+
+(in-package :clim-internals)
+
+(define-graphics-recording draw-pixmap (ink clipping-region)
+  :bounding-rectangle
+  (with-bounding-rectangle* (left top right bottom) clipping-region
+    (values (max x left)
+	    (max y top)
+	    (min (+ x (pixmap-width pixmap)) right)
+	    (min (+ y (pixmap-height pixmap)) bottom))))

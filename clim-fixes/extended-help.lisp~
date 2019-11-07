@@ -1,0 +1,388 @@
+;;; -*- Mode: LISP; Syntax: Common-lisp; Package: USER; Base: 10; Patch-File: T -*-
+;;; Patch file for Private version 0.0
+;;; Reason: Function CLIM:COMPLETE-INPUT:  map the actual character or event gesture to the gesture
+;;; name and pass that as the "action to display-accept-help.
+;;; CLIM Input Editor Command CLIM-INTERNALS::COM-IE-HELP:  pass the actual gesture name as action
+;;; Written by HES, 1/17/03 09:11:05
+;;; while running on Harry S. Truman from FEP2:>inc-symbolics.ilod.1
+;;; with System 452.22, CLOS 439.0, RPC 443.1, Embedding Support 435.0,
+;;; MacIvory Support 447.0, UX Support 443.0, Development Utilities 439.0,
+;;; Old TV 436.0, Zwei 436.0, Utilities 445.0, RPC Development 438.0,
+;;; MacIvory Development 434.0, UX Development 442.0, Server Utilities 442.0,
+;;; Serial 435.0, Hardcopy 446.0, Zmail 442.1, SCSI 430.0, Tape 444.3, LMFS 442.1,
+;;; NSage 440.0, Extended Help 441.0, CL Developer 428.0,
+;;; Documentation Database 440.12, IP-TCP 452.6, IP-TCP Documentation 422.0,
+;;; CLX 450.0, X Remote Screen 448.3, X Documentation 421.1, NFS Client 442.0,
+;;; NFS Server 439.0, NFS Documentation 423.1, Mailer 438.0, Print Spooler 439.0,
+;;; Domain Name Server 436.0, Lock Simple 437.0, Version Control 405.0,
+;;; Compare Merge 404.0, VC Documentation 401.0,
+;;; Logical Pathnames Translation Files NEWEST, Conversion Tools 436.0,
+;;; Metering 444.0, Metering Substrate 444.1, Hacks 440.0, CLIM 72.0,
+;;; Genera CLIM 72.0, CLX CLIM 72.0, PostScript CLIM 72.0, CLIM Demo 72.0,
+;;; Experimental CLIM Documentation 71.27, Statice Runtime 466.1, Statice 466.0,
+;;; Statice Browser 466.0, Statice Server 466.2, Color Demo 422.0, Color 427.1,
+;;; Graphics Support 431.0, Genera Extensions 16.0, Essential Image Substrate 433.0,
+;;; Color System Documentation 10.0, SGD Book Design 10.0, FrameThrower 14.0,
+;;; FrameThrower XL Interface 14.0, Images 431.2, Image Substrate 440.4,
+;;; Statice Documentation 426.0, Symbolics Concordia 444.0, Graphic Editor 440.0,
+;;; Graphic Editing 441.0, Bitmap Editor 441.0, Graphic Editing Documentation 432.0,
+;;; Postscript 436.0, Concordia Documentation 432.0, Joshua 237.6,
+;;; Joshua Documentation 216.0, Joshua Metering 206.0, Jericho 237.0, C 440.0,
+;;; Lexer Runtime 438.0, Lexer Package 438.0, Minimal Lexer Runtime 439.0,
+;;; Lalr 1 434.0, Context Free Grammar 439.0, Context Free Grammar Package 439.0,
+;;; C Runtime 438.0, Compiler Tools Package 434.0, Compiler Tools Runtime 434.0,
+;;; C Packages 436.0, Syntax Editor Runtime 434.0, C Library Headers 434,
+;;; Compiler Tools Development 435.0, Compiler Tools Debugger 434.0,
+;;; Experimental C Documentation 427.0, Syntax Editor Support 434.0,
+;;; LL-1 support system 438.0, Fortran 434.0, Fortran Runtime 434.0,
+;;; Fortran Package 434.0, Experimental Fortran Doc 428.0, Pascal 433.0,
+;;; Pascal Runtime 434.0, Pascal Package 434.0, Pascal Doc 427.0,
+;;; Experimental Genera 8 5 Patches 1.0, Genera 8 5 System Patches 1.41,
+;;; Genera 8 5 Macivory Support Patches 1.0, Genera 8 5 Mailer Patches 1.1,
+;;; Genera 8 5 Domain Name Server Patches 1.1, Genera 8 5 Metering Patches 1.0,
+;;; Genera 8 5 Joshua Patches 1.0, Genera 8 5 Jericho Patches 1.0,
+;;; Genera 8 5 Joshua Doc Patches 1.0, Genera 8 5 Joshua Metering Patches 1.0,
+;;; Genera 8 5 Statice Runtime Patches 1.0, Genera 8 5 Statice Patches 1.0,
+;;; Genera 8 5 Statice Server Patches 1.0,
+;;; Genera 8 5 Statice Documentation Patches 1.0, Genera 8 5 Clim Patches 1.3,
+;;; Genera 8 5 Genera Clim Patches 1.0, Genera 8 5 Postscript Clim Patches 1.0,
+;;; Genera 8 5 Clx Clim Patches 1.0, Genera 8 5 Clim Doc Patches 1.0,
+;;; Genera 8 5 Clim Demo Patches 1.0, Genera 8 5 Color Patches 1.1,
+;;; Genera 8 5 Images Patches 1.0, Genera 8 5 Color Demo Patches 1.0,
+;;; Genera 8 5 Image Substrate Patches 1.0, Genera 8 5 Lock Simple Patches 1.0,
+;;; Genera 8 5 Concordia Patches 1.2, Genera 8 5 Concordia Doc Patches 1.0,
+;;; Genera 8 5 C Patches 1.0, Genera 8 5 Pascal Patches 1.0,
+;;; Genera 8 5 Fortran Patches 1.0, Genera 8 5 Ns Patches 1.0, address-book 17.1,
+;;; CLIM Environment 3.3, Aisl Clos 3.0, Experimental Mycin 4.0, cold load 1,
+;;; Ivory Revision 4A, IFEP 328, FEP0:>I328-loaders.flod(24),
+;;; FEP0:>I328-info.flod(24), FEP0:>I328-debug.flod(24), FEP0:>I328-lisp.flod(25),
+;;; FEP0:>I328-KERNEL.FEP(44), Boot ROM version 320, Device PROM version 325,
+;;; new genera application 5.6.1, MacIvory SCSI Manager Server 4.3.2a1,
+;;; Toolbox Servers 4.2, MacIvory & RPC library 6.3.4a1,
+;;; MacIvory life support 4.3.8a1, Macintosh System Software 8.1,
+;;; 1024x700 Screen with Genera fonts, Machine serial number 30372,
+;;; Macintosh Quadra 800, Apple Extended Keyboard II,
+;;; FrameThrower Microload 74 (from SYS:COLOR;FRAMETHROWER;INITIALIZATION.LISP.167),
+;;; zmail address book extensions (from ADDRESS-BOOK:CODE;ZMAIL-PATCHES.LISP.7),
+;;; as it says (from W:>hes>zmail-hacks>sort-by-expiration-date.lisp.1),
+;;; Calendar improvements (from W:>hes>zmail-hacks>calendar-improvements.lisp.41),
+;;; user the login name as the password (from W:>hes>fixes>anonymous-login.lisp.1),
+;;; When you grow the array and relocate the image,
+;;; you have to adjust the clipping region! (from W:>hes>fixes>bitmap-screen-growth.lisp.2),
+;;; Fix a bug in replaying after erasing (from W:>hes>fixes>clim-erase-output-record.lisp.3),
+;;; Clim redisplay fixes (from W:>hes>fixes>clim-redisplay-fixes.lisp.1),
+;;; Fix up to color decoding so that draw image works better (from W:>hes>fixes>clim-color-monitor.lisp.1),
+;;; Make drawing to bit-array in color work on Mac (from W:>hes>fixes>color-bitmaps.lisp.2),
+;;; Return true remote depth as well (from W:>hes>fixes>console-remote-depth.lisp.1),
+;;; Fix drawing circle and ellipse arcs (from W:>hes>fixes>clim-elliptical-arc.lisp.13),
+;;; Allow it to specify bits-per-pixel (from W:>hes>fixes>clim-pixmaps.lisp.7),
+;;; dont use iman and get bits per pixel right for macivory with color (from W:>hes>fixes>draw-image.lisp.1),
+;;; remember depth (from W:>hes>fixes>gif.lisp.1),
+;;; Make it work for the char bound to the key that started command (from W:>hes>fixes>com-move-over-close-paren.lisp.1),
+;;; add p (from W:>hes>fixes>directory-mail.lisp.2),
+;;; Prevent circles from squishing under transform (from W:>hes>fixes>macivory-circle-drawing.lisp.2),
+;;; Fix meta-. to find the clos methods even if defgeneric is hidden (from W:>hes>fixes>meta-point-for-define-generic.lisp.2),
+;;; Push our own dict at the beginning to prevent overflow (from W:>hes>fixes>postscript-prologue.lisp.1),
+;;; Add a new option to function-0-q to hardcopy the frame immediately enclosing the selected window. Necessary when you have pop-up frames in an activity such as the project planner. (from W:>hes>fixes>hardcopy-selected-frame.lisp.2),
+;;; The current lpq software has slightly different format than the code was based on (from W:>hes>fixes>new-lpd-queue.lisp.1),
+;;; Make printing postscript files on Unix driven printers work (from W:>hes>fixes>unix-postscript-printing.lisp.4),
+;;; Make the lookup of /homes/user/ go through the currently used pathways by consuting auto.home (from W:>hes>fixes>unix-homes-lookup.lisp.4),
+;;; Ignore RPC pointer errors (from W:>hes>fixes>nfs-patch),
+;;; make left configure go to both-mode when in a calendar mode (from W:>hes>fixes>calendar-mode-to-both.lisp.1).
+
+;;; Patch file for Private version 0.0
+;;; Written by HES, 1/17/03 09:18:24
+;;; while running on Harry S. Truman from FEP2:>inc-symbolics.ilod.1
+;;; with System 452.22, CLOS 439.0, RPC 443.1, Embedding Support 435.0,
+;;; MacIvory Support 447.0, UX Support 443.0, Development Utilities 439.0,
+;;; Old TV 436.0, Zwei 436.0, Utilities 445.0, RPC Development 438.0,
+;;; MacIvory Development 434.0, UX Development 442.0, Server Utilities 442.0,
+;;; Serial 435.0, Hardcopy 446.0, Zmail 442.1, SCSI 430.0, Tape 444.3, LMFS 442.1,
+;;; NSage 440.0, Extended Help 441.0, CL Developer 428.0,
+;;; Documentation Database 440.12, IP-TCP 452.6, IP-TCP Documentation 422.0,
+;;; CLX 450.0, X Remote Screen 448.3, X Documentation 421.1, NFS Client 442.0,
+;;; NFS Server 439.0, NFS Documentation 423.1, Mailer 438.0, Print Spooler 439.0,
+;;; Domain Name Server 436.0, Lock Simple 437.0, Version Control 405.0,
+;;; Compare Merge 404.0, VC Documentation 401.0,
+;;; Logical Pathnames Translation Files NEWEST, Conversion Tools 436.0,
+;;; Metering 444.0, Metering Substrate 444.1, Hacks 440.0, CLIM 72.0,
+;;; Genera CLIM 72.0, CLX CLIM 72.0, PostScript CLIM 72.0, CLIM Demo 72.0,
+;;; Experimental CLIM Documentation 71.27, Statice Runtime 466.1, Statice 466.0,
+;;; Statice Browser 466.0, Statice Server 466.2, Color Demo 422.0, Color 427.1,
+;;; Graphics Support 431.0, Genera Extensions 16.0, Essential Image Substrate 433.0,
+;;; Color System Documentation 10.0, SGD Book Design 10.0, FrameThrower 14.0,
+;;; FrameThrower XL Interface 14.0, Images 431.2, Image Substrate 440.4,
+;;; Statice Documentation 426.0, Symbolics Concordia 444.0, Graphic Editor 440.0,
+;;; Graphic Editing 441.0, Bitmap Editor 441.0, Graphic Editing Documentation 432.0,
+;;; Postscript 436.0, Concordia Documentation 432.0, Joshua 237.6,
+;;; Joshua Documentation 216.0, Joshua Metering 206.0, Jericho 237.0, C 440.0,
+;;; Lexer Runtime 438.0, Lexer Package 438.0, Minimal Lexer Runtime 439.0,
+;;; Lalr 1 434.0, Context Free Grammar 439.0, Context Free Grammar Package 439.0,
+;;; C Runtime 438.0, Compiler Tools Package 434.0, Compiler Tools Runtime 434.0,
+;;; C Packages 436.0, Syntax Editor Runtime 434.0, C Library Headers 434,
+;;; Compiler Tools Development 435.0, Compiler Tools Debugger 434.0,
+;;; Experimental C Documentation 427.0, Syntax Editor Support 434.0,
+;;; LL-1 support system 438.0, Fortran 434.0, Fortran Runtime 434.0,
+;;; Fortran Package 434.0, Experimental Fortran Doc 428.0, Pascal 433.0,
+;;; Pascal Runtime 434.0, Pascal Package 434.0, Pascal Doc 427.0,
+;;; Experimental Genera 8 5 Patches 1.0, Genera 8 5 System Patches 1.41,
+;;; Genera 8 5 Macivory Support Patches 1.0, Genera 8 5 Mailer Patches 1.1,
+;;; Genera 8 5 Domain Name Server Patches 1.1, Genera 8 5 Metering Patches 1.0,
+;;; Genera 8 5 Joshua Patches 1.0, Genera 8 5 Jericho Patches 1.0,
+;;; Genera 8 5 Joshua Doc Patches 1.0, Genera 8 5 Joshua Metering Patches 1.0,
+;;; Genera 8 5 Statice Runtime Patches 1.0, Genera 8 5 Statice Patches 1.0,
+;;; Genera 8 5 Statice Server Patches 1.0,
+;;; Genera 8 5 Statice Documentation Patches 1.0, Genera 8 5 Clim Patches 1.3,
+;;; Genera 8 5 Genera Clim Patches 1.0, Genera 8 5 Postscript Clim Patches 1.0,
+;;; Genera 8 5 Clx Clim Patches 1.0, Genera 8 5 Clim Doc Patches 1.0,
+;;; Genera 8 5 Clim Demo Patches 1.0, Genera 8 5 Color Patches 1.1,
+;;; Genera 8 5 Images Patches 1.0, Genera 8 5 Color Demo Patches 1.0,
+;;; Genera 8 5 Image Substrate Patches 1.0, Genera 8 5 Lock Simple Patches 1.0,
+;;; Genera 8 5 Concordia Patches 1.2, Genera 8 5 Concordia Doc Patches 1.0,
+;;; Genera 8 5 C Patches 1.0, Genera 8 5 Pascal Patches 1.0,
+;;; Genera 8 5 Fortran Patches 1.0, Genera 8 5 Ns Patches 1.0, address-book 17.1,
+;;; CLIM Environment 3.3, Aisl Clos 3.0, Experimental Mycin 4.0, cold load 1,
+;;; Ivory Revision 4A, IFEP 328, FEP0:>I328-loaders.flod(24),
+;;; FEP0:>I328-info.flod(24), FEP0:>I328-debug.flod(24), FEP0:>I328-lisp.flod(25),
+;;; FEP0:>I328-KERNEL.FEP(44), Boot ROM version 320, Device PROM version 325,
+;;; new genera application 5.6.1, MacIvory SCSI Manager Server 4.3.2a1,
+;;; Toolbox Servers 4.2, MacIvory & RPC library 6.3.4a1,
+;;; MacIvory life support 4.3.8a1, Macintosh System Software 8.1,
+;;; 1024x700 Screen with Genera fonts, Machine serial number 30372,
+;;; Macintosh Quadra 800, Apple Extended Keyboard II,
+;;; FrameThrower Microload 74 (from SYS:COLOR;FRAMETHROWER;INITIALIZATION.LISP.167),
+;;; zmail address book extensions (from ADDRESS-BOOK:CODE;ZMAIL-PATCHES.LISP.7),
+;;; as it says (from W:>hes>zmail-hacks>sort-by-expiration-date.lisp.1),
+;;; Calendar improvements (from W:>hes>zmail-hacks>calendar-improvements.lisp.41),
+;;; user the login name as the password (from W:>hes>fixes>anonymous-login.lisp.1),
+;;; When you grow the array and relocate the image,
+;;; you have to adjust the clipping region! (from W:>hes>fixes>bitmap-screen-growth.lisp.2),
+;;; Fix a bug in replaying after erasing (from W:>hes>fixes>clim-erase-output-record.lisp.3),
+;;; Clim redisplay fixes (from W:>hes>fixes>clim-redisplay-fixes.lisp.1),
+;;; Fix up to color decoding so that draw image works better (from W:>hes>fixes>clim-color-monitor.lisp.1),
+;;; Make drawing to bit-array in color work on Mac (from W:>hes>fixes>color-bitmaps.lisp.2),
+;;; Return true remote depth as well (from W:>hes>fixes>console-remote-depth.lisp.1),
+;;; Fix drawing circle and ellipse arcs (from W:>hes>fixes>clim-elliptical-arc.lisp.13),
+;;; Allow it to specify bits-per-pixel (from W:>hes>fixes>clim-pixmaps.lisp.7),
+;;; dont use iman and get bits per pixel right for macivory with color (from W:>hes>fixes>draw-image.lisp.1),
+;;; remember depth (from W:>hes>fixes>gif.lisp.1),
+;;; Make it work for the char bound to the key that started command (from W:>hes>fixes>com-move-over-close-paren.lisp.1),
+;;; add p (from W:>hes>fixes>directory-mail.lisp.2),
+;;; Prevent circles from squishing under transform (from W:>hes>fixes>macivory-circle-drawing.lisp.2),
+;;; Fix meta-. to find the clos methods even if defgeneric is hidden (from W:>hes>fixes>meta-point-for-define-generic.lisp.2),
+;;; Push our own dict at the beginning to prevent overflow (from W:>hes>fixes>postscript-prologue.lisp.1),
+;;; Add a new option to function-0-q to hardcopy the frame immediately enclosing the selected window. Necessary when you have pop-up frames in an activity such as the project planner. (from W:>hes>fixes>hardcopy-selected-frame.lisp.2),
+;;; The current lpq software has slightly different format than the code was based on (from W:>hes>fixes>new-lpd-queue.lisp.1),
+;;; Make printing postscript files on Unix driven printers work (from W:>hes>fixes>unix-postscript-printing.lisp.4),
+;;; Make the lookup of /homes/user/ go through the currently used pathways by consuting auto.home (from W:>hes>fixes>unix-homes-lookup.lisp.4),
+;;; Ignore RPC pointer errors (from W:>hes>fixes>nfs-patch),
+;;; make left configure go to both-mode when in a calendar mode (from W:>hes>fixes>calendar-mode-to-both.lisp.1).
+
+
+#+genera
+(SCT:FILES-PATCHED-IN-THIS-PATCH-FILE 
+  "SYS:CLIM;REL-2;CLIM;COMPLETER.LISP.102"
+  "SYS:CLIM;REL-2;CLIM;INPUT-EDITOR-COMMANDS.LISP.147")
+
+#+genera
+(SCT:NOTE-PRIVATE-PATCH "This Allows various *help-gestures* to be treated in different ways.")
+
+
+;========================
+#+genera(SCT:BEGIN-PATCH-SECTION)
+#+genera(SCT:PATCH-SECTION-SOURCE-FILE "SYS:CLIM;REL-2;CLIM;COMPLETER.LISP.102")
+#+genera (SCT:PATCH-SECTION-ATTRIBUTES
+  "-*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: CLIM-INTERNALS; Base: 10; Lowercase: Yes -*-")
+
+#-genera(in-package :clim-internals)
+
+(defun complete-input (stream function
+			      &key partial-completers allow-any-input possibility-printer
+			      (help-displays-possibilities t))
+  (declare (dynamic-extent function))
+  (declare (values answer-object success string))
+  (with-temporary-string (stuff-so-far :length 100 :adjustable t)
+    (with-delimiter-gestures (partial-completers)
+      (with-activation-gestures (*magic-completion-gestures*)
+	(flet ((completion-help (stream action string-so-far)
+		 (declare (ignore string-so-far))
+		 (display-completion-possibilities
+		   stream function stuff-so-far
+		   :possibility-printer possibility-printer
+		   :possibility-type
+		   (if (MEMBER ACTION *HELP-GESTURES*)
+		       (and help-displays-possibilities :possibilities)
+		       action))))
+	  (declare (dynamic-extent #'completion-help))
+	  (with-accept-help ((:subhelp #'completion-help))
+	    ;; Keep the input editor from handling help and possibilities gestures.
+	    ;; They will get treated as activation gestures, thus ensuring that 
+	    ;; STUFF-SO-FAR will be accurate when we display the possibilities.
+	    (let ((*ie-help-enabled* nil)
+		  (location (stream-scan-pointer stream))
+		  token ch
+		  unread return extend
+		  completion-mode completion-type
+		  answer-object)
+	      (flet ((ends-in-char-p (string char)
+		       (let ((sl (length string)))
+			 (and (plusp sl)
+			      (char-equal (aref string (1- sl)) char)))))
+		(declare (dynamic-extent #'ends-in-char-p))
+		(loop
+		  (setq unread nil return nil extend nil)
+		  (with-input-context (`(completer :stream ,stream
+						   :function ,function
+						   :possibility-printer ,possibility-printer
+						   :prefix ,stuff-so-far
+						   :location ,location)) ()
+		       (progn 
+			 (setq token (read-token stream))
+			 (setq ch (stream-read-gesture stream)))
+		     (t (beep stream)))
+		  (extend-vector stuff-so-far token)
+		  (cond ((null ch)
+			 (error "Null character?"))
+			((key-press-event-p ch)
+			 (cond ((member ch *help-gestures* 
+					:test #'keyboard-event-matches-gesture-name-p)
+				(setq completion-mode ':help))
+			       ((member ch *possibilities-gestures* 
+					:test #'keyboard-event-matches-gesture-name-p)
+				(setq completion-mode ':possibilities))
+			       ((member ch *apropos-possibilities-gestures* 
+					:test #'keyboard-event-matches-gesture-name-p)
+				(setq completion-mode ':apropos-possibilities))
+			       ((member ch *completion-gestures*
+					:test #'keyboard-event-matches-gesture-name-p)
+				(setq completion-mode ':complete-maximal
+				      ;; If the completion fails, unread this char
+				      ;; so that a higher level gets the chance to
+				      ;; try the completion again.  For example, when
+				      ;; several completion types are OR'ed together.
+				      unread 'unless-completed))
+			       ((member ch partial-completers 
+					:test #'keyboard-event-matches-gesture-name-p)
+				(setq completion-mode ':complete-limited
+				      unread t extend t return 'if-completed))
+			       ;; What about "overloaded" partial completers??
+			       ((delimiter-gesture-p ch)
+				(setq completion-mode (if allow-any-input nil ':complete)
+				      unread t extend t return t))
+			       ((activation-gesture-p ch)
+				(setq completion-mode (if allow-any-input nil ':complete) 
+				      unread t return t))))
+			((eq ch *end-of-file-marker*)
+			 (setq completion-mode (if allow-any-input nil ':complete) 
+			       return t))
+			(t			;mouse click?
+			 (beep stream)))
+
+		  ;; OK, this is a SPECIAL case.  We check to see if the null string
+		  ;; was read, and if so, we signal a parse-error (because ACCEPT
+		  ;; handles this specially) so that the default value will be filled
+		  ;; in by ACCEPT.
+		  ;; There is a tension here between wanting to fill in the default and
+		  ;; use the maximal left substring when the user types #\End or a field
+		  ;; terminator that also does completion.  Putting this check before the
+		  ;; completion code means that the default always wins.
+		  (when (and return (zerop (fill-pointer stuff-so-far)))
+		    (when (eq unread t)
+		      (stream-unread-gesture stream ch))
+		    (when (input-editing-stream-p stream)
+		      (rescan-if-necessary stream))
+		    (signal 'empty-completion-error
+			    :format-string "Attempting to complete the null string"))
+
+		  (cond ((member completion-mode '(:help :possibilities :apropos-possibilities))
+			 (IF (EQL COMPLETION-MODE :HELP)
+			     (LET ((GESTURE (FIND CH *HELP-GESTURES* 
+						  :TEST #'KEYBOARD-EVENT-MATCHES-GESTURE-NAME-P)))
+			       (DISPLAY-ACCEPT-HELP STREAM (OR GESTURE COMPLETION-MODE) ""))
+			     ;; SINCE WE'VE ASKED THE INPUT EDITOR NOT TO DO THIS,
+			     ;; WE MUST DO IT HERE OURSELVES
+			     (DISPLAY-ACCEPT-HELP STREAM COMPLETION-MODE ""))
+			 (setq completion-type nil))
+			(completion-mode
+			 (multiple-value-bind (string success object nmatches)
+			     (funcall function stuff-so-far completion-mode)
+			   (setq answer-object object)
+			   (cond ((= nmatches 0)
+				  ;; No valid completion, so no replace input
+				  (setq completion-type 'invalid)
+				  (when extend
+				    (vector-push-extend ch stuff-so-far)))
+				 ((= nmatches 1)
+				  (setq completion-type (if success 'unique 'ambiguous))
+				  ;; Replace contents of stuff-so-far with completion
+				  (setf (fill-pointer stuff-so-far) 0)
+				  (extend-vector stuff-so-far string)
+				  )
+				 ((> nmatches 1)
+				  (setq completion-type 'ambiguous)
+				  ;; Replace contents of stuff-so-far with completion
+				  (setf (fill-pointer stuff-so-far) 0)
+				  (extend-vector stuff-so-far string)
+				  ;; Need-to-add-delimiter test??
+				  (when (and extend
+					     (not (ends-in-char-p string ch)))
+				    (vector-push-extend ch stuff-so-far)))))))
+
+		  ;; Check for errors unconditionally, remembering that we may not have
+		  ;; called the completer at all (completion-type = NIL)
+		  (ecase completion-type
+		    ((nil unique left-substring))	;no possible errors to report
+		    (invalid
+		      (unless allow-any-input
+			(when unread
+			  (stream-unread-gesture stream ch))
+			(signal 'simple-completion-error
+				:format-string "Invalid completion: ~A"
+				:format-arguments (list (evacuate-temporary-string stuff-so-far)))))
+		    (ambiguous
+		      ;; Only beep on ambiguous full completions
+		      ;;--- This should really signal an AMBIGUOUS-COMPLETION-ERROR,
+		      ;;--- letting a higher level condition handler do the beeping
+		      (when (eq completion-mode :complete)
+			(beep stream))))
+
+		  (when (eq return 'if-completed)
+		    (unless (eq completion-type 'unique)
+		      (setq return nil)))
+
+		  ;; Decide whether or not to return, remembering that
+		  ;; we might have called the completer.
+		  (when return
+		    (when (or (member completion-type '(nil unique left-substring))
+			      allow-any-input)
+		      ;; Leave the last delimiter for our caller
+		      (when (eq unread t)
+			(stream-unread-gesture stream ch))
+		      ;; Must REPLACE-INPUT after UNREAD-GESTURE so the delimiter is unread
+		      ;; into the input editor's buffer, not the underlying stream's buffer
+		      (unless (stream-rescanning-p stream)
+			(replace-input stream stuff-so-far :buffer-start location))
+		      (return-from complete-input
+			(values answer-object t (evacuate-temporary-string stuff-so-far)))))
+
+		  ;; Not returning yet, but update the input editor's buffer anyway
+		  (unless (stream-rescanning-p stream)
+		    (replace-input stream stuff-so-far :buffer-start location)))))))))))
+
+
+;========================
+#+genera(SCT:BEGIN-PATCH-SECTION)
+#+genera(SCT:PATCH-SECTION-SOURCE-FILE "SYS:CLIM;REL-2;CLIM;INPUT-EDITOR-COMMANDS.LISP.147")
+#+genera(SCT:PATCH-SECTION-ATTRIBUTES
+  "-*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: CLIM-INTERNALS; Base: 10; Lowercase: Yes -*-")
+
+#-genera(in-package :clim-internals)
+;;; Help commands, handled by special magic
+
+(define-input-editor-command (com-ie-help :rescan nil :type completion)
+			     (stream gesture)
+  "Display completion help"
+  (let ((gesture (find gesture *help-gestures*
+		      :test #'keyboard-event-matches-gesture-name-p)))
+    (display-accept-help stream (or gesture :help) "")))
+

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="1"
+   name=""
+   committed-date="2006-01-06T16:58:57.444318Z"
+   url="file:///afs/csail/u/h/hes/REPOS/josh-dist/clim-fixes"
+   last-author="hes"
+   kind="dir"
+   uuid="73f4128a-b309-0410-aaa5-f9d3656b4317"
+   revision="1"/>
+<entry
+   committed-rev="1"
+   name="erase-output-record.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="4f75392f6c8812ecf8f4aba86501d7ff"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:03.000000Z"/>
+<entry
+   committed-rev="1"
+   name="mcl-ie-arglist.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="aba53f662ae81f08e6f326eda0f287eb"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:03.000000Z"/>
+<entry
+   name="MACOSX-binaries"
+   kind="dir"/>
+<entry
+   name="WINDOWS-binaries"
+   kind="dir"/>
+<entry
+   committed-rev="1"
+   name="yank-print-pretty.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="eb03e6a62f64401569aa68a3a689ad45"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="ruled-tables.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="418401e0617d8237ae3a7441a3951ec3"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="allegro-gestures.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="d97d7c01f5c4baabcf9b52d982fe124d"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="mcl-dialog-boolean.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="b1c12e598cb95b62b52ce78bf902d792"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="extended-help.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="3a97895749edf80a3cecf5e6246ef996"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="highlighted-presentation-1.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="2a5451e423ca51c724d2a0e5b8ecb996"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="fix-redisplay-bug.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="9c5cd5d3b11351efafa614555501bc66"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="newer-cad-grapher.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="14e5648066df56cde04fea4dd725ff2b"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="graph-formatting-fix.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="426f86d0eea498f10be463a33741291e"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="fix-postscript.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="a2181cd4550864051f6cd402bc63eb27"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="patch-clim-franz.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="86ccdad2ab4cd090b1b25f9ac6ed8b2f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="clim-fixes-defsystem.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="e4b1271df9c8f12192afdc7e800ac81f"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="allegro-background.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="af22209a31256930490b8819b3191486"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="input-editing-fix.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="90dae0f5dcc06b60b7c02b62c41db927"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="patch-read-token-franz.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="4335b219f9f1c38c1726b01e7068d25a"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+<entry
+   committed-rev="1"
+   name="sequence-element-replace-input.lisp"
+   text-time="2006-01-06T17:02:04.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="869f4eeebf547e705340d7536ebe26af"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:04.000000Z"/>
+</wc-entries>

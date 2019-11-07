@@ -1,0 +1,54 @@
+;;; -*- Mode: Common-lisp; Package: common-lisp-user -*-
+
+(in-package :common-lisp-user)
+
+;;;(eval-when (:compile-toplevel :execute :load-toplevel)
+;;;  (proclaim '(optimize (debug 3) (safety 3))))
+
+#+mcl(require :appleevent-toolkit)
+
+#+(and allegro macosx) (require :climxm)
+#+(and allegro microsoft) (require :climnt)
+
+(let* ((loading-file *load-truename*)
+       (directory (cdr (pathname-directory loading-file))))
+  (print loading-file)
+  ;;; note that this one doesn't need the mcl :external-format because it's for allegro
+  ;;; only
+  #+allegro
+  (load (make-pathname :directory `(:absolute ,@directory)
+		       :device (pathname-device loading-file)
+		       :name "system-class" :type "lisp"))
+  (load (make-pathname :directory `(:absolute ,@directory "xml-parser")
+		       :device (pathname-device loading-file)
+		       :name "xml-parser-defsystem" :type "lisp"))
+  (load (make-pathname :directory `(:absolute ,@directory "clim-fixes") 
+		       :device (pathname-device loading-file)
+		       :name "clim-fixes-defsystem" :type "lisp")
+        #+mcl :external-format #+mcl :unix)
+  (load (make-pathname :directory `(:absolute ,@directory "clim-env" "portable-lisp-environment") 
+		       :device (pathname-device loading-file)
+		       :name "load-env" :type "lisp")
+        #+mcl :external-format #+mcl :unix)
+  (load (make-pathname :directory `(:absolute ,@directory "joshua" "code")
+		       :device (pathname-device loading-file)
+		       :name "joshua-defsystem" :type "lisp")
+        #+mcl :external-format #+mcl :unix)
+  (load (make-pathname :directory `(:absolute ,@directory "joshua" "developer")
+		       :device (pathname-device loading-file)
+		       :name "jd-defsystem" :type "lisp")
+        #+mcl :external-format #+mcl :unix)
+  )
+
+(defun build-it (&key compile recompile)
+  (when compile
+    (compile-system 'clim-fixes :recompile recompile))
+  (load-system 'clim-fixes)
+  (load-clim-env :compile compile :recompile recompile)
+  (when compile
+    (compile-system 'joshua :recompile recompile))
+  (load-system 'joshua)
+  (when compile
+    (compile-system 'joshua-developer :recompile recompile))
+  (load-system 'joshua-developer)
+  )

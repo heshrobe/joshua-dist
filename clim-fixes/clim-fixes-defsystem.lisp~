@@ -1,0 +1,76 @@
+;;; -*- Syntax: Ansi-common-lisp; Package: cl-USER; Base: 10; Mode: LISP -*- 
+
+(in-package :cl-user)
+
+(defvar *clim-fixes-home-directory* :not-yet)
+(defvar *clim-fixes-wild-directory* :not-yet)
+
+(eval-when (:execute :load-toplevel)
+  (when (eql *clim-fixes-home-directory* :not-yet)
+    (let* ((loading-file *load-truename*)
+	   (host (pathname-host loading-file))
+	   (device (pathname-device loading-file))
+           (home-dir (pathname-directory loading-file)))
+      (setq *clim-fixes-home-directory* (make-pathname :directory home-dir :host host :device device)
+            )
+      (setf (logical-pathname-translations "clim-fixes")
+	`(("code;*.*"	,*clim-fixes-home-directory*)
+	  ))))) 
+
+#+mcl
+(loop for name in '("load-system" "compile-system" "defsystem")
+      for upcased = (string-upcase name)
+      for clim-ds-sym = (intern upcased 'clim-ds)
+      do (import clim-ds-sym 'clim)
+      do (import clim-ds-sym 'cl-user)
+      do (export clim-ds-sym 'clim))
+
+#+mcl
+(let ((good-string (string-upcase "boolean")))
+  (unless (find-symbol good-string 'clim)
+    (import (find-symbol good-string) 'clim)
+    (export (find-symbol good-string) 'clim)))
+
+#+mcl
+(clim:defsystem clim-fixes
+    (:default-pathname "clim-fixes:code;" :default-package :clim-internals)
+    ("erase-output-record")
+    ("extended-help")
+    ("fix-redisplay-bug")
+    ;; use the Allegro formatter and not this fix 
+    ;; ("graph-formatting-fix")
+    ("newer-cad-grapher")
+    ;; ("dialog-boolean-bug")
+    ("mcl-ie-arglist")
+    ("input-editing-fix")
+    )
+
+#+allegro
+(defsystem clim-fixes
+    (:default-pathname "clim-fixes:code;" :default-package :clim-internals)
+  (:serial
+   #+mswindows
+    "allegro-background"
+    "allegro-gestures"
+    "erase-output-record"
+    "extended-help"
+    "fix-redisplay-bug"
+    ;; this fixes something that isn't broken in the allegro
+    ;; sources but the patch (based on MCL sources) breaks
+    ;; the grapher
+    ;; "graph-formatting-fix"
+    "highlighted-presentation-1"
+    "newer-cad-grapher"
+    "patch-clim-franz"
+    ))
+
+#+genera
+(sct:defsystem clim-fixes
+    (:default-pathname "clim-fixes:code;" :default-package :clim-internals) 
+  (:serial
+    "erase-output-record"
+    "extended-help"
+    "fix-redisplay-bug"
+    "graph-formatting-fix"
+    "newer-cad-grapher"
+    ))

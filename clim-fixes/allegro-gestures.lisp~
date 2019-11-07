@@ -1,0 +1,19 @@
+;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: CLIM-INTERNALS; Base: 10; Lowercase: Yes -*-
+
+;; $fiHeader: gestures.lisp,v 1.20 92/12/03 10:26:44 cer Exp $
+
+(in-package :clim-internals)
+
+;; Returns T only for key press events
+(defun-inline key-press-event-p (x)
+  (or (characterp x)
+      (typep x 'key-press-event)))
+
+(defun-inline key-release-event-p (x)
+  (typep x 'key-release-event))
+
+#+allegro
+(define-input-editor-gestures
+  (:ie-show-arglist            :a   :control :shift)
+  (:ie-show-value            :v   :control :shift)
+  (:ie-show-documentation   :d   :control :shift))

@@ -1,0 +1,230 @@
+Really short summary:
+
+There are several methods for redisplay-frame-pane:
+
+  (DEFMETHOD REDISPLAY-FRAME-PANE :AROUND APPLICATION-FRAME T)
+  (DEFMETHOD REDISPLAY-FRAME-PANE APPLICATION-FRAME T)
+  (DEFMETHOD REDISPLAY-FRAME-PANE :AFTER APPLICATION-FRAME CLIM-STREAM-PANE)
+  (DEFMETHOD REDISPLAY-FRAME-PANE APPLICATION-FRAME PANE-DISPLAY-MIXIN)
+  (DEFMETHOD REDISPLAY-FRAME-PANE APPLICATION-FRAME UPDATING-OUTPUT-STREAM-MIXIN)
+
+The first of these calls window-clear if :force-p is t.  Window-clear leaves the region of the menu's mirror at 0:1, 0:1, see below.
+It then does call-next-method.
+
+For the command-menu-pane, the primary method is the last one above which does a call-next-method inside an updaring-output form.
+The next method invokes the display function.
+But the mirror's region has no width so you get wrap-around trying to print the menu items.
+
+The after method calls change-space-requirements which puts the mirror region into a
+size whose width is reasonable but whose height is 525 pixels (caused by the bogus display).
+
+________________________________________________________________________________
+
+
+Now for the long summary of the how window-clear leaves the mirror region at 0:1 0:1:
+
+Redisplay-frame-pane with :Force-p t is called during the initial setup of the frame
+
+(defmethod redisplay-frame-pane :around ((frame application-frame) pane
+					 &key force-p)
+  (let ((pane-object (if (typep pane 'pane)
+			 pane
+			 (find-pane-named frame pane))))
+    ...
+                (window-clear pane-object))	      
+	      (call-next-method))
+
+It calls window-clear when either (pane-needs-redisplay pane-object) returns the two values t t or when :force-p is t.  
+
+Note: Commenting out the call to window-clear does indeed keep the menu from getting screwed up.  However, the rest of the windows get cleared.
+
+Window-clear in turn calls change-space-requirements,
+but only after setting the stream-width and height to 0 and clearing the output-record of the output history which causes its width and height to become 0.
+
+(defmethod window-clear ((pane clim-stream-pane))
+  (stream-close-text-output-record pane)
+  (let ((output-history (stream-output-history pane)))
+    (with-bounding-rectangle* (left top right bottom) output-history
+      (when (sheet-viewable-p pane)
+	(medium-clear-area (sheet-medium pane) left top right bottom)))
+    (clear-output-record output-history))                 <<<< 
+  (window-erase-viewport pane)
+  (when-let ((cursor (stream-text-cursor pane)))
+    (setf (cursor-position cursor)
+          (page-cursor-initial-position pane)))
+  (setf (stream-width pane) 0)                                <<<<<
+  (setf (stream-height pane) 0)                               <<<<<
+  (scroll-extent pane 0 0)
+  (change-space-requirements pane))
+
+
+window-clear calls change-space-requirements on the command-menu-pane after doing the highlighted actions above.
+
+The command-menu-pane has mixins layout-protocol-mixin and space-requirement-options-mixin.
+The main method for layout-protocol mixin
+invokes change-space-requirements on its parent the vrack-pane associated with the command-menu-pane which the calls it on its parent
+the top-level-sheet-pane.
+
+This in turn calls layout-frame on the actual-frame.
+
+This  in turn calls allocate-space on the pane gotten from (frame-panes frame).
+This has type box-layout-mixin.
+The corresponding method calls box-layout-mixin/vertically-allocate-space and this calls layout-child on all its children after getting space requirements from
+box-layout-mixin/vertically-allocate-space-aux*.
+
+Box-layout-mixin/vertically-allocate-space is called with args real-width real-height which are correct (900 700).
+
+It calls box-layout-mixin/vertically-allocate-space-aux* with the args pane, real-width, real-height (900 700)
+
+ (LET* ((CONTENT-SRS
+                (MAPCAR #'(LAMBDA (C) (VERTICALLY-CONTENT-SR*** BOX C HEIGHT))  <<<<
+                        (BOX-LAYOUT-MIXIN-CLIENTS BOX)))
+               (ALLOT (MAPCAR #'SPACE-REQUIREMENT-HEIGHT CONTENT-SRS))
+
+Now, Vertically-context-sr*** calls compose-space if the client has box-client-pane which in this case is the command-menu-pane
+          (SR
+             (IF (BOX-CLIENT-PANE CLIENT)
+                 (COMPOSE-SPACE (BOX-CLIENT-PANE CLIENT))
+                 (MAKE-SPACE-REQUIREMENT :WIDTH 0 :MIN-WIDTH 0 :MAX-WIDTH 0
+                                         :HEIGHT 0 :MIN-HEIGHT 0 :MAX-HEIGHT
+                                         0)))
+
+Compose space has 2 around methods and a primary that are applicable:
+arounds:space-requirement-options-mixin and layout-protocol-mixin
+primary: stream-pane.
+
+The primary calculates w h width height all to be 0,   due to what window-clear did before this
+
+(defmethod compose-space ((pane stream-pane))
+(let* ((w (bounding-rectangle-max-x (stream-output-history pane)))  << 0
+         (h (bounding-rectangle-max-y (stream-output-history pane)))  << 0
+         (width (max w (stream-width pane))) << 0
+         (height (max h (stream-height pane)))) << 0
+(make-space-requirement
+     :min-width (clamp w 0 width)
+     :width width
+     :max-width +fill+
+     :min-height (clamp h 0 height)
+     :height height
+     :max-height +fill+))
+     ...
+     )
+
+So VERTICALLY-CONTENT-SR*** returns two values:
+(478.40625 46.59375 0.0 175.0)   <<<< already screwed here.
+(900 900 900 900)
+The third entry corresponds to the command-menu-pane. 
+
+Now BOX-LAYOUT-MIXIN/VERTICALLY-ALLOCATE-SPACE calls layout-child inside this loop:
+
+(MULTIPLE-VALUE-BIND (HEIGHTS WIDTHS)
+          (BOX-LAYOUT-MIXIN/VERTICALLY-ALLOCATE-SPACE-AUX* PANE REAL-WIDTH
+                                                           REAL-HEIGHT)
+        (LET ((X 0))
+          (LOOP FOR CHILD IN (BOX-LAYOUT-MIXIN-CLIENTS PANE)
+                FOR HEIGHT IN HEIGHTS
+                FOR WIDTH IN WIDTHS
+                DO (WHEN (BOX-CLIENT-PANE CHILD)
+                     (LAYOUT-CHILD (BOX-CLIENT-PANE CHILD)
+                                   (PANE-ALIGN-X (BOX-CLIENT-PANE CHILD))
+                                   (PANE-ALIGN-Y (BOX-CLIENT-PANE CHILD))
+                                   ((LAMBDA (HEIGHT WIDTH) HEIGHT WIDTH) X 0)
+                                   ((LAMBDA (HEIGHT WIDTH) WIDTH HEIGHT) X 0)
+                                   ((LAMBDA (HEIGHT WIDTH) HEIGHT WIDTH) WIDTH
+                                    REAL-WIDTH)
+                                   ((LAMBDA (HEIGHT WIDTH) HEIGHT WIDTH)
+                                    REAL-HEIGHT HEIGHT)))
+				    (INCF X HEIGHT)
+				    (INCF X Y-SPACING))))
+
+(where heights and widhs are what were returned by BOX-LAYOUT-MIXIN/VERTICALLY-ALLOCATE-SPACE-AUX*)
+
+(Note: All of this code is actually generated by the dada macro, which is why it's so odd)
+
+At this call to layout-child everything is still OK, but it gets called with its height argument = 0.
+
+Layout-child calls resize-sheet and allocate space with child-height equal to the passed in height argument = 0 (because align-y is :expand)
+
+(let (...
+       (child-height (if (eql :expand align-y)
+                           height
+                           (clamp height
+                                  (space-requirement-min-height sr)
+                                  (space-requirement-max-height sr)))))
+				  ...
+    (move-sheet child child-x child-y)
+    (resize-sheet child child-width child-height)
+    (allocate-space child child-width child-height))
+
+Move-sheet calls (setf sheet-transformation) which calls update-mirror-geometry with everything OK on entry.
+
+Then, Resize-sheet does this:
+
+(defmethod resize-sheet ((sheet basic-sheet) width height)
+  (setf (sheet-region sheet)
+        (make-bounding-rectangle 0 0 width height)))
+
+Where height is now 0 although the width is fine.
+
+(setf sheet-region) has this method
+
+(defmethod (setf sheet-region) :after (region (sheet basic-sheet))
+  (declare (ignore region))
+  (invalidate-cached-regions sheet)
+  (map-over-sheets #'(lambda (sheet)
+                       (when (sheet-direct-mirror sheet)
+                         (update-mirror-geometry sheet))) <<<<<<
+                   sheet)
+  (note-sheet-region-changed sheet))
+
+And this gets us to a second call to update-mirror-geometry and at this point, the input argument is a bounding-box x 0:900 y 0:0.
+Although the mirror's bounding box is still OK.
+
+Now comes the funny part:
+
+In Update-Mirror-Geometry:
+(let* ((parent (sheet-parent sheet))
+         (sheet-region-in-native-parent
+           ;; this now is the wanted sheet mirror region
+           (transform-region (sheet-native-transformation parent)
+                             (region-intersection (sheet-region parent)
+                                                  (transform-region (sheet-transformation sheet)
+                                                                    (sheet-region sheet))))))
+    (when (region-equal sheet-region-in-native-parent +nowhere+)
+      (%set-mirror-geometry sheet :invalidate-transformations t)  <<<<<
+      (return-from update-mirror-geometry))
+
+The sheet region at this point has a real width but a height of 0.  That causes the region intersection to be empty (i.e. +nowhere+)
+so we call %set-mirror-geometry.
+
+Note that MR isn't provided as an argument in this case which causes the region to be 0,0,1,1.  Up to this point, the width of the region
+was fine, but now it becomes 1 which causes the menu items to get displayed vertically because the command-menu-pane has eol-action of wrap
+
+(defun %set-mirror-geometry (sheet &key
+                                     (MT (make-translation-transformation -5 -5))
+                                     (MR (make-rectangle* 0 0 1 1))<<<<<<<<<<<
+                                     (invalidate-transformations nil))
+  (setf (%sheet-mirror-region sheet) MR)
+  (setf (%sheet-mirror-transformation sheet) MT)
+  (when (and (sheet-direct-mirror sheet)
+             (not (eql *configuration-event-p* sheet)))
+    (let ((port (port sheet))
+          (mirror (sheet-direct-mirror sheet)))
+      (port-set-mirror-region port mirror MR)
+      ;; TOP-LEVEL-SHEET-PANE is our window (and it is managed by the window
+      ;; manager - decorations and such. We can't pinpoint exact translation. On
+      ;; the other hand UNMANAGED-TOP-LEVEL-SHEET-PANE is essential for menus
+      ;; and has exact position set (thanks to not being managed by WM).
+      (unless (and (typep sheet 'top-level-sheet-pane)
+                   (null (typep sheet 'unmanaged-top-level-sheet-pane)))
+       (port-set-mirror-transformation port mirror MT)))
+    (when invalidate-transformations
+      (with-slots (native-transformation device-transformation) sheet
+        (setf native-transformation nil
+              device-transformation nil)))))
+
+
+Next we get to layout-child again, this time through change-space-requirements (still under the around method).
+At this point we're already screwed.  The bounding box of the mirror is now 0:1 0:1
+
+(after all this, I checked that doing a window-clear on the command-menu-pane leaves the region of the mirror as 0:1 0:1). 

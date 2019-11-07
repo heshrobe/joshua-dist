@@ -1,0 +1,188 @@
+
+================================================================================
+
+
+There is also an after method on Redisplay-frame-pane
+
+redisplay-frame-pane :after ((frame application-frame)
+				 (pane clim-stream-pane)
+				 &key force-p)
+
+that calls change-space-requirements on the pane; but things are already screwed up by then.
+
+Note: command-menu-pane is a sub-class of updating-output-stream-mixin which has a primary method for redisplay-frame-pane.
+This main method sets up an updating-output call and then does a call-next-method (which is where the call to the menu displayer happens).
+
+
+Change-space-requirements has a :before, main and :after methods on layout-protocol-mixin.
+The breakpoints show that the menu is still OK during the main method on the 2nd pass
+until after it calls change-space-requirements on the sheet-parent
+
+(defmethod change-space-requirements ((pane layout-protocol-mixin)
+                                      &key resize-frame &allow-other-keys)
+  (when (sheet-parent pane)
+    (when (eql pane aplan::*foo*) (break "CSR 1a"));; on 2nd pass (why 2 passes) good here
+    (change-space-requirements (sheet-parent pane)
+			       :resize-frame resize-frame)
+    (when (eql pane aplan::*foo*) (break "CSR 1b")) ;; on 2nd pass bad here
+    ))
+
+The sheet parent is a clx mirror of a vrack-pane:
+(defclass vrack-pane (rack-layout-mixin vbox-pane)
+   ()
+   (:default-initargs :box-layout-orientation :vertical))
+
+Again applying break points here for the parent vrack pane: It's Okay on the 1st pass and on the 2nd pass
+It's OK before the call to this guys's parent but bad afterwards.
+
+It's parent is of type top-level-sheet.
+
+That method eventually gets to allocate-space.
+
+
+The failure actually occurs in layout-child.  It gets called with its height argument = 0.
+That value is computed by box-layout-mixin/vertically-allocate-space on the parent of the command-menu-sheet
+this is called-throught a chain starting at window-clear inside redisplay-frame-pane  through change-space-requirements on the pane
+and then on its parent and then on the top-level-sheet-pane.
+
+
+
+and now I've lost track of this.  The key thing is that eventually somebody asks whether the intersection of the sheet's region and the top level's region
+is +nowhere+ which it is since the height is 0.  It then sets the regions to have an width and height of 0, which when the layout code runs causes the wacko
+vertical layout.
+
+This happens in Update-Mirror-Geometry:
+(let* ((parent (sheet-parent sheet))
+         (sheet-region-in-native-parent
+           ;; this now is the wanted sheet mirror region
+           (transform-region (sheet-native-transformation parent)
+                             (region-intersection (sheet-region parent)
+                                                  (transform-region (sheet-transformation sheet)
+                                                                    (sheet-region sheet))))))
+    (when (region-equal sheet-region-in-native-parent +nowhere+)
+      (%set-mirror-geometry sheet :invalidate-transformations t)  <<<<<
+      (return-from update-mirror-geometry))
+
+This is in turn called from:
+
+(defmethod (setf sheet-region) :after (region (sheet basic-sheet))
+  (declare (ignore region))
+  (invalidate-cached-regions sheet)
+  (map-over-sheets #'(lambda (sheet)
+                       (when (sheet-direct-mirror sheet)
+                         (update-mirror-geometry sheet))) <-----
+                   sheet)
+  (note-sheet-region-changed sheet))
+
+Note that MR isn't provided as an argument in this case which causes the region to be 0,0,1,1
+(defun %set-mirror-geometry (sheet &key
+                                     (MT (make-translation-transformation -5 -5))
+                                     (MR (make-rectangle* 0 0 1 1))<<<<<<<<<<<
+                                     (invalidate-transformations nil))
+  (setf (%sheet-mirror-region sheet) MR)
+  (setf (%sheet-mirror-transformation sheet) MT)
+  (when (and (sheet-direct-mirror sheet)
+             (not (eql *configuration-event-p* sheet)))
+    (let ((port (port sheet))
+          (mirror (sheet-direct-mirror sheet)))
+      (port-set-mirror-region port mirror MR)
+      ;; TOP-LEVEL-SHEET-PANE is our window (and it is managed by the window
+      ;; manager - decorations and such. We can't pinpoint exact translation. On
+      ;; the other hand UNMANAGED-TOP-LEVEL-SHEET-PANE is essential for menus
+      ;; and has exact position set (thanks to not being managed by WM).
+      (unless (and (typep sheet 'top-level-sheet-pane)
+                   (null (typep sheet 'unmanaged-top-level-sheet-pane)))
+       (port-set-mirror-transformation port mirror MT)))
+    (when invalidate-transformations
+      (with-slots (native-transformation device-transformation) sheet
+        (setf native-transformation nil
+              device-transformation nil)))))
+
+(Setf sheet-region) is called from:
+
+(defmethod generate-panes :after (fm  (frame application-frame))
+  (declare (ignore fm))
+  (sheet-adopt-child (frame-top-level-sheet frame) (frame-panes frame))
+  (unless (sheet-parent (frame-top-level-sheet frame))
+    (sheet-adopt-child (graft frame) (frame-top-level-sheet frame)))
+  ;; Find the size of the new frame
+  (multiple-value-bind (w h x y) (frame-geometry* frame)
+    (declare (ignore x y))
+    ;; automatically generates a window-configuation-event
+    ;; which then calls allocate-space
+    ;;
+    ;; Not any longer, we turn off CONFIGURE-NOTIFY events until the
+    ;; window is mapped and do the space allocation now, so that all
+    ;; sheets will have their correct geometry at once. --GB
+    (change-space-requirements (frame-top-level-sheet frame) :width w :height h
+			       :resize-frame t)
+    (setf (sheet-region (frame-top-level-sheet frame))
+	  (make-bounding-rectangle 0 0 w h))
+    (allocate-space (frame-top-level-sheet frame) w h) ))
+
+Layout-child is called by box-layout-mixin/vertically-allocate-space
+
+which is called by allocate-space
+
+which is called by generate-panes :after
+
+redisplay-frame-pane :around -> window-clear -> change-space-requirement ->
+      (port-set-mirror-region port mirror MR)
+      ;; TOP-LEVEL-SHEET-PANE is our window (and it is managed by the window
+      ;; manager - decorations and such. We can't pinpoint exact translation. On
+      ;; the other hand UNMANAGED-TOP-LEVEL-SHEET-PANE is essential for menus
+      ;; and has exact position set (thanks to not being managed by WM).
+      (unless (and (typep sheet 'top-level-sheet-pane)
+                   (null (typep sheet 'unmanaged-top-level-sheet-pane)))
+       (port-set-mirror-transformation port mirror MT)))
+    (when invalidate-transformations
+      (with-slots (native-transformation device-transformation) sheet
+        (setf native-transformation nil
+              device-transformation nil)))))
+
+(Setf sheet-region) is called from:
+
+(defmethod generate-panes :after (fm  (frame application-frame))
+  (declare (ignore fm))
+  (sheet-adopt-child (frame-top-level-sheet frame) (frame-panes frame))
+  (unless (sheet-parent (frame-top-level-sheet frame))
+    (sheet-adopt-child (graft frame) (frame-top-level-sheet frame)))
+  ;; Find the size of the new frame
+  (multiple-value-bind (w h x y) (frame-geometry* frame)
+    (declare (ignore x y))
+    ;; automatically generates a window-configuation-event
+    ;; which then calls allocate-space
+    ;;
+    ;; Not any longer, we turn off CONFIGURE-NOTIFY events until the
+    ;; window is mapped and do the space allocation now, so that all
+    ;; sheets will have their correct geometry at once. --GB
+    (change-space-requirements (frame-top-level-sheet frame) :width w :height h
+			       :resize-frame t)
+    (setf (sheet-region (frame-top-level-sheet frame))
+	  (make-bounding-rectangle 0 0 w h))
+    (allocate-space (frame-top-level-sheet frame) w h) ))
+
+Layout-child is called by box-layout-mixin/vertically-allocate-space
+
+ box-layout-mixin/vertically-allocate-space is called with real-width and real-height of 900, 700 but it's local height is 0
+this is gotten from BOX-LAYOUT-MIXIN/VERTICALLY-ALLOCATE-SPACE-AUX* called with pane, real-width, real-height
+this returns two values:
+(478.40625 46.59375 0.0 175.0)   <<<< already screwed here.
+(900 900 900 900)
+
+The third entry corresponds to the command-menu-pane.
+
+These values come from space-requirement-height.
+
+which is called by allocate-space
+
+which is called by (generate-panes :after) and (redisplay-frame-pane :around)
+
+redisplay-frame-pane :around -> window-clear -> change-space-requirement -> 
+                                               box-layout-mixin/vertically-allocate-space -> layout-child -> (setf sheet-transformation) ->  ... update-mirror-geometry here y is 34
+                                                                                                                                                                   (setf sheet-region) ->  ... update-mirror-geometry  here y = 0,0
+
+
+ -> allocate-space -> box-layout-mixin/verically-allocate-space -> layout-child -> (setf sheet-transformation) ->  ... update-mirror-geometry here y is 34
+                                                                                                                                                                   (setf sheet-region) ->  ... update-mirror-geometry  here y = 0,0
+                         -> (setf sheet-region) ->  upate-mirror-geometry -> %set-mirror-geometry (which is where the it's set to 0,0,1,1

@@ -1,0 +1,330 @@
+;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: CLIM-INTERNALS; Base: 10; Lowercase: Yes -*-
+
+(in-package :clim-internals)
+
+
+(defclass cad-graph-output-record (directed-graph-output-record)
+  ())
+
+(define-graph-type :cad cad-graph-output-record)
+
+(defmethod layout-graph-nodes ((graph cad-graph-output-record) stream
+			       arc-drawer arc-drawing-options)
+  (declare (ignore arc-drawer arc-drawing-options stream))
+  (with-slots (root-nodes hash-table n-generations) graph
+    (when root-nodes
+      (let* ((properties (slot-value graph 'properties))
+	     (orientation (getf properties :orientation))
+	     (center-nodes (getf properties :center-nodes))
+	     (generation-separation (getf properties :generation-separation))
+	     (within-generation-separation (getf properties :within-generation-separation))
+	     (start-x (coordinate 0))
+	     (start-y (coordinate 0)))
+	(flet ((inferior-mapper (function node)
+		 (map nil function (graph-node-children node)))
+	       (yx-output-record-set-position (record y x)
+		 (output-record-set-position record x y)))
+	  (declare (dynamic-extent #'inferior-mapper #'yx-output-record-set-position))
+	  (multiple-value-bind (breadthfun depthfun set-positionfun start-breadth start-depth)
+	      (ecase orientation
+		((:vertical :down :up)
+		 (values #'bounding-rectangle-width #'bounding-rectangle-height
+			 #'output-record-set-position start-x start-y))
+		((:horizontal :right :left)
+		 (values #'bounding-rectangle-height #'bounding-rectangle-width
+			 #'yx-output-record-set-position start-y start-x)))
+	    (macrolet ((traverse (new-node-function &optional (old-node-function '#'false))
+			 `(traverse-graph root-nodes #'inferior-mapper 
+					  hash-table #'identity
+					  ,new-node-function ,old-node-function))
+		       ;; "Breadth" is the width in vertical orientation, otherwise 
+		       ;; it's the height.  "Depth" is vice-versa.
+		       (breadth (node) `(funcall breadthfun ,node))
+		       (depth (node) `(funcall depthfun ,node)))
+	      (let ((generation-descriptors
+		      (loop for generation to n-generations
+			    collect (make-generation-descriptor
+				      :generation generation
+				      :breadth-so-far start-breadth)))
+		    (max-gen-breadth (coordinate 0)) 
+		    broadest-gen-descr)
+		(when (member orientation '(:up :left))
+		  (setq generation-descriptors (nreverse generation-descriptors)))
+		;; Determine the breadth and depth of each generation
+		(flet ((collect-node-size (p ph child-node)
+			 (declare (ignore p ph))
+			 (let ((descr (assoc (graph-node-generation child-node)
+					     generation-descriptors)))
+			   (incf (generation-size descr))
+			   (incf (generation-breadth descr) (breadth child-node))
+			   (maxf (generation-depth descr) (depth child-node)))))
+		  (declare (dynamic-extent #'collect-node-size))
+		  (traverse #'collect-node-size))
+		;; Determine max-breadth and starting-depth
+		(loop with depth-so-far = start-depth
+		      for descr in generation-descriptors do
+		  (let ((gen-breadth (generation-breadth descr)))
+		    (when (> gen-breadth max-gen-breadth)
+		      (setf max-gen-breadth gen-breadth
+			    broadest-gen-descr descr)))
+		  (setf (generation-start-depth descr) depth-so-far)
+		  (incf depth-so-far (+ generation-separation (generation-depth descr))))
+		;; Determine breadth-spacing
+		(incf max-gen-breadth
+		      (* within-generation-separation (generation-size broadest-gen-descr)))
+		(loop for descr in generation-descriptors do
+		  (let ((excess (floor (- max-gen-breadth (generation-breadth descr))
+				       (max (generation-size descr) 1))))
+		    (setf (generation-inner-breadth-separation descr) excess)
+		    (setf (generation-edge-breadth-separation descr) (floor excess 2))))
+		;; Place nodes
+		(flet ((place-node (p ph child-node)
+			 (declare (ignore p ph))
+			 (let ((descr (assoc (graph-node-generation child-node)
+					     generation-descriptors)))
+			   (incf (generation-breadth-so-far descr)
+				 (if (generation-touched descr)
+				     (generation-inner-breadth-separation descr)
+				     (progn (setf (generation-touched descr) t)
+					    (generation-edge-breadth-separation descr))))
+			   (funcall set-positionfun
+				    child-node
+				    (generation-breadth-so-far descr)
+				    (if center-nodes
+					(+ (generation-start-depth descr)
+					   (floor (- (generation-depth descr)
+						     (depth child-node)) 2))
+					(generation-start-depth descr)))
+			   (incf (generation-breadth-so-far descr) (breadth child-node)))))
+		  (declare (dynamic-extent #'place-node))
+		  (traverse #'place-node))))))))))
+
+(defmethod layout-graph-edges ((graph cad-graph-output-record) stream
+			       arc-drawer arc-drawing-options)
+  (declare (ignore arc-drawing-options))
+  (with-slots (root-nodes hash-table properties) graph
+    (let ((non-local-edges nil))
+      (when root-nodes
+	(flet ((inferior-mapper (function node)
+		 (map nil function (graph-node-children node))))
+	  (declare (dynamic-extent #'inferior-mapper))
+          (multiple-value-bind (xoff yoff)
+	                       (convert-from-relative-to-absolute-coordinates
+		                stream (output-record-parent graph))
+            (with-identity-transformation (stream)
+              (with-output-recording-options (stream :draw nil :record t)
+                (with-new-output-record (stream 'standard-sequence-output-record nil :parent graph)
+                  (labels
+                    ((collect-edge (x1 y1 x2 y2 parent child)
+                       (push (list x1 y1 x2 y2 
+                                   (graph-node-generation parent) (graph-node-generation child)
+                                   parent child
+                                   )
+                             non-local-edges))
+                     (draw-edge (parent ph child &optional ch)
+                       (declare (ignore ph ch))
+                       (when parent
+                         (multiple-value-bind (parent-x parent-y) 		 
+			                      (with-bounding-rectangle* (left top right bottom) parent
+			                        (declare (ignore left))
+			                        (values right (floor (+ top bottom) 2)))
+                           (multiple-value-bind (child-x child-y) 
+			                        (with-bounding-rectangle* (left top right bottom) child
+				                  (declare (ignore right))
+				                  (values (1- left) (floor (+ top bottom) 2)))
+                             (translate-coordinates xoff yoff parent-x parent-y child-x child-y)
+                             (funcall arc-drawer #'(lambda (x1 y1 x2 y2)
+                                                     (collect-edge x1 y1 x2 y2 parent child))
+                                      (graph-node-object parent) (graph-node-object child)
+                                      parent-x parent-y child-x child-y))))))
+                    (declare (dynamic-extent #'draw-edge))
+                    (traverse-graph root-nodes #'inferior-mapper hash-table #'identity #'draw-edge #'draw-edge))                  
+                  (route-edges graph stream non-local-edges))))))))))
+
+(defclass intergeneration-wiring ()
+    ((generation-number :initarg :generation-number :accessor generation-number)
+     (boxes-in-this-generation :initform nil :accessor boxes-in-this-generation)
+     (number-of-tracks :initform 0 :accessor number-of-tracks)
+     (total-bump :initform 0 :accessor total-bump)
+     (current-track-number :initform 0 :accessor current-track-number)
+     (horizontal-gaps :initform nil :accessor horizontal-gaps)
+     (left :accessor left)
+     (right :accessor right))) 
+
+(defvar *track-spacing* 10)
+
+(defgeneric route-edges (graph-record stream non-local-records))
+
+(defmethod route-edges ((graph-record cad-graph-output-record) stream non-local-records)
+  (with-slots (root-nodes hash-table) graph-record
+    (let ((generations-map nil)
+	  (max-height nil)
+	  (minimum-generation nil)
+	  (maximum-generation nil))
+      (flet ((find-entry-for-generation (generation &optional (create t))
+	       (let ((entry (find generation generations-map :key #'generation-number)))
+		 (when (and (null entry) create)
+		   (setq entry (make-instance 'intergeneration-wiring :generation-number generation))
+		   (push entry generations-map))
+		 entry))
+	     (box-bottom (record)
+	       (with-bounding-rectangle* (left top bottom right) record
+		 (declare (ignore left top right))
+		 bottom))
+	     (box-top (record)
+	       (with-bounding-rectangle* (left top bottom right) record
+		 (declare (ignore left bottom right))
+		 top)))
+	;; build up all the information we'll need about integenerational spacing
+	(flet ((add-route-to-generations (start-generation end-generation)
+		  (loop for generation from (1+ start-generation) below end-generation
+			 for entry = (find-entry-for-generation generation)
+			 do (incf (number-of-tracks entry)))))
+          (setq non-local-records (restructure-non-local-records non-local-records))
+          (loop for ((start-generation) . stuff) in non-local-records
+                for end-generation = (loop for (end-generation) in stuff maximize end-generation)
+                do (add-route-to-generations start-generation end-generation)
+                (minf-or minimum-generation start-generation)
+                (maxf-or maximum-generation end-generation)))
+	;; now accumulate the needed spacing
+	(loop with total-bump = 0
+	      for generation from minimum-generation upto maximum-generation
+	      for entry = (find-entry-for-generation generation)
+	      do (setf (total-bump entry) total-bump
+		       total-bump (+ total-bump (1+ (number-of-tracks entry)))))
+	;; then bump over everybody who needs to move
+	(flet ((bump-space (parent-node ph child-node &optional ch)
+		 (declare (ignore parent-node ph ch))
+		 (let* ((generation (graph-node-generation child-node))
+			(entry (find-entry-for-generation generation)))
+		   (when entry
+		     (push child-node (boxes-in-this-generation entry))
+		     (let* ((bump (total-bump entry))
+			    (space (* *track-spacing* bump)))
+		       ;; *track-spacing* is just a made up constant for a line and some
+		       ;; space for now.  
+		       (with-bounding-rectangle* (his-x his-y right bottom) child-node
+			 (declare (ignore right bottom))
+			 (output-record-set-position child-node (+ space his-x) his-y)
+			 )))))
+	       (dont-bump-space (&rest ignore)
+		 (declare (ignore ignore))
+		 (values))
+	       (inferior-mapper (function node)
+		 (map nil function (graph-node-children node))))
+	  (traverse-graph root-nodes #'inferior-mapper
+			  hash-table #'identity
+			  #'bump-space #'dont-bump-space))
+	;; go over all the connections
+	;; get ready to route the runs by sorting the
+	;; generations horizontally and vertically, figuring out where the horizontal gaps are
+	;; figuring out the horizontal extent of each block of nodes
+	(setq generations-map (sort generations-map #'< :key #'generation-number))
+	(loop for entry in generations-map
+	      do (setf (boxes-in-this-generation entry)
+		       (sort (boxes-in-this-generation entry) #'< :key #'box-top))
+	      maximize (box-bottom (first (last (boxes-in-this-generation entry)))) into maxh
+	      finally (setq max-height maxh))
+	(loop for entry in generations-map 
+	      do (loop for box in (boxes-in-this-generation entry)
+		       with last-bottom = 0
+		       with horizontal-gaps = nil
+		       with min-left and max-right
+		       do (with-bounding-rectangle* (left top right bottom) box
+			    (push (list last-bottom top nil) horizontal-gaps)
+			    (setq last-bottom bottom)
+			    (minf-or min-left left)
+			    (maxf-or max-right right))
+		       finally (push (list last-bottom max-height nil) horizontal-gaps)
+                       (setf (left entry) min-left
+                             (horizontal-gaps entry) (nreverse horizontal-gaps)
+                             (right entry) max-right)))
+	(flet ((get-next-track (generation)
+		 (let* ((entry (find-entry-for-generation generation nil))
+			(track-number (current-track-number entry)))
+		   (incf (current-track-number entry))
+		   track-number)))
+          (loop for ((start-generation x1 y1) . stuff) in non-local-records
+		for start-entry = (find-entry-for-generation start-generation nil)
+		do 
+                (incf x1 (* *track-spacing* (total-bump start-entry)))
+                (loop for generation from (generation-number start-entry)
+                      for next-generation = (1+ generation)
+                      for this-entry = (find-entry-for-generation generation nil)
+                      for next-entry = (find-entry-for-generation next-generation nil)
+                      for this-x = x1 then next-x
+                      for this-y = y1 then next-y
+                      for next-x = nil
+                      for next-y = nil
+                      until (null stuff)
+                      do (loop with min-y = this-y and max-y = this-y
+                               for (gen dest-x dest-y) = (first stuff)
+                               until (null stuff)
+                               until (not (= gen next-generation))
+                               do (pop stuff)
+                               (clim-utils:minf min-y dest-y)
+                               (clim-utils:maxf max-y dest-y)
+                               collect (list dest-x dest-y) into destinations
+                               finally (when destinations
+                                         (let* ((track (get-next-track generation))
+                                                (track-x (+ *track-spacing* (right this-entry) (* *track-spacing* track)))
+                                                (bump (* *track-spacing* (total-bump next-entry))))
+                                           ;; draw horizontal up to the track
+                                           (draw-line* stream this-x this-y track-x this-y)
+                                           ;; draw vertical along the track
+                                           (draw-line* stream track-x min-y track-x max-y)
+                                           (loop for (dest-x dest-y) in destinations
+                                                 do (draw-line* stream track-x dest-y (+ bump dest-x) dest-y))
+                                           (setq this-x track-x))))
+                      when stuff
+                      do 
+                      (loop with best-gap and best-distance
+                               for gap in (horizontal-gaps next-entry)
+                               for (top bottom) = gap
+                               for distance =  (min (abs (- this-y bottom))
+                                                    (abs (- this-y top)))
+                               when (or (null best-distance) (< distance best-distance))
+                               do (setq best-gap gap best-distance distance)
+                               finally 
+                               (flet ((find-horiz-track (gap target-y)
+                                                (destructuring-bind (top bottom tracks) gap
+                                                  (cond ((and (< top this-y bottom)
+                                                              (not (member target-y tracks)))
+                                                         (push target-y (third gap))
+                                                         target-y)
+                                                        ((< (abs (- target-y bottom))
+                                                            (abs (- target-y top)))
+                                                         (loop for y = (- bottom 3) then (- y 3)
+                                                               when (not (member y tracks))
+                                                               do (push y (third gap))
+                                                               and return y))
+                                                        (t (loop for y = (+ top 3) then (+ y 3)
+                                                                 when (not (member y tracks))
+                                                                 do (push y (third gap))
+                                                                 and return y))))))
+                                         (setq next-y (find-horiz-track best-gap this-y)
+                                               next-x (right next-entry))
+                                         ;; go vertical to horizontal gap's track
+                                         (draw-line* stream this-x this-y this-x next-y)
+                                         ;; go horizontal to track
+                                         (draw-line* stream this-x next-y next-x next-y)))))))
+      (values graph-record stream))))
+
+(defun restructure-non-local-records (non-local-records)
+  (let ((table (make-hash-table :test #'equal)))
+    (flet ((make-entry (start-generation x1 y1 end-generation x2 y2)
+             (let* ((key (list start-generation x1 y1)))
+               (push (list end-generation x2 y2) (gethash key table)))))
+      (loop for (x1 y1 x2 y2 start-generation end-generation) in non-local-records
+            do (make-entry start-generation x1 y1 end-generation x2 y2)))
+    (flet ((gen-then-y-then-x (key1 key2)
+             (destructuring-bind (gen1 x1 y1) key1
+               (destructuring-bind (gen2 x2 y2) key2
+                 (if (= gen1 gen2)
+                   (if (= y1 y2)
+                     (< x1 x2)
+                     (< y1 y2))
+                   (< gen1 gen2))))))
+      (sort (loop for stuff being the hash-values of table using (hash-key key)
+                  collect (cons key (sort stuff #'gen-then-y-then-x)))
+            #'gen-then-y-then-x :key #'car))))
