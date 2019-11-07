@@ -1,0 +1,98 @@
+;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: CLIM-ENV; Base: 10; Lowercase: Yes -*-
+
+;;; Copyright (c) 1994-2000, Scott McKay.
+;;; Copyright (c) 2001-2003, Scott McKay and Howard Shrobe.
+;;; All rights reserved.  No warranty is expressed or implied.
+;;; See COPYRIGHT for full copyright and terms of use.
+
+(in-package :clim-env)
+
+;;; Editing commands
+
+(define-command (com-edit-definition :command-table editing :name t)
+    ((definition #---ignore 'symbol
+                 #+++ignore '((expression) :auto-activate t)
+       :provide-default t 
+       :prompt "definition to edit")
+     &key
+     (type '(token-or-type (:all) symbol)
+	   :default :all
+	   :prompt "definition type"))
+  #-Genera (declare (ignore type))
+  #+Genera (when (eql type 'defun)
+	     (setq type 'lisp:defun))
+  #+Genera (if (eql type :all)
+	     (ed `(zwei:edit-definition ,definition ()))
+	     (ed `(zwei:edit-definition ,definition (,type))))
+  #-Genera (ed definition)) 
+
+(define-presentation-to-command-translator edit-definition
+    ((or symbol expression form) com-edit-definition editing
+     :tester ((object)
+	      (or (functionp object)
+		  (and (symbolp object)
+		       (or (fboundp object)
+			   #+Genera (si:get-source-file-name object)
+			   #+Allegro (excl:source-file object)))))
+     :gesture :edit)
+    (object)
+  (list (if (functionp object) (function-name object) object)))
+
+(define-drag-and-drop-translator d&d-edit-definition
+    ((or symbol expression form)
+     command editor editing
+     #+MCL :before-drag-tester
+     #+(or Allegro Genera)
+     :tester ((object)
+	      (or (functionp object)
+		  (and (symbolp object)
+		       (or (fboundp object)
+			   #+Genera (si:get-source-file-name object)
+			   #+Allegro (excl:source-file object))))))
+    (object)
+  `(com-edit-definition ,(if (functionp object) (function-name object) object))) 
+
+(define-command (com-edit-file :command-table editing :name t)
+    ((pathname 'pathname :provide-default t :prompt "file"))
+  (cond ((probe-file pathname)
+	 (ed pathname))
+	(t (with-frame-standard-output (stream)
+	     (format stream "~&The file ")
+	     (present pathname 'pathname :stream stream)
+	     (write-string "was not found." stream)))))
+                
+(define-presentation-to-command-translator com-edit-file
+    (pathname com-edit-file editing
+     :gesture :edit
+     :tester ((object)
+              (not (directory-pathname-p object))))
+    (object)
+  (list object))
+
+(define-drag-and-drop-translator d&d-edit-file
+    (pathname command editor editing)
+    (object)
+  `(com-edit-file ,object)) 
+
+#+MCL
+(defun ccl::save-all-files (&key (query t) (stream *standard-output*) &aux wpath)
+  (dolist (window (ccl::windows :include-invisibles t))
+    (when (and (setq wpath (ccl::window-filename window))
+               (ccl::window-needs-saving-p window)
+               (or (not query) (y-or-n-p "Save modified FRED buffer ~A? " wpath)))
+      (format stream "~&Saving ")
+      (clim:present wpath 'pathname :stream stream)
+      (write-string " ..." stream)
+      (ccl::window-save window)
+      (write-string ". Done." stream))))
+
+#+(or Genera MCL)
+(define-command (com-save-file-buffers :command-table editing :name t)
+    (&key
+     (query 'boolean :default t :mentioned-default nil
+	    :documentation "Query before saving each modified editor buffer."))
+  (with-frame-standard-output (stream)
+    #+Genera (zwei:save-all-files query)
+    #+MCL (ccl::save-all-files :query query :stream stream)))
+
+;;; --- Edit buffers

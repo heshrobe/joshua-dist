@@ -1,0 +1,287 @@
+;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: CLIM-ENV; Base: 10; Lowercase: Yes -*-
+
+;;; Copyright (c) 1994-2000, Scott McKay.
+;;; Copyright (c) 2001-2003, Scott McKay and Howard Shrobe.
+;;; All rights reserved.  No warranty is expressed or implied.
+;;; See COPYRIGHT for full copyright and terms of use.
+
+(in-package :clim-env)
+
+;;; Object browser
+
+;;--- This should keep a history of inspected objects
+;;--- Then there should be a menu bar item that navigates this history
+(define-application-frame inspector-frame (selected-object-mixin)
+    ((object :initarg :object :initform nil :accessor inspector-object)
+     (current-pane :initform nil))
+  (:command-definer define-inspector-command)
+  (:command-table (inspector :inherit-from (activity 
+					    editing
+					    lisp
+					    selected-objects)
+			     :menu (("Activity" :menu activity)
+				    ("Selections" :menu selected-objects))))
+  (:top-level (inspector-top-level))
+  (:pointer-documentation t)
+  (:panes
+    (upper-pane :application
+		:background +white+
+		:display-after-commands nil
+		:end-of-line-action :allow
+		:end-of-page-action :allow)
+    (lower-pane :application
+		:background +white+
+		:display-after-commands nil
+		:end-of-line-action :allow
+		:end-of-page-action :allow))
+  (:layouts
+    (main (vertically ()
+	    (:fill (vertically ()
+		     (1/2 upper-pane)
+		     (1/2 lower-pane)))))))
+
+(defmethod frame-maintain-presentation-histories ((frame inspector-frame)) t)
+
+(defmethod inspector-top-level ((frame inspector-frame))
+  (enable-frame frame)
+  (inspect-object frame (inspector-object frame) :use-top-pane t)
+  (default-frame-top-level frame))
+
+(define-presentation-type location (&key modifier)
+  :inherit-from 'expression) 
+
+(defmethod inspect-object ((frame inspector-frame) object &key use-top-pane)
+  (let ((stream (if use-top-pane
+		  (get-frame-pane frame 'upper-pane)
+		  (get-frame-pane frame 'lower-pane)))
+        (*print-length* 5)
+        (*print-level* 3))
+    (cond
+     (use-top-pane
+      (window-clear stream)
+      (window-clear (get-frame-pane frame 'lower-pane)))
+     (t
+      (let* ((pane (get-frame-pane frame 'lower-pane))
+	     (line-height (stream-line-height pane)))
+	(multiple-value-bind (x y) (stream-cursor-position pane)
+	  (declare (ignore x))
+	  (terpri pane)
+	  (terpri pane)
+	  (window-set-viewport-position 
+	   pane 0 (- y (* 2 line-height)))))
+      ))
+    #+Genera
+    (when (si:named-structure-p object)
+      ;; Generate a list of all of the structures slots
+      (let* ((description (get (or (and (arrayp object)
+					(si:named-structure-symbol object))
+				   (and (listp object)
+					(symbolp (car object))
+					(car object)))
+			       'si:defstruct-description)))
+	(formatting-table (stream :x-spacing '(2 :character))
+	  (loop for (slot-name . slot-description)
+		in (si:defstruct-description-slot-alist description)
+		as form = `(,(si:defstruct-slot-description-ref-macro-name slot-description)
+			     ',object)
+		do (formatting-row (stream)
+		     (formatting-cell (stream :align-x :right)
+		       (format stream "~A:" slot-name))
+		     (formatting-cell (stream :align-x :left)
+		       (present (eval form) 'location
+				:single-box :highlighting
+				:stream stream))))))
+      (return-from inspect-object))
+    #+Genera
+    (when (si:instancep object)
+      (display-standard-object (si:follow-structure-forwarding object) stream)
+      (return-from inspect-object))
+    (display-object object stream)))
+
+(defmethod display-object ((object symbol) stream)
+  (formatting-table (stream :x-spacing '(2 :character) :move-cursor t)
+    (flet ((print-property (name reader &optional tester)
+             (formatting-row (stream)
+	       (formatting-cell (stream)
+		 (write-string name stream))
+	       (formatting-cell (stream) 
+                 (if (or (null tester) (funcall tester object)) 
+		   (present (funcall reader object) 'location
+			    :single-box :highlighting
+			    :stream stream)
+		   (with-text-face (stream :italic) 
+		     (write-string "unbound" stream)))))))
+      (declare (dynamic-extent #'print-property))
+      (print-property "Name:" 'symbol-name)
+      (print-property "Value:" 'symbol-value 'boundp)
+      (print-property "Function:" 'symbol-function 'fboundp)
+      (print-property "Plist:" 'symbol-plist)
+      (print-property "Package:" 'symbol-package))))
+
+(defmethod display-object ((object cons) stream)
+  (let ((*print-length* nil)
+	(*print-level* 3)
+	(*print-circle* t))
+    (present object 'location				;--- modifier?
+	     :single-box :highlighting
+	     :stream stream)))
+
+(defmethod display-object ((object string) stream)
+  (present object 'location
+	   :single-box :highlighting
+	   :stream stream))
+
+(defmethod display-object ((object vector) stream)
+  (formatting-table (stream :x-spacing '(2 :character) :move-cursor t)
+    (let ((index -1))
+      (map nil
+	   #'(lambda (elt)
+	       (formatting-row (stream)
+		 (formatting-cell (stream :align-x :right)
+		   (format stream "~D:" (incf index)))
+		 (formatting-cell (stream)		;--- modifier?
+		   (present elt 'location :stream stream))))
+	   object))))
+
+(defmethod display-object ((object array) stream)
+  (let ((*print-array* t))
+    (present object 'location				;--- modifier?
+	     :single-box :highlighting
+	     :stream stream)))
+
+(defmethod display-object ((object hash-table) stream)
+  (formatting-table (stream :x-spacing '(2 :character) :move-cursor t)
+    (maphash #'(lambda (key val)
+		 (formatting-row (stream)
+		   (formatting-cell (stream :align-x :right)
+		     (format stream "~S:" key))
+		   (formatting-cell (stream)
+		     (present val 'location :stream stream))))
+	     object)))
+
+(defmethod display-object ((object standard-object) stream)
+  (display-standard-object object stream))
+
+(defmethod display-standard-object (object stream)
+  (let* ((class (class-of object))
+	 (slots (copy-list (append (class-instance-slots class)
+				   (class-class-slots class)))))
+    (setq slots (sort slots #'string-lessp
+		      :key #'(lambda (s) (symbol-name (slot-definition-name s)))))
+    (formatting-table (stream :x-spacing '(2 :character) :move-cursor t)
+      (loop for slot in slots
+	    as slot-name = (slot-definition-name slot)
+	    do (formatting-row (stream)
+		 (formatting-cell (stream :align-x :right)
+		   (format stream "~A:" slot-name))
+		 (formatting-cell (stream :align-x :left)
+		   (if (slot-boundp object slot-name)
+		     (let ((slot-name slot-name)) ;don't share this
+		       (flet ((modifier (new-value)
+				(setf (slot-value object slot-name) new-value)))
+			 (present (slot-value object slot-name) 
+				  `(location :modifier ,#'modifier)
+				  :single-box :highlighting
+				  :stream stream)))
+		     (with-text-face (stream :italic)
+		       (write-string "unbound" stream)))))))))
+
+#-(or Genera Lispworks Allegro)
+(defmethod display-object ((object structure-object) stream)
+  (display-standard-object object stream))
+
+#+Lispworks
+(defmethod display-object ((object structure-object) stream)
+  (let* ((wrapper (clos::class-wrapper (class-of object)))
+	 (slots (copy-list (structure::dd-slots wrapper))))
+    (setq slots (sort slots #'string-lessp
+		      :key #'(lambda (s) (symbol-name (structure::dsd-name s)))))
+    (formatting-table (stream :x-spacing '(2 :character) :move-cursor t)
+      (dolist (slot slots)
+	(formatting-row (stream)
+	  (formatting-cell (stream)
+	    (format stream "~A:" (structure::dsd-name slot)))
+	  (formatting-cell (stream)
+	    (let ((slot slot))		;don't share this
+	      (flet ((modifier (new-value)
+		       (setf (funcall (structure::dsd-accessor slot) object) new-value)))
+		(present (funcall (structure::dsd-accessor slot) object) 
+			 `(location :modifier ,#'modifier)
+			 :single-box :highlighting
+			 :stream stream)))))))))
+
+#+Allegro
+(defmethod display-object ((object structure-object) stream)
+  (let* ((type (excl::structure-ref object 0))
+	 desc)
+    (when (consp type)
+      (setq type (caar type)))
+    (setq desc (get type 'excl::%structure-definition))
+    (when desc
+      (let ((slots (loop for slot in (nreverse (excl::object-instance-slot-names object))
+		         for i upfrom 1
+		         collect (cons slot i))))
+	(setq slots (sort slots #'string-lessp :key #'car))
+	(formatting-table (stream :x-spacing '(2 :character) :move-cursor t)
+	  (loop for (name . index) in slots doing
+	    (formatting-row (stream)
+	      (formatting-cell (stream)
+		(format stream "~A:" name))
+	      (formatting-cell (stream)
+		(present (excl::structure-ref object index) 'expression
+			 :single-box :highlighting
+			 :stream stream)))))))))
+
+;;--- Should numbers display anything special?  What else?
+(defmethod display-object ((object t) stream)
+  (present object 'location 
+	   :single-box :highlighting
+	   :stream stream)) 
+
+(define-inspector-command (com-clear :name t :menu t)
+    ()
+  (let ((frame *application-frame*))
+    (window-clear (get-frame-pane frame 'lower-pane))))
+
+(define-inspector-command (com-inspect-object :name t)
+    ((object '((expression) :auto-activate t) :gesture :select))
+  (inspect-object *application-frame* object))
+
+(define-inspector-command (com-menu-inspect-object :menu "Inspect") ()
+  (with-application-frame (frame)
+    (let* ((stream (frame-standard-input frame))
+           (default (inspector-object frame))
+	   (object (accepting-values (stream :own-window t 
+                                             :resynchronize-every-pass t
+					     :width 500 :height 50)
+		     (setq default (eval (accept 'expression
+			                         :stream stream
+			                         :default default
+			                         :prompt "Expression"))))))
+      (inspect-object frame object))))
+
+(define-inspector-command com-modify-location
+    ((old-value 't)
+     (modifier 't))
+  (with-application-frame (frame)
+    (let* ((stream (frame-standard-input frame))
+	   (value old-value)
+	   (new-value (accepting-values (stream :own-window t 
+						:resynchronize-every-pass t
+						:width 500 :height 50)
+			(setq value (eval (accept 'expression
+						  :stream stream
+						  :default value
+						  :prompt "New value"))))))
+      (funcall modifier (eval new-value)))))
+
+(define-presentation-to-command-translator modify-location
+    (location com-modify-location inspector
+     :gesture :modify
+     :documentation "Modify this location"
+     :tester ((presentation)
+	      (with-presentation-type-parameters (location (presentation-type presentation))
+		(and modifier (not (eq modifier '*))))))
+    (object presentation)
+  (with-presentation-type-parameters (location (presentation-type presentation))
+    (list object modifier)))

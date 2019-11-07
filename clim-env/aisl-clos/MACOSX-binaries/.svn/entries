@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="1"
+   name=""
+   committed-date="2006-01-06T16:58:57.444318Z"
+   url="file:///afs/csail/u/h/hes/REPOS/josh-dist/clim-env/aisl-clos/MACOSX-binaries"
+   last-author="hes"
+   kind="dir"
+   uuid="73f4128a-b309-0410-aaa5-f9d3656b4317"
+   revision="1"/>
+<entry
+   committed-rev="1"
+   name="aisl-clos-pkg"
+   text-time="2006-01-06T17:02:17.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="7eaa309eabaf744c3534c7c3744a2c6e"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:17.000000Z"/>
+<entry
+   committed-rev="1"
+   name="mop"
+   text-time="2006-01-06T17:02:17.000000Z"
+   committed-date="2006-01-06T16:58:57.444318Z"
+   checksum="21646f2e785994ba2d6e2f0d2b80baa4"
+   last-author="hes"
+   kind="file"
+   prop-time="2006-01-06T17:02:17.000000Z"/>
+</wc-entries>

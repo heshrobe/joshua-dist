@@ -1,0 +1,108 @@
+(in-package :AISL-CLOS)
+
+#+MCL
+(defun generic-function-name (instance)
+  (function-name instance))
+
+#+MCL
+(defmethod generic-function-lambda-list ((me generic-function))
+  (let ((args (arglist (function-name me))))
+    ;; reader-methods don't return arglist this way, for some reason
+    (if (eq (car args) 'CCL::&METHOD)
+      (cddr args)
+      args)))
+
+#+Allegro-ignore-if-the-next-one-works-OK
+(defmethod class-instance-slots (class)
+  (loop for sd in (clos:class-slots class)
+        if (eq :instance (clos:slot-definition-allocation sd))
+          collect sd))
+
+#+MCL                                   ; MCL definition has a third required argument-- JCMa 12/13/2001.
+(defun find-applicable-methods (generic-function specializers &optional qualifiers)
+  (ccl::find-applicable-methods generic-function specializers qualifiers))
+
+#+Allegro
+(defun find-applicable-methods (generic-function specializers &optional qualifiers)
+  (declare (ignore qualifiers))
+  (compute-applicable-methods generic-function specializers))
+
+#+MCL                                   ; broken definition in MCL 4.3 failes to return the SD2 slots -- JCMa 12/13/2001.
+(defmethod class-class-slots ((class ccl::standard-class))
+  (destructuring-bind (sd1 . sd2) (ccl::%class-slots class)
+    (cond ((and sd1 sd2) `(,@sd1 ,.(map 'list #'identity sd2)))
+	  (sd1 (copy-list sd1))
+	  (t (map 'list #'identity sd2))))) 
+
+#-MCL
+(defmethod class-instance-slots ((me class))
+  "Get all direct and indirect instance-allocated slots of a class."
+  (remove :instance (class-slots me)
+          :test (complement #'eq)
+          :key #'slot-definition-allocation))
+
+#-MCL
+(defmethod class-direct-instance-slots (class)
+  "Get only direct instance-allocated slots of a class."
+  (remove :instance (clos:class-direct-slots class)
+	  :test (complement #'eq)
+	  :key #'slot-definition-allocation))
+
+#-MCL
+(defmethod class-class-slots (class)
+  "Get all direct and indirect class-allocated slots of a class."
+  (remove :class (class-slots class)
+	  :test (complement #'eq)
+	  :key #'slot-definition-allocation))
+
+#-MCL
+(defmethod class-direct-class-slots (class)
+  "Get only direct class-allocated slots of a class."
+  (remove :class (clos:class-direct-slots class)
+	  :test (complement #'eq)
+	  :key #'slot-definition-allocation))
+
+#+MCL
+(defmethod class-direct-class-slots ((class (eql t)))
+  nil)
+
+#+MCL
+(defmethod slot-definition-allocation (class slot)
+  (if (member slot (ccl:class-direct-class-slots class))
+    :class
+    :instance))
+
+#+MCL
+(defmethod class-direct-slots (class)
+  (append (ccl::class-direct-class-slots class)
+	  (class-direct-instance-slots class)))
+
+#+(and MCL (not CCL-3))			; already defined in MCL3
+(defun slot-definition-initargs (slotd)
+  "Returns a set of :initarg keywords associated with the slot."
+  (ccl::%slotd-initargs slotd))
+
+#+(and MCL (not CCL-3))			; already defined in MCL3
+(defun slot-definition-initfunction (slotd)
+  "Returns a function of no arguments that can be called to produce the value
+   that is to be used to initialize the slot, or nil if the slot has no explicit :initform."
+  (ccl::%slotd-initform slotd))
+
+#+(and MCL (not CCL-3))			; already defined in MCL3
+(defun slot-definition-initform (slotd)
+  "Returns a rendition of the form that appeared as the slot's :initform, or nil
+   if the slot has no explicit :initform."
+  (let ((sdf (ccl::%slotd-initform slotd)))
+    (if (listp sdf)			; see definition of slotd-initform for more info here
+      `',(car sdf)
+      `',sdf)))
+
+#+(and MCL (not CCL-3))			; already defined in MCL3
+(defun slot-definition-type (slotd)
+  "Returns the type of the slot."
+  (ccl::%slotd-type slotd))
+
+#+MCL
+(defun class-direct-default-initargs (class)
+  (ccl::%class-local-default-initargs class))
+

@@ -1,0 +1,218 @@
+;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: CLIM-ENV; Base: 10; Lowercase: Yes -*-
+
+;;; Copyright (c) 1994-2000, Scott McKay.
+;;; Copyright (c) 2001-2003, Scott McKay and Howard Shrobe.
+;;; All rights reserved.  No warranty is expressed or implied.
+;;; See COPYRIGHT for full copyright and terms of use.
+
+(in-package :clim-env)
+
+;;; The top-level "navigator" for the CLIM Environment
+
+(define-command-table application-menu)
+(define-command-table edit-menu)
+(define-command-table tools-menu)
+(define-command-table system-menu)
+(define-command-table manuals-menu)
+(define-command-table OS-menu)
+
+(define-application-frame navigator ()
+  ((frames :initform nil :accessor navigator-frames))
+  (:command-table (navigator :inherit-from (application-menu
+					    activity
+					    editing
+					    systems
+					    edit-menu
+					    tools-menu
+					    OS-menu
+					    system-menu)
+			     :menu (("Apps" :menu application-menu)
+				    ("Activity" :menu activity)
+				    ("Edit" :menu edit-menu)
+				    ("Tools" :menu tools-menu)
+				    ("Systems" :menu system-menu)
+				    ("Manuals" :menu manuals-menu)
+				    ("OS" :menu OS-menu))))
+  (:command-definer nil)
+  (:pointer-documentation nil)
+  (:panes
+   (interactor :application
+	       :background +white+
+	       :scroll-bars :vertical))
+  (:layouts
+   (main
+    (vertically () interactor))))
+
+
+(define-command (com-choose-application :command-table application-menu
+					:name t :menu "Choose application") ()
+  (let ((frame
+	 (menu-choose (navigator-frames *application-frame*)
+		      :printer #'(lambda (frame stream)
+				   (princ (frame-pretty-name frame) stream)))))
+    (when frame
+      (raise-frame frame))))
+
+(add-menu-item-to-command-table 'application-menu "quit-divider" 
+				                      :divider nil
+				                      :errorp nil)
+
+(define-command (com-shutdown-environment :command-table application-menu
+					                    :name t :menu "Shutdown") ()
+   (shutdown-clim-environment :navigator *application-frame*))
+
+(add-menu-item-to-command-table
+  'edit-menu "File" 
+  :function #'(lambda (gesture arg)
+		gesture arg
+		(let ((pathname (select-file *application-frame*)))
+		  (when pathname
+		    `(com-edit-file ,pathname))))
+  :errorp nil)
+
+(add-menu-item-to-command-table
+  'edit-menu "Definition"
+  :function #'(lambda (gesture arg)
+		gesture arg
+		(let* ((stream (frame-standard-input *application-frame*))
+		       (definition (accepting-values (stream :own-window t)
+				     (accept #---ignore 'symbol
+					     #+++ignore '((expression) :auto-activate t)
+					     :prompt "Definition to edit"
+					     :provide-default t 
+					     :stream stream))))
+		  `(com-edit-definition ,definition)))
+  :errorp nil)
+
+(add-menu-item-to-command-table
+  'system-menu "Load" 
+  :function #'(lambda (gesture arg)
+		gesture arg
+		(let* ((stream (frame-standard-input *application-frame*))
+		       (system (accepting-values (stream :own-window t)
+				 (accept '(type-or-string system)
+					 :prompt "System to load"
+					 :default-type 'system :provide-default t
+					 :stream stream))))
+		  `(com-load-system ,system)))
+  :errorp nil)
+
+
+#+Genera (zwei:defindentation (make-clim-environment-application 2 1))
+(defun make-clim-environment-application (navigator frame-class &rest initargs)
+  (clim-sys:make-process
+     #'(lambda ()  (let* ((framem (frame-manager navigator))
+			  (frame (apply #'make-application-frame frame-class 
+					:frame-manager framem
+					initargs)))
+		     (setf (navigator-frames navigator)
+		       (nconc (navigator-frames navigator) (list frame)))
+		     (run-frame-top-level frame)))
+     :name (string frame-class)))
+
+(define-command (com-start-lisp-listener :command-table tools-menu
+					 :name t :menu "Lisp Listener") ()
+  (let ((width  #+Genera +fill+ #-Genera 750)
+	(height #+Genera +fill+ #-Genera 650))
+    (make-clim-environment-application *application-frame* 'lisp-listener
+      :width width :height height)))
+
+(define-command (com-start-class-browser :command-table tools-menu
+					 :name t :menu "Class Browser") ()
+  (make-clim-environment-application *application-frame* 'class-browser
+    :width 700 :height 650))
+
+(define-command (com-start-generic-function-browser :command-table tools-menu
+						    :name t :menu "Generic Function Browser") ()
+  (make-clim-environment-application *application-frame* 'generic-function-browser
+    :width 700 :height 650))
+
+(define-command (com-start-function-browser :command-table tools-menu
+					    :name t :menu "Function Browser") ()
+  (make-clim-environment-application *application-frame* 'function-browser
+    :width 700 :height 650))
+
+(define-command (com-start-package-browser :command-table tools-menu
+					   :name t :menu "Package Browser") ()
+  (make-clim-environment-application *application-frame* 'package-browser
+    :width 700 :height 650))
+
+
+(define-command (com-start-fsedit :command-table OS-menu
+				  :name t :menu "Dired") ()
+  (make-clim-environment-application *application-frame* 'fsedit
+    :width 700 :height 650))
+
+(define-command (com-start-peek :command-table OS-menu
+				:name t :menu "Processes") ()
+  (make-clim-environment-application *application-frame* 'peek
+    :width 700 :height 650))
+
+(add-menu-item-to-command-table 'OS-menu "unix-divider" 
+				:divider nil
+				:errorp nil)
+
+(define-command (com-start-grep :command-table OS-menu
+				:name t :menu "Grep") ()
+  (make-clim-environment-application *application-frame* 'grep
+    :width 700 :height 450))
+
+(define-command (com-start-shell :command-table OS-menu
+				 :name t :menu "Shell") ()
+  (make-clim-environment-application *application-frame* 'shell
+    :width 700 :height 650))
+
+(defvar *navigators* nil)
+
+(defun find-navigator (&key (port (find-port)) framem (errorp t))
+  (let* ((framem (or framem (find-frame-manager :port port))) 
+	 (navigator (cdr (assoc framem *navigators*))))
+    (or navigator
+	(when errorp
+	  (error "There doesn't appear to be a navigator!")))))
+
+(defun start-clim-environment (&key (port (find-port)) framem (force nil))
+  ;; Load the init file first in order to set up frame resources
+  (let ((init (make-pathname :defaults (user-homedir-pathname)
+			     :name #+Unix ".clim-environment"
+			     #-Unix "clim-environment"
+			     :type #-(or Lispworks3.3 CCL) nil 
+			     #+(or Lispworks3.3 CCL) "lisp"
+			     :version #+Unix nil #-Unix :newest)))
+    (load init :verbose t :if-does-not-exist nil))
+  (#+MCL ccl:process-run-function 
+   #+Allegro mp:process-run-function
+   #+Genera process:process-run-function
+    "Frame Top Level"
+    #'(lambda ()
+	(let* ((framem (or framem (find-frame-manager :port port))))
+	  (let* ((entry (assoc framem *navigators*))
+		 (frame (cdr entry)))
+	    (when (or force (null frame))
+	      (setq frame (make-application-frame 'navigator
+						  :frame-manager framem
+						  :right 1000 :top 0
+						  :width 400 :height 100))
+	      #+MCL (let* ((window (clim:get-frame-pane frame 'interactor))
+			   (mirror (clim:sheet-mirror window))
+			   (menu-item (ccl:window-menu-item mirror)))
+		      (ccl:set-command-key menu-item #\b)))
+	    (if entry 
+	      (setf (cdr entry) frame)
+	      (push (cons framem frame) *navigators*))
+	    (clim:run-frame-top-level frame))))))
+
+(defun shutdown-clim-environment (&key navigator (port (find-port)) framem)
+  (let ((navigator (or navigator
+                       (find-navigator :port port :framem framem :errorp nil))))
+    (when (and navigator
+               (pointer-yes-or-no-p
+		 "Shut down the CLIM Environment?"
+		 :foreground +black+
+		 :background (find-named-color "orange-red" (frame-palette navigator))))
+      (dolist (frame (navigator-frames navigator))
+	(frame-exit frame)
+        (destroy-frame frame))
+      (setq *navigators* (delete navigator *navigators* :key #'cdr))
+      (frame-exit navigator))))
+
