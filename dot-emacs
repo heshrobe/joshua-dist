@@ -1,0 +1,213 @@
+;; A sample ~/.emacs file.
+;;
+;; $Id: emacs.el,v 1.7.24.1 2001/05/30 20:10:54 layer Exp $
+;; ____________________________________________________________________________
+;; Aquamacs custom-file warning:
+;; Warning: After loading this .emacs file, Aquamacs will also load
+;; customizations from `custom-file' (customizations.el). Any settings there
+;; will override those made here.
+;; Consider moving your startup settings to the Preferences.el file, which
+;; is loaded after `custom-file':
+;; ~/Library/Preferences/Aquamacs Emacs/Preferences
+;; _____________________________________________________________________________
+
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+
+; (package-initialize)
+
+(setq x-select-enable-clipboard 't)
+
+(setq ispell-program-name "/opt/local/bin/aspell")
+
+(autoload 'flyspell-mode "flyspell" "On-the-fly spelling checker." t)
+(autoload 'flyspell-delay-command "flyspell" "Delay on command." t) 
+(autoload 'tex-mode-flyspell-verify "flyspell" "" t) 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Getting stuff from the joshua distribution
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(setq *josh-directory* (expand-file-name "~/josh-dist/"))
+
+(load (format "%sparedit.elc" *josh-directory*))
+(load (format "%smouse-copy.elc" *josh-directory*))
+(load (format "%semacs-additions-for-joshua.el" *josh-directory*))
+
+;; set the mouse-copy key
+(global-set-key [(hyper mouse-2)] 'mouse-copy-thing-at-point)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Basic Customizations
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(setq x-select-enable-clipboard t)
+(setq mac-option-modifier  'meta)
+(setq mac-function-modifier 'hyper)
+
+(define-key global-map [(hyper ?k)] 'kill-backward-up-list)
+
+(put 'downcase-region 'disabled nil)
+
+(put 'upcase-region 'disabled nil)
+
+(defvar *allegro-loaded* nil)
+
+(let ((last-nonmenu-event nil))
+
+  (when (y-or-n-p "Set up for Allegro")
+    (defvar *allegro-home*)
+    (setq *allegro-loaded* t)
+    (message "System type is %s" system-type)
+    (setq *allegro-home*
+	  (if (string-equal system-type "darwin")
+	      "/Applications/AllegroCL64.app/Contents/Resources"
+	    "/Allegro"))
+
+    (defvar *eli-directory*)
+    (setq *eli-directory* (expand-file-name (format "%s/eli/" *allegro-home*)))
+
+    (load (format "%sfi-site-init.el" *eli-directory*))
+    (setq fi:find-tag-lock nil)
+
+    ;; Make left and right bracket [] and braces {} behave like parens
+    (modify-syntax-entry ?\[ "(]   " fi:lisp-mode-syntax-table)
+    (modify-syntax-entry ?\] ")[   " fi:lisp-mode-syntax-table)
+    (modify-syntax-entry ?\{ "(]   " fi:lisp-mode-syntax-table)
+    (modify-syntax-entry ?\} ")[   " fi:lisp-mode-syntax-table)
+
+
+    ;; making formatting nicer for a bunch of Joshua and TIARA stuff
+    (let ((tag 'fi:common-lisp-indent-hook))
+      (put 'make-token tag '(like make-instance))
+      (put 'with-unification tag '(like unify))
+      (put 'with-stack-list tag '(like unify))
+      (put 'stack-let tag '(like with-open-file))
+      (put 'with-atomic-action tag '(like unify))
+      (put 'with-statement-destructured tag '((1 1 quote) (0 t 2)))
+      (put 'as-object-member tag '((1 1 quote) (0 t 2)))
+      (put 'with-predication-maker-destructured tag '((1 1 quote) (0 t 2)))
+      (put 'binding-lvs tag  '(like with-open-file))
+      (put 'def-aif-generic tag (quote (if (fi:lisp-atom-p 2)
+					   ((1 3 lambda-list) (0 t 3))
+					 ((1 2 lambda-list) (0 t 2)))))
+      (put 'def-aif-class tag '(like defclass))
+      (put 'def-aif-method tag 
+	   ;; this is for the nicecap stuff
+	   ;; '(like defmethod) should work but didn't
+	   ;; but I'm not sure it wouldn't in a clean world.
+	   (quote (if (fi:lisp-atom-p 2)
+		      ((1 3 lambda-list) (0 t 3))
+		    ((1 2 lambda-list) (0 t 2)))))
+      ;; json relates stuff
+      (put 'json:as-array-member tag '(like with-open-file))
+      )
+
+
+    (setq fi:common-lisp-directory (format "%s/" *allegro-home*))
+    (setq fi:common-lisp-image-name (format"%s/alisp" *allegro-home*))
+    (setq fi:common-lisp-clim-image-file (format "%s/clim-env-josh.dxl" *allegro-home*))
+    (setq fi:common-lisp-base-image-file (format "%s/alisp.dxl" *allegro-home*))
+    ;; (setq fi:common-lisp-clim-image-file "*allegro-home*/clim.dxl")
+
+    (setq fi:common-lisp-host "localhost")
+
+    ;; (setq fi:common-mlisp-image-name "*allegro-home*/mlisp")
+    ;; (setq fi:common-mlisp-base-image-file "*allegro-home*/mlisp.dxl")
+
+
+    ;; This function starts up lisp with your defaults.
+    (defun run-common-lisp ()
+      (interactive)
+      (fi:common-lisp fi:common-lisp-buffer-name
+		      fi:common-lisp-directory
+		      fi:common-lisp-image-name
+		      fi:common-lisp-image-arguments
+		      fi:common-lisp-host
+		      fi:common-lisp-clim-image-file))
+						    
+
+    (defun run-raw-common-lisp ()
+      (interactive)
+      (fi:common-lisp fi:common-lisp-buffer-name
+		      fi:common-lisp-directory
+		      fi:common-lisp-image-name
+		      fi:common-lisp-image-arguments
+		      fi:common-lisp-host
+		      fi:common-lisp-base-image-file))
+
+    (defun run-clim-common-lisp ()
+      (interactive)
+      (fi:common-lisp fi:common-lisp-buffer-name
+		      fi:common-lisp-directory
+		      fi:common-lisp-image-name
+		      fi:common-lisp-image-arguments
+		      fi:common-lisp-host
+		      fi:common-lisp-clim-image-file))
+
+    ;; (defun run-raw-common-mlisp ()
+    ;;   (interactive)
+    ;;   (fi:common-lisp fi:common-lisp-buffer-name
+    ;; 		  fi:common-lisp-directory
+    ;; 		  fi:common-mlisp-image-name
+    ;; 		  fi:common-lisp-image-arguments
+    ;; 		  fi:common-lisp-host
+    ;; 		  fi:common-mlisp-base-image-file))
+
+    ;; (defun run-common-lisp-from-file ()
+    ;;   (interactive)
+    ;;   (fi:start-interface-via-file "localhost" "*common-lisp*" "eli-start-data"))
+
+    ;; (define-key global-map "\C-xL" 'run-common-lisp-from-file)
+
+    ;; Set up a keybinding for `run-common-lisp', two possible ways:
+    ;;(progn
+    ;;  (setq ctlx-3-map (make-keymap))
+    ;;  (define-key ctl-x-map "3" ctlx-3-map)
+    ;;  (define-key ctlx-3-map "l" 'run-common-lisp))
+    ;; or this:
+    (define-key global-map "\C-xl" 'run-common-lisp)
+
+    ;; Run cl each time emacs is run:
+    ;; (run-common-lisp)
+
+;;; Make M-. work for Allegro
+;;; Also rebind Control-Meta-d to down-list from disassemble
+    (setq fi:lisp-mode-hook
+	  (function
+	   (lambda ()
+	     (let ((map (current-local-map)))
+	       (message "Making meta-. work")
+	       (define-key map "\C-c."	'find-tag)
+	       (define-key map "\C-c,"	'tags-loop-continue)
+	       (define-key map "\e."	'fi:lisp-find-definition)
+	       (define-key map "\e,"	'fi:lisp-find-next-definition)
+	       (define-key map "\C-\M-d"   'down-list)
+	       (message "Making control-meta-d work")))))
+
+;;; Use manual from my disk for Allegro
+    (setq fi::manual-base-url (format "file:~s/" *allegro-home*))))
+
+  
+;;; The let forces this to use a dialog box
+(let ((last-nonmenu-event nil))
+  (when (and (not *allegro-loaded*) (y-or-n-p "Load slime stuff"))
+    (load (expand-file-name "~/quicklisp/slime-helper.el"))
+    (setq inferior-lisp-program "sbcl")
+    (load "~/.emacs.d/init.el")
+    ))
+
+
+;;; For the CASE project
+
+(autoload 'aadl-mode "aadl-mode"
+  "Major mode for editing AADL files" t)
+
+(add-to-list 'auto-mode-alist '("\\.aadl\\'" . aadl-mode))
