@@ -1089,8 +1089,10 @@
 	  (typical-instance-of-type? (list self))
 	  (t nil))))
 
-(defmethod object-type-of ((self basic-object) )
-  (object-type-name (slot-value self 'type)))
+(defmethod object-type-of ((self basic-object))
+  (let ((type (slot-value self 'type)))
+    (when type
+      (object-type-name type))))
 
 (defmethod superpart ((self basic-object)) (slot-value self 'superpart-object))
 
@@ -1270,18 +1272,19 @@
 
 (defmethod trigger-rules-when-created :before ((object basic-object))
   (let* ((object-type (object-type-of object))
-	 (type-pred `[,(type-of-predicate-for-object-type object) ,object ,object-type])
+	 (type-pred (when object-type `[,(type-of-predicate-for-object-type object) ,object ,object-type]))
 	 (superior (basic-object-superpart-object object))
 	 (role-name (role-name object))
-	 (part-of-pred `[,(part-of-predicate-for-object-type object) ,superior ,role-name ,object]))
-    (setf (basic-object-type-predication object) type-pred
-	  (been-in-database-p type-pred) t
-	  (basic-object-part-predication object) part-of-pred
-	  (been-in-database-p part-of-pred) t)
-    (justify part-of-pred +true+ :premise)
-    (justify type-pred +true+ :premise)
+	 (part-of-pred (when (and superior object-type) `[,(part-of-predicate-for-object-type object) ,superior ,role-name ,object])))
+    (when type-pred
+      (setf (basic-object-type-predication object) type-pred
+	    (been-in-database-p type-pred) t))
+    (when part-of-pred
+      (setf (basic-object-part-predication object) part-of-pred
+	    (been-in-database-p part-of-pred) t))
+    (when part-of-pred (justify part-of-pred +true+ :premise))
+    (when type-pred (justify type-pred +true+ :premise))
     ))
-
 
 (defmacro part (role-name type)
   `(make-instance ',type

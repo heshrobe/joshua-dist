@@ -89,6 +89,7 @@
    "fix-presentation-highlighting-and-documentation"
    "fix-options-on-translators"
    "fix-filling-output"
+   "fix-tab-as-complete"
    ))
 
 #+genera

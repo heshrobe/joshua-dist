@@ -113,10 +113,160 @@
   (truth-value nil)
   (semi-unification-code nil))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Definitions used in building the actual rete network
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstruct (basic-rete-node)
+  (children nil)
+  (environments nil)
+  (merges-underneath nil)
+  (suspended-states nil))
+
+;;; an abstract node type, only included in others (i.e. matchers and mergers)
+(defstruct (Rete-node (:include basic-rete-node))
+  ;; this one is sort of an "abstract defstruct", i.e. you only make
+  ;; Rete-match-nodes or Rete-merge-nodes, never just Rete-node
+  (code nil)
+  (semi-unification-code nil))
+
+(defun rete-node-printfn (self stream depth &optional stuff-to-insert)
+  (declare (ignore depth))
+  (format stream "#<~s~@[ ~s~]~@[ ~o~]>"
+	  (type-of self)
+	  stuff-to-insert
+	  ;; would be pointer if I knew how
+	  (or nil)))
+
+;;; A node that's the result of a Lisp operation
+(defstruct (Rete-procedure-node (:include basic-Rete-node)
+				(:print-function rete-node-printfn))
+  (code nil)
+  (rule-name nil))
+
+(defstruct (Rete-or-node (:include basic-Rete-node)
+			     (:print-function rete-node-printfn))
+  )
+
+(defstruct (match-id)
+  ;; a structure used in Rete-leaf nodes for traceability and to tell
+  ;; whether two nodes are mergeable
+  (rule-name nil)
+  (pattern nil))
+
+;;; A node that's the result of a pattern matching operation
+(defstruct (Rete-match-node (:include Rete-node)
+			    (:print-function
+			     (lambda (o s d)
+				(rete-node-printfn
+				  o s d
+				  (let ((match-ids (Rete-match-node-match-ids o)))
+				    (if match-ids
+					(match-id-pattern
+					  (first match-ids))
+					"No Pattern"))))))
+  (match-ids nil)
+  (truth-value nil)
+  )
+
+(defstruct (Rete-object-match-node (:include Rete-match-node)))
+
+;;; A node that's the result of merging the stored environments at two other nodes
+(defstruct (Rete-merge-node (:include Rete-node)
+			    (:print-function rete-node-printfn))
+  (merge-id nil))
+
+
+;;; Two pseudo nodes
+;;; these are the beginning of an AND group or an OR group
+;;; there only function is to point to all the leaf nodes of this group
+;;; doing this with a List screws the compiler as it tries to copy constants.
+
+(defstruct (rete-and-group)
+  (parts nil))
+
+(defstruct (rete-or-group)
+  (parts nil))
+
+
+
+
+
+;;; The links of the rete network
+
+(defstruct (basic-Rete-child-entry)
+  ;; An abstract link type, only included in others
+  (child nil))
+
+(defstruct (Rete-child-entry (:include basic-Rete-child-entry))
+  ;; A link that points to a merge node
+  ;; says what other node to merge with and from which side
+  ;; since the merge code is asymmetric in the two environments
+  (brother nil)
+  (side nil))
+
+(defstruct (Rete-procedure-entry (:include basic-Rete-child-entry))
+  ;; A link that points to a procedure node
+  ;; The node it points to has the code the perform the operation
+  (rule-name nil))
+
+(defstruct (rete-or-entry (:include basic-rete-child-entry))
+  (rule-name nil)
+  (shuffling-code nil))
+
+(defstruct (rete-terminal-entry)
+  ;; A link that points to a rule-body
+  (function nil)
+  (rule-name nil)
+  (truth-values nil)
+  (importance nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Stimulate refers to defstructs here but this loads later
+;;; so it's been moved to this file to allow inlining
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; What's on the stimulate list of a predication is a list of
+;;; rete-match-nodes to process.
+
+
+(defmethod stimulate ((self default-protocol-implementation-model) truth-value)
+  ;; First look at all the match nodes that we haven't yet done the
+  ;; match with.
+  (with-slots (bits rete-states stimulate-list) self
+   (loop until (/= (predication-bits-truth-value bits) truth-value)
+	 for rete-state in rete-states
+	 doing (stimulate-rete-state rete-state truth-value))
+   (when stimulate-list
+     (loop with head = (cons nil stimulate-list)
+	   with pointer = head
+	   for match-node = (cadr pointer)
+	   ;; stop when my bits have been changed, or when there are no
+	   ;; more entries in the stimulate-list
+	   until (or (/= (predication-bits-truth-value bits) truth-value) (null match-node))
+	   for required-truth-value = (rete-match-node-truth-value match-node)
+	   if (/= required-truth-value truth-value)
+	     ;; If this guy doesn't have the right truth-value
+	     ;; just bypass him; he'll stay sitting on the stimulate-list
+	     do (setf pointer (cdr pointer))
+		;; otherwise process the entry and splice him out
+	   else do (rete-network-match-predication match-node self)
+		   (setf (cdr pointer) (cddr pointer))
+	   finally (setq stimulate-list (cdr head))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
 ;;;; Phase 1 of compiling the rete network
 ;;; This phase figures out everything about the topology of the network
 ;;; This phase deals with the syntax of the rule
 ;;;   We deal with Logic-variables-makers and Predication-makers.
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -618,109 +768,7 @@
 ;;; They come here because the code below builds the final rete network
 ;;; which uses these structures.
 
-(defstruct (basic-rete-node)
-  (children nil)
-  (environments nil)
-  (merges-underneath nil)
-  (suspended-states nil))
 
-;;; an abstract node type, only included in others (i.e. matchers and mergers)
-(defstruct (Rete-node (:include basic-rete-node))
-  ;; this one is sort of an "abstract defstruct", i.e. you only make
-  ;; Rete-match-nodes or Rete-merge-nodes, never just Rete-node
-  (code nil)
-  (semi-unification-code nil))
-
-(defun rete-node-printfn (self stream depth &optional stuff-to-insert)
-  (declare (ignore depth))
-  (format stream "#<~s~@[ ~s~]~@[ ~o~]>"
-	  (type-of self)
-	  stuff-to-insert
-	  ;; would be pointer if I knew how
-	  (or nil)))
-
-;;; A node that's the result of a Lisp operation
-(defstruct (Rete-procedure-node (:include basic-Rete-node)
-				(:print-function rete-node-printfn))
-  (code nil)
-  (rule-name nil))
-
-(defstruct (Rete-or-node (:include basic-Rete-node)
-			     (:print-function rete-node-printfn))
-  )
-
-
-
-;;; A node that's the result of a pattern matching operation
-(defstruct (Rete-match-node (:include Rete-node)
-			    (:print-function
-			      (lambda (o s d)
-				(rete-node-printfn
-				  o s d
-				  (let ((match-ids (Rete-match-node-match-ids o)))
-				    (if match-ids
-					(match-id-pattern
-					  (first match-ids))
-					"No Pattern"))))))
-  (match-ids nil)
-  (truth-value nil)
-  )
-
-(defstruct (Rete-object-match-node (:include Rete-match-node)))
-
-;;; A node that's the result of merging the stored environments at two other nodes
-(defstruct (Rete-merge-node (:include Rete-node)
-			    (:print-function rete-node-printfn))
-  (merge-id nil))
-
-
-;;; Two pseudo nodes
-;;; these are the beginning of an AND group or an OR group
-;;; there only function is to point to all the leaf nodes of this group
-;;; doing this with a List screws the compiler as it tries to copy constants.
-
-(defstruct (rete-and-group)
-  (parts nil))
-
-(defstruct (rete-or-group)
-  (parts nil))
-
-(defstruct (match-id)
-  ;; a structure used in Rete-leaf nodes for traceability and to tell
-  ;; whether two nodes are mergeable
-  (rule-name nil)
-  (pattern nil))
-
-
-
-;;; The links of the rete network
-
-(defstruct (basic-Rete-child-entry)
-  ;; An abstract link type, only included in others
-  (child nil))
-
-(defstruct (Rete-child-entry (:include basic-Rete-child-entry))
-  ;; A link that points to a merge node
-  ;; says what other node to merge with and from which side
-  ;; since the merge code is asymmetric in the two environments
-  (brother nil)
-  (side nil))
-
-(defstruct (Rete-procedure-entry (:include basic-Rete-child-entry))
-  ;; A link that points to a procedure node
-  ;; The node it points to has the code the perform the operation
-  (rule-name nil))
-
-(defstruct (rete-or-entry (:include basic-rete-child-entry))
-  (rule-name nil)
-  (shuffling-code nil))
-
-(defstruct (rete-terminal-entry)
-  ;; A link that points to a rule-body
-  (function nil)
-  (rule-name nil)
-  (truth-values nil)
-  (importance nil))
 
 
 

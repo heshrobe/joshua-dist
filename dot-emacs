@@ -191,11 +191,9 @@
 	       (define-key map "\e,"	'fi:lisp-find-next-definition)
 	       (define-key map "\C-\M-d"   'down-list)
 	       (message "Making control-meta-d work")))))
-
 ;;; Use manual from my disk for Allegro
-    (setq fi::manual-base-url (format "file:~s/" *allegro-home*))))
+    (setq fi::manual-base-url (format "file://%s/" *allegro-home*))))
 
-  
 ;;; The let forces this to use a dialog box
 (let ((last-nonmenu-event nil))
   (when (and (not *allegro-loaded*) (y-or-n-p "Load slime stuff"))

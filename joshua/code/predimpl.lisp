@@ -153,32 +153,38 @@
 		(list rete-state child-entry)
 		(number-from-importance importance)))
 
-;;; What's on the stimulate list of a predication is a list of
-;;; rete-match-nodes to process.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; This has been moved to rete.lisp because it references
+;;; defstructs defined there and if it's there inlining is possible
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
  
-(defmethod stimulate ((self default-protocol-implementation-model) truth-value)
-  ;; First look at all the match nodes that we haven't yet done the
-  ;; match with.
-  (with-slots (bits rete-states stimulate-list) self
-   (loop until (/= (predication-bits-truth-value bits) truth-value)
-	 for rete-state in rete-states
-	 doing (stimulate-rete-state rete-state truth-value))
-   (when stimulate-list
-     (loop with head = (cons nil stimulate-list)
-	   with pointer = head
-	   for match-node = (cadr pointer)
-	   ;; stop when my bits have been changed, or when there are no
-	   ;; more entries in the stimulate-list
-	   until (or (/= (predication-bits-truth-value bits) truth-value) (null match-node))
-	   for required-truth-value = (rete-match-node-truth-value match-node)
-	   if (/= required-truth-value truth-value)
-	     ;; If this guy doesn't have the right truth-value
-	     ;; just bypass him; he'll stay sitting on the stimulate-list
-	     do (setf pointer (cdr pointer))
-		;; otherwise process the entry and splice him out
-	   else do (rete-network-match-predication match-node self)
-		   (setf (cdr pointer) (cddr pointer))
-	   finally (setq stimulate-list (cdr head))))))
+
+;; (defmethod stimulate ((self default-protocol-implementation-model) truth-value)
+;;   ;; First look at all the match nodes that we haven't yet done the
+;;   ;; match with.
+;;   (with-slots (bits rete-states stimulate-list) self
+;;    (loop until (/= (predication-bits-truth-value bits) truth-value)
+;; 	 for rete-state in rete-states
+;; 	 doing (stimulate-rete-state rete-state truth-value))
+;;    (when stimulate-list
+;;      (loop with head = (cons nil stimulate-list)
+;; 	   with pointer = head
+;; 	   for match-node = (cadr pointer)
+;; 	   ;; stop when my bits have been changed, or when there are no
+;; 	   ;; more entries in the stimulate-list
+;; 	   until (or (/= (predication-bits-truth-value bits) truth-value) (null match-node))
+;; 	   for required-truth-value = (rete-match-node-truth-value match-node)
+;; 	   if (/= required-truth-value truth-value)
+;; 	     ;; If this guy doesn't have the right truth-value
+;; 	     ;; just bypass him; he'll stay sitting on the stimulate-list
+;; 	     do (setf pointer (cdr pointer))
+;; 		;; otherwise process the entry and splice him out
+;; 	   else do (rete-network-match-predication match-node self)
+;; 		   (setf (cdr pointer) (cddr pointer))
+;; 	   finally (setq stimulate-list (cdr head))))))
+
 
 ;;;
 ;;; The actual default implementations of the protocol fns.
