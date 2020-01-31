@@ -106,7 +106,7 @@
 	   (quote (if (fi:lisp-atom-p 2)
 		      ((1 3 lambda-list) (0 t 3))
 		    ((1 2 lambda-list) (0 t 2)))))
-      ;; json relates stuff
+      ;; json related stuff
       (put 'json:as-array-member tag '(like with-open-file))
       )
 
