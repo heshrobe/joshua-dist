@@ -2,41 +2,6 @@
 
 (in-package :cl-user)
 
-#+Genera
-(scl:defsystem joshua-portable
-    (:pretty-name "Joshua Portable"
-     :short-name "JP"
-     :default-pathname "joshua:portable;code;"
-     :journal-directory "joshua:portable;code;patch;"
-     :bug-reports t
-     :advertised-in (:disk-label :herald :finger)
-     :source-category (:basic)
-     :distribute-sources t
-     :distribute-binaries t
-     :maintaining-sites (:scrc :jamaica-plain :MIT))
-  (:serial-definitions
-    "packaged"
-    "borrowin"
-    "mapfvars"
-    "mapforms"
-    "readnnwr"
-    "preddefs"
-    "predicat"
-    "unificat"
-    "predprot"
-    "clos-heaps"
-    "predimpl" 
-    "rete" 
-    "matcher"
-    "discrimi"
-    "supplied"
-    "rules"
-    "ltms"
-    "objectmo"
-    "cfs"))
-
-
-#-genera
 (eval-when (:execute :load-toplevel)
   (let* ((loading-file *load-truename*)
          (host (pathname-host loading-file))
@@ -50,8 +15,6 @@
 	      ("**;*.*" ,wildcard)
 	       )))))
 
-
-#+allegro
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (defun find-joshua-readtable ()
     (symbol-value (intern (string-upcase "*joshua-readtable*") (find-package :joshua-internals)))
@@ -75,7 +38,6 @@
       (joshua-module-mixin separate-destination-module)
     ()))
 
-#+allegro
 (defsystem joshua
     (:pretty-name "Joshua"
      :default-module-class separate-destination-module
@@ -101,28 +63,5 @@
     "congruence-closure"
     "objectmo"
     "cfs"
+    "better-grapher"
     ))
-
-
-#+mcl
-(clim-defsys:defsystem joshua
-    (:default-pathname "joshua:code;")
-  ("packaged" :language :lisp-unix)
-  ("borrowin" :load-before-compile ("packaged") :language :lisp-unix)
-  ("mapfvars" :load-before-compile ("borrowin") :language :lisp-unix)
-  ("mapforms" :load-before-compile ("mapfvars") :language :lisp-unix)
-  ("readnnwr" :load-before-compile ("mapforms") :language :lisp-unix)
-  ("preddefs" :load-before-compile ("readnnwr") :language :lisp-unix)
-  ("predicat" :load-before-compile ("preddefs") :language :lisp-unix)
-  ("unificat" :load-before-compile ("predicat") :language :lisp-unix)
-  ("predprot" :load-before-compile ("unificat") :language :lisp-unix)
-  ("clos-heaps" :load-before-compile ("predprot") :language :lisp-unix)
-  ("predimpl" :load-before-compile ("clos-heaps") :language :lisp-unix)
-  ("rete" :load-before-compile ("predimpl") :language :lisp-unix)
-  ("matcher" :load-before-compile ("rete") :language :lisp-unix)
-  ("discrimi" :load-before-compile ("matcher") :language :lisp-unix)
-  ("supplied" :load-before-compile ("discrimi") :language :lisp-unix)
-  ("rules" :load-before-compile ("supplied") :language :lisp-unix) 
-  ("ltms" :load-before-compile ("rules") :language :lisp-unix)
-  ("objectmo" :load-before-compile ("ltms") :language :lisp-unix)
-  ("cfs" :load-before-compile ("ltms") :language :lisp-unix))

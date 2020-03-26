@@ -21,7 +21,8 @@
 
 (setq x-select-enable-clipboard 't)
 
-(setq ispell-program-name "/opt/local/bin/aspell")
+(setq ispell-program-name "/usr/local/bin/aspell")
+(load "~/quicklisp/local-projects/McCLIM/Tools/hyperclim.el")
 
 (autoload 'flyspell-mode "flyspell" "On-the-fly spelling checker." t)
 (autoload 'flyspell-delay-command "flyspell" "Delay on command." t) 
@@ -197,9 +198,9 @@
 ;;; The let forces this to use a dialog box
 (let ((last-nonmenu-event nil))
   (when (and (not *allegro-loaded*) (y-or-n-p "Load slime stuff"))
+    (load "~/.emacs.d/init.el")
     (load (expand-file-name "~/quicklisp/slime-helper.el"))
     (setq inferior-lisp-program "sbcl")
-    (load "~/.emacs.d/init.el")
     ))
 
 

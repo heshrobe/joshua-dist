@@ -143,7 +143,8 @@
   (if (heap-empty-p-macro)
       (values nil nil nil)
     (with-top-key-and-item (key item)
-       (values item key t)))))
+      (values item key t)))))
+
 
 (defmethod heap-remove ((self heap))
   (with-slots (heap-array active-size) self
