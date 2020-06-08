@@ -1,48 +1,12 @@
 ;;; -*- Mode: LISP; Base: 10; Syntax: Common-lisp; Package: joshua-internals -*-
-;;;>
-;;;> *****************************************************************************************
-;;;> ** (c) Copyright 1990-1988 Symbolics, Inc.  All rights reserved.
-;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
-;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
-;;;> stored only in accordance with the terms of such license.
-;;;> 
-;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
-;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3653, Symbolics
-;;;> 3620 (R), Symbolics 3610 (R), Symbolics Common Lisp (R), Symbolics-Lisp (R),
-;;;> Zetalisp (R), Genera (R), Wheels (R), Dynamic Windows (R), Showcase, SmartStore (R),
-;;;> Semanticue (R), Frame-Up (R), Firewall (R), MACSYMA (R), COMMON LISP MACSYMA (R),
-;;;> CL-MACSYMA (R), LISP MACHINE MACSYMA (R), MACSYMA Newsletter (R), PC-MACSYMA, Document
-;;;> Examiner (R), Delivery Document Examiner, S-DYNAMICS (R), S-GEOMETRY (R), S-PAINT (R),
-;;;> S-RECORD, S-RENDER (R), Displacement Animation, FrameThrower, PaintAmation, "Your Next
-;;;> Step in Computing" (R), Ivory, MacIvory, MacIvory model 2, XL400, Symbolics UX400S, 
-;;;> Symbolics C, Symbolics Pascal (R), Symbolics Prolog, Symbolics Fortran (R), CLOE (R),
-;;;> CLOE Application Generator, CLOE Developer, CLOE Runtime, Common Lisp Developer,
-;;;> Symbolics Concordia, Joshua, and Statice (R) are trademarks of Symbolics, Inc.
-;;;> 
-;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Technical Data and Computer 
-;;;> Software Clause at DFAR 52.227-7013.
-;;;> 
-;;;>      Symbolics, Inc.
-;;;>      8 New England Executive Park, East
-;;;>      Burlington, Massachusetts  01803
-;;;>      United States of America
-;;;>      617-221-1000
-;;;> *****************************************************************************************
-;;;>
+;;;
 
 (in-package :ji)
 
 ;;; The Joshua tracing substrate
 
 ;;; This file contains:
-;;;  
+;;;
 ;;; The defclass and methods for the following classes
 ;;;
 ;;; 1.) Joshua-debbugger - keeps track of all of the global state of Joshua
@@ -75,7 +39,7 @@
 ;;;
 ;;; 4) forward-rule-tracer, backward-rule-tracer, predication-tracer,
 ;;; and tms-tracer - These are the classes of the four types of tracers.
-;;; 
+;;;
 ;;; It also contains all of the definitions that create the instances of
 ;;; the event and the tracers and register them with joshua-debugger.
 ;;; See define-tracing-event and define-tracer
@@ -83,14 +47,11 @@
 ;;; This file uses an arglist declaration; this is not defined by common lisp.
 ;;; this provides it:
 
-#+(or mcl allegro)
+#+(or mcl allegro sbcl)
 (declaim (declaration arglist))
 
-;;; First some defvars 
+;;; First some defvars
 ;;; Where to install joshua commands, for now we just stick them in Global
-
-
-
 
 (defvar *joshua-command-table* (clim:find-command-table 'clim:global-command-table))
 
@@ -130,9 +91,9 @@
   `(progn (clim:indenting-output (,stream  #'joshua-trace-message-indentor)
 	    ,@body)))
 
-;;; By wrapping all of the trace messages with this we make sure that 
-;;; any output done by the user between trace outputs is done to a 
-;;; new line, but at the same time we get the trace indentation for the 
+;;; By wrapping all of the trace messages with this we make sure that
+;;; any output done by the user between trace outputs is done to a
+;;; new line, but at the same time we get the trace indentation for the
 ;;; first line of the message.
 (defmacro with-joshua-trace-message-output ((stream) &body body)
   `(progn (fresh-line ,stream)
@@ -147,9 +108,11 @@
 
 ;;; A hack to draw lines before and/or after output to the screen
 ;;; this probably doesn't work because of pane-viewport-region
-(defmacro delineating-output ((&optional (stream *standard-output*)
-					 &key (fraction-of-screen .8)
-					 (location :around) (thickness 2))
+;;; also SBCL barfed at the use of both &optional and &key and I don't
+;;; think it was used without providing stream anyhow
+(defmacro delineating-output ((stream
+                               &key (fraction-of-screen .8)
+                                 (location :around) (thickness 2))
 			      &body body)
   (let ((right-edge (gensym))
 	(draw-line (gentemp "DRAW-LINE")))
@@ -161,9 +124,9 @@
                   (declare (ignore left top bottom))
 		  (clim:with-room-for-graphics (,stream :height (1+ ,thickness))
 		    (clim:draw-line* ,stream
-                                     0 1 
+                                     0 1
                                      (floor (* ,fraction-of-screen ,right-edge)) 1
-                                    :line-thickness ,thickness))))))
+                                     :line-thickness ,thickness))))))
        (fresh-line ,stream)
        (,draw-line :before)
        ,@body
@@ -179,12 +142,12 @@
      (print-without-truth-value predication stream)
      (princ "]" stream))
     ((= truth-value +unknown+)
-     (prin1 predication stream)))) 
+     (prin1 predication stream))))
 
 ;;; these are the internal definitions except it evaluates the function-name
 ;;; the time and the unique-name
 
-#+genera 
+#+genera
 (defun unadvise (function)
   (si:unadvise-1 function nil nil))
 
@@ -196,6 +159,14 @@
 (defun unadvise (function)
   (funwrap function 'joshua-tracing))
 
+#+sbcl
+(defun advise (function fwrapper-name)
+  (sb-impl::encapsulate function 'joshua-tracing fwrapper-name))
+
+#+sbcl
+(defun unadvise (function)
+  (sb-impl::unencapsulate function 'joshua-tracing))
+
 #+mcl
 (defun advise (function form)
   (let* ((newsym (gentemp "ADVICE"))
@@ -204,7 +175,7 @@
                        (and (consp function) (eq (car function) :method)))))
     (ccl::advise-2 (eval (ccl::advise-global-def function newsym :around form method-p))
                    newsym method-p function :around 'joshua-tracing
-                   nil))) 
+                   nil)))
 
 #+mcl
 (defun unadvise (function)
@@ -216,7 +187,7 @@
 ;;; tracing
 
 (defclass joshua-debugger ()
-  ((event-to-tracer-table :initarg :event-to-tracer-table :accessor joshua-debugger-event-to-tracer-table 
+  ((event-to-tracer-table :initarg :event-to-tracer-table :accessor joshua-debugger-event-to-tracer-table
                           :initform (make-hash-table :test #'eq))
    (event-to-collector-table :initarg :event-to-collector-table :accessor joshua-debugger-event-to-collector-table
                              :initform (make-hash-table :test #'eq))
@@ -252,7 +223,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Adding and removing filters for controlling interactive tracing/stepping
 
-;;; The filter should be a two arg function that takes the event and the current depth 
+;;; The filter should be a two arg function that takes the event and the current depth
 ;;; as its args. It returns t when tracing should happen, nil if we want to skip the
 ;;; event. This is used by the Leap command.
 (defmethod add-tracing-filter ((self joshua-debugger) continuation)
@@ -265,7 +236,7 @@
     (setf tracing-filter nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; The code for keeping track of individual tracing events 
+;;; The code for keeping track of individual tracing events
 
 ;;; create a symbol for each event. This is used by the event macros to determine
 ;;; whether a tracing event is active.
@@ -314,7 +285,7 @@
   (with-slots (event-to-symbol-table) self
     (gethash event event-to-symbol-table)))
 
-;;; keep track of who enabled the tracing event so we can have one event used 
+;;; keep track of who enabled the tracing event so we can have one event used
 ;;; by multiple tracers/collectors
 (defmethod enable-event ((self joshua-debugger) event-name enabler-name)
   (with-slots (tracing-events event-to-symbol-table) self
@@ -363,8 +334,8 @@
             (return t)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Code for handling the definition and manipulation of tracers which are 
-;;; logical collections of tracing events that use the same functions for 
+;;; Code for handling the definition and manipulation of tracers which are
+;;; logical collections of tracing events that use the same functions for
 ;;; doing output. Things like the forward-rule-tracer, backward-rule-tracer,
 ;;; etc.
 
@@ -376,7 +347,7 @@
         (when error-p
 	  (error "Unknown Type of Tracing ~s. It must must be one of ~s."
 	         name
-	         (loop for a-tracer in tracers 
+	         (loop for a-tracer in tracers
 		       collect (tracer-unique-id a-tracer)))))
       tracer)))
 
@@ -419,7 +390,7 @@
     (disable tracer)
     (setf active-tracers (delete tracer active-tracers))
     (ensure-global-encapsulation-state self)))
-  
+
 (defmethod tracer-enabled-p ((self joshua-debugger) tracer)
   (with-slots (active-tracers) self
     (member tracer active-tracers)))
@@ -441,7 +412,7 @@
            encaps))))
 ;;; This depends on the Genera Encapsulation Framework
 
-;;; create a new type of encapsulation for joshua-tracing this should 
+;;; create a new type of encapsulation for joshua-tracing this should
 ;;; go into the system source at the next release
 
 #+genera
@@ -479,7 +450,7 @@
     (intern string)))
 
 
-;;; these are just around for debugging the encapsulation and event 
+;;; these are just around for debugging the encapsulation and event
 ;;; mechanisms
 ;
 ;(defmethod (do-encapsulations joshua-debugger)()
@@ -489,10 +460,10 @@
 ;
 ;(defmethod (undo-encapsulations joshua-debugger)()
 ;  (loop for encaps in encapsulations do
-;    (loop for enabler in (joshua-encapsulation-enablers encaps) do 
+;    (loop for enabler in (joshua-encapsulation-enablers encaps) do
 ;      (undo-encapsulation encaps enabler))))
 ;;
-;;;; these are just for debugging 
+;;;; these are just for debugging
 ;(defmethod (clear-encapsulations joshua-debugger)()
 ;  (setf  encapsulations nil))
 ;
@@ -509,7 +480,7 @@
 
 
 ;;; Keep track of the current encapsulations. Global encapsulations are those
-;;; that must be done whenever any kind of tracing is enabled. For example, 
+;;; that must be done whenever any kind of tracing is enabled. For example,
 ;;; the encapsulations that maintain the *rule-depth* variable.
 
 (defmethod add-encapsulation ((self joshua-debugger) encapsulation &optional global-p)
@@ -537,8 +508,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; finally some methods used by joshua-debugger to interact with the user
 
-;;; this is called by the tracer after it determines that the event is one 
-;;; that the user wants to step at. 
+;;; this is called by the tracer after it determines that the event is one
+;;; that the user wants to step at.
 
 
 ;;; This is still very DW specific
@@ -578,7 +549,7 @@
 
 ;;; I suppose this should be created statically to avoid consing, but it
 ;;; makes it easier to patch in new tracers if it isn't
-(defmethod create-tracer-alist ((self joshua-debugger) 
+(defmethod create-tracer-alist ((self joshua-debugger)
                                 &key (tracer-list (joshua-debugger-tracers self))
                                 (extra-items nil)
                                 (First-word-of-doc-strings "Enable"))
@@ -592,8 +563,8 @@
 	  finally (return (append (nreverse alist) extra-items)))))
 
 ;;; Set the tracing options, either explicitly or via menu. With enable-p nil
-;;; it will disable the tracing options. Here's a good example of a function 
-;;; that should really be three or four functions. 
+;;; it will disable the tracing options. Here's a good example of a function
+;;; that should really be three or four functions.
 (defmethod set-joshua-trace-conditions ((self joshua-debugger)
 	                                &key tracer menu enable-p (trace-events nil trace-supplied-p)
 		                        (step-events nil step-supplied-p)
@@ -606,8 +577,8 @@
       (if menu
         ;; Conditions is the list of all tracers that we want to deal with
         (let* ((conditions (if (eq tracer :all) tracers `(,tracer)))
-               ;; tracing-list is the list of tracers that should be enabled when the 
-               ;;  menu comes up. Here's a little set logic - I don't want to actually 
+               ;; tracing-list is the list of tracers that should be enabled when the
+               ;;  menu comes up. Here's a little set logic - I don't want to actually
                ;; enable them until the menu returns normally.
                (tracing-list (set-difference (intersection (union active-tracers enable-list)
                                                            conditions)
@@ -635,11 +606,11 @@
                (query-identifier-list
                 (loop for sub-tracers on tracers
                       do (progn sub-tracers)    ; progn = ignore
-                      collect (gensym) into qi-list 
+                      collect (gensym) into qi-list
                       collect (gensym) into qi-list
                       finally (return qi-list))))
           (flet ((print-heading (heading stream)
-                   (terpri stream) 
+                   (terpri stream)
                    (clim:with-text-style (stream *deemphasis-character-style*)
                      (princ heading stream))
                    (terpri stream))
@@ -650,14 +621,14 @@
                         query-identifier-list)))
             ;; Let success indicate the normal completion of the accepting values (No abort)
             (let ((success-p
-                   (catch 'aborted
+                   (catch 'aborted (break)
                      (clim:with-text-style (stream '(nil nil nil))
                        (terpri stream)
                        (restart-bind
                          ((abort #'(lambda (ignore)
                                      (declare (ignore ignore))
                                      (throw 'aborted nil))))
-                         (clim:accepting-values (stream :own-window own-window-p 
+                         (clim:accepting-values (stream :own-window own-window-p
                                                         :label "Joshua Tracing Options"
                                                         ;; :queries-are-independent nil   ?????
                                                         )
@@ -667,12 +638,18 @@
                                               :prompt-mode :raw
                                               :default tracing-list
                                               :stream stream))
-                           ;; this reverse of tracing list will make the most 
+                           ;; this reverse of tracing list will make the most
                            ;; recently enabled appear last - minimize redisplay
                            (loop for tracer in (reverse tracing-list)
-                                 do
-                                 (clim:updating-output (stream :cache-value t :unique-id tracer)
-                                   (print-heading (concatenate 'string (tracer-name tracer) " Options") stream))
+                                 ;; FIX: Doing an updating output inside an accepting values loses in McClim
+                                 ;; Accepting-values streams don't mix in updating-output-stream-mixin
+                                 ;; This uses updating-output although the cache-value is t since the unique
+                                 ;; id is tracer but tracer is a member of tracing-list which can change
+                                 ;; during the cycle since it's the value of an accept right above.
+
+                                 do (#-mcclim clim:updating-output #-mcclim (stream :cache-value t :unique-id tracer)
+                                     #+mcclim progn
+                                     (print-heading (concatenate 'string (tracer-name tracer) " Options") stream))
                                  (terpri stream)
 				 (setf (cdr (assoc tracer tracer-action-list))
 				   (accept-tracing-options tracer stream (cdr (assoc tracer tracer-action-list))))
@@ -691,7 +668,7 @@
                                                       ))))))
                      ;;explicitly return t to signal successfull completion
                      t)))
-              ;; The user's hit ” so we can do our stuff
+              ;; The user's hit ??? so we can do our stuff
               (if success-p
                 (loop for tracer in conditions
                       do
@@ -740,7 +717,7 @@
 	(loop for (tracer . rest) on tracers
 	      while rest
 	      do
-	      (delineating-output (*standard-output* :fraction-of-screen .6 
+	      (delineating-output (*standard-output* :fraction-of-screen .6
 						     :location :after :thickness 1)
 	        (show-tracing-state tracer))
 	      finally (show-tracing-state tracer))
@@ -870,7 +847,7 @@
 	    (,name (find-tracer-by-class-name self ',class) ,@argument-list))))
 
 
-;;; And make an instance of this as it must be around by the time we 
+;;; And make an instance of this as it must be around by the time we
 ;;; load the defs of encapsulations, tracing-events, tracers, etc.
 
 (defparameter *joshua-debugger* (make-instance 'joshua-debugger))
@@ -893,7 +870,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; forms for defining tracing events
-;;; the class for tracing events 
+;;; the class for tracing events
 
 (defmethod add-encapsulation ((self tracing-event) encaps &optional global-p)
   (declare (ignore global-p))
@@ -940,8 +917,8 @@
 	    *joshua-debugger* ,',event-name ,@arguments)))))
 
 
-;;; a macro to define interesting tracing events 
-(defmacro define-tracing-event (name pretty-name 
+;;; a macro to define interesting tracing events
+(defmacro define-tracing-event (name pretty-name
 				&key (short-name pretty-name)
 				(active-name pretty-name)
 				macro-name
@@ -966,11 +943,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Forms for defining joshua-encapsulations
-				
+
 ;;; the class for keeping track of encapsulations
 (defclass joshua-encapsulation ()
   ((name :initarg :name :accessor joshua-encapsulation-name)
-   (original-fspec :initarg :original-fspec :accessor joshua-encapsulation-original-fspec) 
+   (original-fspec :initarg :original-fspec :accessor joshua-encapsulation-original-fspec)
    (arglist :initarg :arglist :accessor joshua-encapsulation-arglist)
    (cached-encapsulation :initarg :cached-encapsulation :accessor joshua-encapsulation-cached-encapsulation :initform nil)
    (cached-fdefinition :initarg :cached-fdefinition :accessor joshua-encapsulation-cached-fdefinition :initform nil)
@@ -981,7 +958,7 @@
    (call-original-p :initarg :call-original-p :accessor joshua-encapsulation-call-original-p :initform nil)
    (enabled-p :initarg :enabled-p :accessor joshua-encapsulation-enabled-p :initform nil)))
 
-;;; This will force the precompilation of encapsulations at load time. It also 
+;;; This will force the precompilation of encapsulations at load time. It also
 ;;; will make sure that the encapsulation can compile when it is compiled to
 ;;; core, instead of having to enable it to make sure it compiles.
 
@@ -993,7 +970,7 @@
   (undo-encapsulation self :self))
 
 ;;; We need to look at what event is enabling us. This makes a sloppy
-;;; attempt at returning the value from the encapsulated function. The 
+;;; attempt at returning the value from the encapsulated function. The
 ;;; general approach to encapsulation probably could use to be rethought.
 
 #| Comments by hes on porting strategy:
@@ -1003,18 +980,18 @@ In particular, it assumed that you can advise a specific method.  I believe that
 make this hard or require access to mechanisms that the prudent implementor would avoid.  In Genera, for example,
 I'm not sure that you can, in fact, trace method, as opposed to the generic function.
 
-Looking through the actual uses, I believe that the only uses of method tracing are for ltms specific implementations 
+Looking through the actual uses, I believe that the only uses of method tracing are for ltms specific implementations
 of the basic tms protocol.   While it's possible that we might someday add a variety of other tms styles, we haven't
-done it yet (after a number of years).  Therefore, although it's less elegant by far (in fact a kludge) we're just 
+done it yet (after a number of years).  Therefore, although it's less elegant by far (in fact a kludge) we're just
 going to encapsulate the generic function and typecase the first argument (the origin of all this was flavors after all
 where only the first argument was used for dispatch.
 
 If this approach fails we can alway think of other options.
 
-Every implementation has an Advise capability (check allegro) but they vary.  
+Every implementation has an Advise capability (check allegro) but they vary.
 arglist convention of MCL for the moment.
 
-The MCL arglist is: fspec the-advise &key when name define-if-not 
+The MCL arglist is: fspec the-advise &key when name define-if-not
 where name is a unique name for this piece of advise.
 
 Allegro uses the following format: fspec where name position &rest forms
@@ -1040,12 +1017,13 @@ Allegro also has a facility called fwrapper which is more general, but not avail
         collect (symbol-macro-from-name name i))))
 
 (defmethod do-encapsulation ((self joshua-encapsulation) enabler)
-  (with-slots (#+allegro name enablers enabled-p original-fspec cached-fdefinition cached-encapsulation
+  (with-slots (#+(or allegro sbcl) name enablers enabled-p original-fspec cached-fdefinition cached-encapsulation
 	       arglist after-body before-body encapsulated-function
-	       call-original-p wrap-body) self
+	       call-original-p wrap-body)
+      self
     (unless (member enabler enablers)
       (pushnew enabler enablers)
-      (unless enabled-p 
+      (unless enabled-p
         (unencapsulate-function-for-joshua-tracing original-fspec)
 	#+genera
 	(scl:if (and (eq (fdefinition original-fspec) cached-fdefinition)
@@ -1067,7 +1045,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 			 (apply #'values .answer)))))
 		;; Save the encapsulation so we can reuse it
 		(setf cached-encapsulation
-		      (fdefinition 
+		      (fdefinition
 			(si:unencapsulate-function-spec original-fspec 'si:joshua-trace))))
         #+mcl
         (advise
@@ -1084,9 +1062,11 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	       (apply #'values .answer.))))
         #+allegro
         (fwrap original-fspec 'joshua-tracing name)
+        #+sbcl
+        (sb-impl::encapsulate original-fspec 'joshua-tracing name)
         (setf enabled-p t)))))
 
-;;; keep track of which events are enabling this encaps and only 
+;;; keep track of which events are enabling this encaps and only
 ;;; unencapsulate it when no one's interested
 (defmethod undo-encapsulation ((self joshua-encapsulation) disabler)
   (with-slots (enablers original-fspec enabled-p) self
@@ -1096,13 +1076,22 @@ Allegro also has a facility called fwrapper which is more general, but not avail
       (setf enabled-p nil))))
 
 ;;; the macro for defining encapsulations
+
 (defmacro define-joshua-encapsulation ((name original-fspec call-original-p event-list
 					     &optional global-p)
-				       &key before-body after-body body-wrapper 
+				       &key before-body after-body body-wrapper
 					    (arglist (arglist original-fspec)))
   ;; (declare (zwei:indentation 1 1 1 1))
-  (let ((instance (gensym)))
-    `(progn
+  (let* ((instance (gensym))
+         #+sbcl (real-args (loop for arg in arglist
+                                 for first-char = (aref (symbol-name arg) 0)
+                                 unless (char-equal first-char #\&)
+                                   collect arg))
+
+        #+sbcl (simple-call-next-form `(funcall next-wrapper ,@real-args))
+        #+sbcl (call-next-form `(setq .answer. (funcall next-wrapper ,@real-args)))
+        )
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
        #+allegro
        (def-fwrapper ,name ,arglist
          (let ((.answer. nil))
@@ -1112,6 +1101,18 @@ Allegro also has a facility called fwrapper which is more general, but not avail
                 `(macrolet ((call-next () `(setq .answer. (multiple-value-list (call-next-fwrapper)))))
                    ,@body-wrapper)
                 `(setq .answer. (multiple-value-list (call-next-fwrapper)))))
+           ,after-body
+           (apply #'values .answer.)))
+       #+sbcl
+       (defun ,name (next-wrapper ,@arglist)
+         (declare (ignorable next-wrapper))
+         (let ((.answer. nil))
+           ,before-body
+           ,(when call-original-p
+              (if body-wrapper
+                  `(macrolet ((call-next () ',call-next-form))
+                     ,@Body-wrapper)
+                  `(setq .answer. (multiple-value-list ,simple-call-next-form))))
            ,after-body
            (apply #'values .answer.)))
        (let ((,instance (make-instance 'joshua-encapsulation
@@ -1126,11 +1127,11 @@ Allegro also has a facility called fwrapper which is more general, but not avail
          (add-encapsulation-to-events *joshua-debugger* ,instance ,event-list)
          ))))
 
-;;; The macro used to tell the debugger about a tracing entity and to 
+;;; The macro used to tell the debugger about a tracing entity and to
 ;;; create the tracing macro.
 (defmacro define-tracer (class-name name
 			 &key pretty-name events default-trace-events
-			 default-step-events 
+			 default-step-events
 			 )
   `(add-tracer
      *joshua-debugger*
@@ -1213,7 +1214,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 		 :view clim:+textual-dialog-view+
 	         )))
 
-;;; the method for enabling a tracer. 
+;;; the method for enabling a tracer.
 (defmethod enable ((self tracer) new-output-events new-interaction-events)
   (with-slots (unique-id current-output-events current-interaction-events events) self
     (setf current-output-events new-output-events)
@@ -1287,14 +1288,14 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 
 (defmethod add-trace-event ((self tracer) event)
   (with-slots (current-output-events unique-id) self
-    (let ((event-name (tracing-event-name event))) 
+    (let ((event-name (tracing-event-name event)))
       (pushnew event-name current-output-events)
       (enable-event *joshua-debugger* event-name unique-id)
       (ensure-event-state self t))))
 
 (defmethod untrace-event ((self tracer) event)
   (with-slots (unique-id current-output-events current-interaction-events) self
-    (let ((event-name (tracing-event-name event))) 
+    (let ((event-name (tracing-event-name event)))
       (setf current-output-events (delete event-name current-output-events))
       (unless (member event-name current-interaction-events)
         (disable-event *joshua-debugger* event-name unique-id))
@@ -1335,12 +1336,12 @@ Allegro also has a facility called fwrapper which is more general, but not avail
     (loop for event in events do
           (disable-event *joshua-debugger* event unique-id))))
 
-;;; A method which modifies the options from a list of instance vars and 
+;;; A method which modifies the options from a list of instance vars and
 ;;; values produced by accepting values.
 
 (defmethod set-tracing-options ((self tracer) option-list &rest ignore)
   (declare (ignore ignore))
-  (loop for (name . value) in option-list 
+  (loop for (name . value) in option-list
       when (slot-exists-p self name)
       do (setf (slot-value self name ) value)))
 
@@ -1353,11 +1354,11 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 (defclass forward-rule-tracer (tracer)
   ((trace-everything-p :accessor frt-trace-everything-p :initform t)
    (traced-forward-rules :accessor frt-traced-forward-rules :initform nil)
-   (traced-forward-rule-table :accessor frt-traced-forward-rule-table 
+   (traced-forward-rule-table :accessor frt-traced-forward-rule-table
                               :initform (make-hash-table))
-   (traced-forward-rule-triggers :accessor frt-traced-forward-rule-triggers :initform nil)		
+   (traced-forward-rule-triggers :accessor frt-traced-forward-rule-triggers :initform nil)
    (currently-running-forward-rules :accessor frt-currently-running-forward-rules :initform ())
-   (forward-rule-firings :accessor frt-forward-rule-firings 
+   (forward-rule-firings :accessor frt-forward-rule-firings
                          :initform (make-hash-table :test #'equal))
    (forward-rule-invocation-count :accessor frt-forward-rule-invocation-count :initform 0)
    ))
@@ -1404,7 +1405,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 (defgeneric trace-it (tracer event thing &key &allow-other-keys))
 
 (defun merge-with-stream-style (style)
-  (clim:merge-text-styles 
+  (clim:merge-text-styles
    style
    (clim:medium-merged-text-style (clim:sheet-medium *standard-output*))))
 
@@ -1432,7 +1433,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	       (filter-forward-rule self rule-name triggers))
       (interact *joshua-debugger* event rule-name))))
 
-;;; This should return an alist of instance-vars and settings that can 
+;;; This should return an alist of instance-vars and settings that can
 ;;; be handled by set-tracing-options
 
 (defgeneric accept-tracing-options (thing &optional stream defaults))
@@ -1450,7 +1451,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 		                          :query-identifier :trace-all-forward-rules-p
 		                          :stream stream))
     (cond
-     (trace-everything-p 
+     (trace-everything-p
       (setq traced-forward-rule-triggers nil traced-forward-rules nil))
      (t
       (terpri stream)
@@ -1512,7 +1513,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 		alist)))
       (when (predicationp object)
         (let ((variant (find object traced-forward-rule-triggers :test #'variant)))
-	  (if variant 
+	  (if variant
 	    (push `("Untrace Forward Rule Trigger"
 		    :value (untrace-forward-rule-trigger ,self)
 		    :documentation
@@ -1530,7 +1531,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
       alist)))
 
 ;;; Ok lets try doing it like this
-;;; a tester for tracing rules 
+;;; a tester for tracing rules
 
 (define-joshua-tracing-method (traceable-forward-rule-p forward-rule-tracer) (object)
   (and (symbolp object)
@@ -1543,7 +1544,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
        (forward-rule-test-p object)
        (traced-forward-rule-p object)))
 
-;;; For predications 
+;;; For predications
 (define-joshua-tracing-method (traceable-forward-rule-trigger-p forward-rule-tracer) (object)
   (with-slots (traced-forward-rule-triggers) self
     (and (predicationp object)
@@ -1565,7 +1566,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	     (format stream "~&Forward Rule tracing is on"))
 	   (clim:indenting-output (stream 3)
 	     (cond
-              (trace-everything-p 
+              (trace-everything-p
 	       (format stream "~%Tracing Allforward rules"))
               (t
 	       (when traced-forward-rules
@@ -1594,15 +1595,15 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	   (with-output-as-command (stream `(com-enable-joshua-tracing ,self))
 	     (format stream "~&Forward Rule tracing is off"))))))
 
-;;; This will turn off rule tracing when there's no way we could be interested 
-;;; in anything. 
+;;; This will turn off rule tracing when there's no way we could be interested
+;;; in anything.
 (defmethod ensure-tracing-state ((self forward-rule-tracer) &optional force-enable-p)
   (with-slots (trace-everything-p traced-forward-rules traced-forward-rule-triggers current-output-events current-interaction-events) self
     (unless (or trace-everything-p
 	        traced-forward-rules
 	        traced-forward-rule-triggers)
       (reset-defaults self)
-      (unless force-enable-p 
+      (unless force-enable-p
         (disable-tracer *joshua-debugger* self)))
     (when (and trace-everything-p (or traced-forward-rules traced-forward-rule-triggers))
       (setf trace-everything-p nil))
@@ -1620,7 +1621,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	  traced-forward-rules nil
 	  traced-forward-rule-triggers nil)
     (when events-too-p (reset-events self))))
-  
+
 (defmethod add-trace-forward-rule ((self forward-rule-tracer) rule-name)
   (with-slots (traced-forward-rule-table trace-everything-p traced-forward-rules) self
     (when trace-everything-p (setf trace-everything-p nil))
@@ -1654,7 +1655,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 (defclass backward-rule-tracer (tracer)
   ((trace-everything-p :accessor brt-trace-everything-p :initform t)
    (traced-backward-rules :accessor brt-traced-backward-rules :initform nil)
-   (traced-backward-rule-table :accessor brt-traced-backward-rule-table 
+   (traced-backward-rule-table :accessor brt-traced-backward-rule-table
                                :initform (make-hash-table))
    (traced-backward-rule-triggers :accessor brt-traced-backward-rule-triggers :initform nil)))
 
@@ -1680,7 +1681,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 		     p +true+ predication truth-value)))
 	      traced-backward-rule-triggers))))
 
-(defvar *backward-rule-trace-events* '(:fire-backward-rule :exit-backward-rule 
+(defvar *backward-rule-trace-events* '(:fire-backward-rule :exit-backward-rule
 				       :succeed-backward-rule :retry-backward-rule
  				       :enqueue-backward-rule :dequeue-backward-rule))
 
@@ -1701,7 +1702,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	      (format *standard-output* " (Goal... )")
 	      (print-with-truth-value-as-not predication truth-value)
 	      )))))))
-  
+
 (defmethod interact ((self backward-rule-tracer) event rule &key predication truth-value &allow-other-keys)
   (with-slots (current-interaction-events) self
     (when (and (member event current-interaction-events)
@@ -1786,7 +1787,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 		alist)))
       (when (predicationp object)
         (let ((variant (find object traced-backward-rule-triggers :test #'variant)))
-	  (if variant 
+	  (if variant
 	    (push `("Untrace Backward Rule Trigger"
 		    :value (untrace-backward-rule-trigger ,self)
 		    :documentation
@@ -1813,7 +1814,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
        (backward-rule-test-p object)
        (traced-backward-rule-p object)))
 
-;;; For predications 
+;;; For predications
 (define-joshua-tracing-method (traceable-backward-rule-trigger-p backward-rule-tracer)(object)
   (with-slots (traced-backward-rule-triggers) self
     (and (predicationp object)
@@ -1881,7 +1882,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	  traced-backward-rule-triggers nil)
     (clrhash traced-backward-rule-table)
     (when events-too-p (reset-events self))))
-    
+
 (defmethod add-trace-backward-rule ((self backward-rule-tracer) rule-name)
   (with-slots (traced-backward-rules) self
     (pushnew rule-name traced-backward-rules)
@@ -1907,7 +1908,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
     (ensure-tracing-state self)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Predication tracing 
+;;; Predication tracing
 
 (defclass predication-tracer (tracer)
   ((trace-everything-p :accessor brt-trace-everything-p :initform t)
@@ -1948,10 +1949,11 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 
 (defun print-with-truth-value  (predication truth-value &optional (stream *standard-output*))
   (unless (= truth-value +true+)
-    (write-char (cond 
+    (write-char (cond
 		  ((= truth-value +unknown+) #\?)
  		  ((= truth-value +false+)  #\-)
-		  ((= truth-value +contradictory+) #\x))
+		  ((= truth-value +contradictory+) #\x)
+                  (t (error "Not a valid truth value ~a" truth-value)))
 		stream))
   (print-database-predication-without-truth-value predication stream))
 
@@ -1987,7 +1989,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
           #|
           (:ask-success
            (clim:indenting-output (stream `(,(+ 3 (* 2 *rule-depth*)) :character))
-               (print-query-results justification :stream stream))) |#       
+               (print-query-results justification :stream stream))) |#
           (otherwise (princ predication stream)))))))
 
 (defmethod show-tracing-state ((self predication-tracer) &optional (stream *standard-output*))
@@ -1996,7 +1998,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	   (with-output-as-command (stream `(com-disable-joshua-tracing ,self))
 	     (format stream "~&Predication tracing is on"))
 	   (clim:indenting-output (stream 3)
-	     (cond 
+	     (cond
               (trace-everything-p (format stream "~%Tracing All predicates"))
               (t
 	       (when traced-predicate-classes
@@ -2029,7 +2031,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
   (with-slots (current-interaction-events) self
     (when (and (member event current-interaction-events)
 	       (filter-fact self predication truth-value))
-      (interact *joshua-debugger* event predication)))) 
+      (interact *joshua-debugger* event predication))))
 
 (defmethod accept-tracing-options ((self predication-tracer) &optional (stream *query-io*) defaults)
   (let ((trace-everything (cdr (assoc 'trace-everything-p defaults)))
@@ -2038,13 +2040,13 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	(enumerate-predications (cdr (assoc 'enumerate-predications defaults)))
 	(enumerate-predicates (cdr (assoc 'enumerate-predicates defaults))))
     (terpri stream)
-    (setf trace-everything (clim:accept 
+    (setf trace-everything (clim:accept
                             '(clim:member-alist (("All" :value t :documentation "Trace all predications")
                                                  ("Selectively" :value nil :documentation "Specify which predications to trace")))
                             :prompt "Trace Predications"
                             :default trace-everything
                             :stream stream))
-    (cond 
+    (cond
      (trace-everything (setq trace-predicate-class nil trace-predication nil))
      (t
       (terpri stream)
@@ -2163,7 +2165,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 		alist)))
       (when (predicationp object)
         (let ((variant (find object traced-patterns  :test #'variant)))
-	  (if variant 
+	  (if variant
 	    (push `("Untrace Predication Pattern"
 		    :value (untrace-pattern ,self)
 		    :documentation
@@ -2228,7 +2230,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 ;
 ;(defmacro-in-class (register-rule-nodes rete-tracer)()
 ;  `(progn (clrhash interesting-rete-nodes)
-;	 (unless trace-everything-p 
+;	 (unless trace-everything-p
 ;	   (loop for rule in traced-rete-rules
 ;		 do
 ;	     (loop for node in (nodes-leading-to-goals `(,rule))
@@ -2436,9 +2438,17 @@ Allegro also has a facility called fwrapper which is more general, but not avail
     (with-joshua-trace-message-output (*standard-output*)
       (flet ((print-pred (&optional print-with-t-v-p)
                (clim:with-text-style (*standard-output* *emphasis-character-style*)
-                 (if print-with-t-v-p 
-                   (clim:present predication 'database-predication :stream *standard-output*)
-                   (print-database-predication-without-truth-value predication *standard-output*)))
+                 ;; SBCL reports that the true branch of the if is unreachable
+                 ;; which is in fact true since no caller of print-pred provides
+                 ;; the optional preint-t-v-p argument.  But I'm just
+                 ;; muffling the report in case somebody should want to change that.
+                 (locally
+                     #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
+                     (if print-with-t-v-p
+                         (clim:present predication 'database-predication :stream *standard-output*)
+                         ;; Note SBCL determined this is unreachable since all calls to print-pred
+                         ;; don't provide the optional argument.  Probably a legacy of something.
+                         (print-database-predication-without-truth-value predication *standard-output*))))
                (unless (or (= +true+ truth-value) print-with-t-v-p)
                  (format *standard-output* " as ")
                  (clim:with-text-style (*standard-output* *emphasis-character-style*)
@@ -2475,7 +2485,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 	   (with-output-as-command (stream `(com-disable-joshua-tracing ,self))
 	     (format stream "~&TMS tracing is on"))
 	   (clim:indenting-output (stream 3)
-	     (cond 
+	     (cond
               (trace-everything-p (format stream "~%Tracing All TMS predicates"))
               (t (when traced-predicate-classes
 		   (format stream "~%Tracing TMS predicatations of class~p: "
@@ -2516,12 +2526,12 @@ Allegro also has a facility called fwrapper which is more general, but not avail
         (traced-patterns (cdr (assoc 'traced-patterns defaults))))
     (setq trace-everything-p (clim:accept '(clim:member-alist (("All" :value t
                                                                 :documentation "Trace all TMS predications")
-                                                               ("Selectively" :value nil    
+                                                               ("Selectively" :value nil
                                                                 :documentation "Specify which TMS predications to trace")))
                                           :prompt "Trace TMS operations on which TMS Predications"
                                           :default trace-everything-p
                                           :stream stream))
-    (cond 
+    (cond
      (trace-everything-p
       (setq traced-predicate-classes nil traced-patterns nil))
      (t
@@ -2626,7 +2636,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 		alist)))
       (when (and (predicationp object)(nontrivial-tms-p object))
         (let ((variant (find object traced-patterns  :test #'variant)))
-	  (if variant 
+	  (if variant
 	    (push `("Untrace TMS Predication Pattern"
 		    :value (untrace-pattern ,self)
 		    :documentation
@@ -2685,7 +2695,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
   :active-name "Firing forward rule"
   :macro-name trace-fire-forward-rule
   :arglist (rule-name triggers environment importance)
-  :documentation "Firing the THEN part of a forward rule" 
+  :documentation "Firing the THEN part of a forward rule"
   )
 
 (define-tracing-event :exit-forward-rule "Exit forward rule"
@@ -2797,7 +2807,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
   :arglist (predication &key truth-value old-truth-value justification old-state)
   :documentation "Acting on the change of the truth value of a predication in the database")
 
-(define-tracing-event :try-merge "Try merge"	
+(define-tracing-event :try-merge "Try merge"
   :short-name "Try merge"
   :active-name "Trying to merge"
   :macro-name trace-try-merge
@@ -2908,5 +2918,3 @@ Allegro also has a facility called fwrapper which is more general, but not avail
   :events *tms-trace-events*
   :default-trace-events '(:contradiction :bring-in :retract)
   :default-step-events nil)
-  
-

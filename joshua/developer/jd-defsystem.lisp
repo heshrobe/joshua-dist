@@ -45,3 +45,18 @@
     ))
 
 
+#+asdf
+(asdf:defsystem joshua-developer
+    :pathname "."
+     :name "Joshua Developer"
+    :description "Development tools for Joshua"
+    :serial t
+    :components
+    ((:file "mcclim-additions")
+     (:file "ptype-defs")
+     (:file "tracing")
+     (:file "encapsulations")
+     (:file "ptypes-and-commands")
+     #+allegro
+     (:file "emacs-interfaces")
+     ))

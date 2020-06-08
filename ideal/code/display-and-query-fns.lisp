@@ -67,14 +67,14 @@
        (for-all-cond-cases (cc (node-predecessors node))
 	  (format t "~&       ~{~20A~} =>"
 		  (mapcar #'(lambda (a)(label-name (cdr a))) cc))
-	  (let ((val (deterministic-state-of node cc)))	
+	  (let ((val (deterministic-state-of node cc)))
 	    (cond ((numberp val) (format t "~10,2,,,F ~%" val))
 		  ((and (listp val)
 			(numberp (car val))
 			(typep (cdr val ) 'label))
 		   (format t " ~A (EV = ~6,2,,,F)" (label-name (cdr val)) (car val)))
 		  ((typep val 'label)		;for deterministic chance nodes [mpw]
-		   (format t " ~A" (label-name val)))	
+		   (format t " ~A" (label-name val)))
 		  (T (format t "~A" val)))))))
   (values))
 
@@ -96,24 +96,24 @@
   (format t "~%---------------------------------")
   (ecase (noisy-or-subtype node)
     ((:NARY :GENERIC)
-  (for-all-cond-cases (pred-case pred)
-    (format t "~% ~A => ~A" (label-name (state-in pred-case))
-	    (inhibitor-prob-of node pred-case))))
+     (for-all-cond-cases (pred-case pred)
+       (format t "~% ~A => ~A" (label-name (state-in pred-case))
+               (inhibitor-prob-of node pred-case))))
     ((:BINARY)
-      (for-all-cond-cases (pred-case pred)
-	(cond
-	  ((noisy-or-false-case-p pred-case)
-	   (format t "~% False Label: ~A  Inhibitor Prob: ~A"
-		   (label-name (state-in pred-case))
-		   (inhibitor-prob-of node pred-case)))
-	  ((not (zerop (inhibitor-prob-of node pred-case)))
-	   (format t "~%       Label: ~A  Inhibitor Prob: ~A. * Warning: Non-zero inhibitor ~
+     (for-all-cond-cases (pred-case pred)
+       (cond
+         ((noisy-or-false-case-p pred-case)
+          (format t "~% False Label: ~A  Inhibitor Prob: ~A"
+                  (label-name (state-in pred-case))
+                  (inhibitor-prob-of node pred-case)))
+         ((not (zerop (inhibitor-prob-of node pred-case)))
+          (format t "~%       Label: ~A  Inhibitor Prob: ~A. * Warning: Non-zero inhibitor ~
                                prob for non-false state of predecessor in binary Noisy or node"
-		   (label-name (state-in pred-case))
-		   (inhibitor-prob-of node pred-case))))))))
+                  (label-name (state-in pred-case))
+                  (inhibitor-prob-of node pred-case))))))))
 
 (defun display-noisy-or-det-fn (node)
-  (let ((fmt " ~@5A"))
+  (let ((fmt " ~5@A"))
     (labels ((disp (node-list tab-level cond-case)
 	;(format t "~%JJJ :~A ~A" (mapcar #'node-name node-list) tab-level)
 	       (cond
@@ -124,11 +124,11 @@
 		      (disp (rest node-list) (+ tab-level 1)
 			    (combine-cond-cases pred-case cond-case))
 		      (format t "~%")
-		      
+
 		      (tabs tab-level)))))
 	     (tabs (tab-level)
 	       (dotimes (x tab-level)
-		 (declare (ignore x))
+		 #-sbcl (declare (ignore x))
 		 (format t fmt ""))))
       (format t "~%----------- Deterministic function -----------------------~%")
       (dolist (p (node-predecessors node))
@@ -144,7 +144,7 @@
       (dolist (p (node-predecessors node))
 	(declare (ignore p))
 	(format t fmt "-----")))))
-  
+
 (defun PROB-STRING (nc cc)
   (format nil "P[~A=~A|~{~A~}]"
 	  (if (typep nc 'node) (node-name nc) (node-name (node-in nc)))
@@ -152,11 +152,12 @@
 	      (if (state-in nc) (label-name (state-in nc)) "") )
 	  (mapcar #'(lambda (a)(format nil "~A=~A "
 				       (node-name (car a))
-				       (label-name (cdr a)))) cc)))
+				       (label-name (cdr a))))
+                  cc)))
 
 (defun PROB-STRING-OF-COND-CASE (cond-case)
   (format nil "~{~A~}" (mapcar #'(lambda (n.s)
-				   (format nil " ~@5A=~@5A" (node-name (car n.s))
+				   (format nil " ~5@A=~5@A" (node-name (car n.s))
 					   (if  (cdr n.s)(label-name (cdr n.s)))))
 			       cond-case)))
 
@@ -165,7 +166,8 @@
 	  (node-name node)
 	  (mapcar #'(lambda (a)(format nil "~A=~A "
 				       (node-name (car a))
-				       (label-name (cdr a)))) cc)))
+				       (label-name (cdr a))))
+                  cc)))
 
 (defun DIAG-DISPLAY-LINKS (&optional (diagram *diagram*))
   (dolist (n diagram)
@@ -198,7 +200,7 @@
 (defun move-tab (tab-stops &optional (tab-width 12))
   (terpri)
   (dotimes (k (* (- tab-stops 1) tab-width))
-    (declare (ignore k))
+    #-sbcl (declare (ignore k))
     (princ " ")))
 
 (defvar *my-print* nil)

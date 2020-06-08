@@ -56,7 +56,7 @@
   (cond
     ((null name)
      (error "Nil is not allowed a node-name"))
-    ((find nil state-labels)
+    ((member nil state-labels)
      (error "Nil is not allowed as the name of a state label"))
     ((not (symbolp name))
      (error "The name ~A for the new node is not a symbol" name))
@@ -190,7 +190,7 @@
 	   (create-empty-distribution node)
 	   (for-all-cond-cases (node-case node)
 	     (for-all-cond-cases (old-cond-case old-preds)
-	       (let ((old-content (contents-of-dist-array-location 
+	       (let ((old-content (contents-of-dist-array-location
 				    old-dist-array  node-case old-cond-case old-preds)))
 		 (for-all-cond-cases (incremental-cond-case new-additional-preds)
 		   (setf (contents-of node-case
@@ -258,7 +258,7 @@
 	    (when (distribution-repn node)
 	      (ideal-warning "During deletion of node arc to the decision  ~
                           node ~A  its policy has become inconsistent" node)))
-	;If node is not a decision node adjust the distributions accordingly 
+	;If node is not a decision node adjust the distributions accordingly
       (t (create-empty-distribution node)
        (for-all-cond-cases (node-case node)
 	 (for-all-cond-cases (new-cond-case (node-predecessors node))
@@ -298,7 +298,7 @@
 		      (combine-cond-cases pred-case random-old-preds-case))))))))
 	; Recompile distribution
     (compile-noisy-or-distribution node)))
-  
+
 ;******************** Overall edit function for state label list *************************
 
 ; Takes a new set of label names for node. Leaves the labels that are already labels
@@ -319,7 +319,7 @@
     (dolist (name names-of-states-to-be-added)
       (add-state node name))
     (values node)))
-	  
+
 ;*********************************ADD STATE************************************************
 
 ; Adds a state to the state list of a node. Sets all the new
@@ -345,7 +345,7 @@
 	; If its a decision node dont do anything more to node
 	   (:DECISION (if (distribution-repn node)
 			  (warn "Added a state to the decision  node ~A. The policy ~% ~@
-                           has been left unchanged is now inconsistent")))
+                           has been left unchanged is now inconsistent" node)))
 	   ; If chance prob node make new dist for node with new p's = 0 and old p's
 	    ; preserved.
 	   (:CHANCE
@@ -369,7 +369,7 @@
 ; other words).
 
 (defun noisy-or-add-new-state (node new-state)
-  (when (eq (noisy-or-subtype node) :BINARY) 
+  (when (eq (noisy-or-subtype node) :BINARY)
     (ideal-warning "Adding state ~A to binary noisy or node ~A.~
                      Changing it to an nary node" new-state node)
     (setf (noisy-or-subtype node) :NARY))
@@ -572,7 +572,7 @@
 	(with-adjusted-label-ids (node del-state)
 	  (setf (deterministic-state-of node ccase)
 		(find-if #'other-state (state-labels node))))))))
-	   
+
 (defun get-target-state (node)
   (let* ((label-list (state-labels node))
 	 (label-name-list (mapcar #'label-name label-list)))
@@ -631,7 +631,7 @@
     (compile-noisy-or-distribution succ)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Add arcs to geNERATE a complete, direct ordering 
+;;; Add arcs to geNERATE a complete, direct ordering
 ;;; of the decision nodes in a diagram
 
 
@@ -647,4 +647,3 @@
 	(add-arcs present-node (list previous-node)))
       (setq previous-node present-node)
       (setq present-node (pop remaining-nodes)))))
-

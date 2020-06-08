@@ -37,7 +37,7 @@
 		      (y-or-n-p "Do u want to retract evidence for node ~A?" evidence-node))
 		 nil)
 		((y-or-n-p "Do u have specific evidence for node ~A ?" evidence-node)
-		 (find 
+		 (find
 		   (query `(MEMBER ,@label-names)
 			  "What is the observed state of the node ~A ?" evidence-node)
 		   (state-labels evidence-node) :key #'label-name))
@@ -71,7 +71,7 @@
 		      (yes-or-no-p "Do u want to retract evidence for node ~A?" evidence-node))
 		 nil)
 		((yes-or-no-p "Do u have specific evidence for node ~A ?" evidence-node)
-		 (find 
+		 (find
 		   (query `(MEMBER ,@label-names)
 			  "What is the observed state of the node ~A ?" evidence-node)
 		   (state-labels evidence-node) :key #'label-name))
@@ -125,7 +125,8 @@
       ((label-p new-evidence)(eq old-evidence new-evidence))
       ; Fixed to handle virtual evidence correctly (Feb 8 '91)
       ((listp new-evidence)(unchanged-virtual-evidence-p old-evidence new-evidence))
-      (t (error "The content of node-state of node ~A is ~A. This is not valid evidence.")))))
+      (t (error "The content of node-state of node ~A is ~A. This is not valid evidence."
+                node new-evidence)))))
 
 
 ; This function is called if new-evidence is virtual evidence.  It
@@ -209,7 +210,7 @@
 			( t t)))
 		  state-contents)
       (check-all-states-present state-contents node))))
-       
+
 (defun check-all-states-present (state-contents node)
   (let ((state-labels (state-labels node))
 	(evidence-state-labels (mapcar #'car state-contents)))

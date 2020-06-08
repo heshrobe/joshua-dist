@@ -1,42 +1,4 @@
 ;;; -*- Mode: LISP; Base: 10; Syntax: Common-lisp; Package: joshua-internals -*-
-;;;>
-;;;> *****************************************************************************************
-;;;> ** (c) Copyright 1990-1988 Symbolics, Inc.  All rights reserved.
-;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
-;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
-;;;> stored only in accordance with the terms of such license.
-;;;> 
-;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
-;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3653, Symbolics
-;;;> 3620 (R), Symbolics 3610 (R), Symbolics Common Lisp (R), Symbolics-Lisp (R),
-;;;> Zetalisp (R), Genera (R), Wheels (R), Dynamic Windows (R), Showcase, SmartStore (R),
-;;;> Semanticue (R), Frame-Up (R), Firewall (R), MACSYMA (R), COMMON LISP MACSYMA (R),
-;;;> CL-MACSYMA (R), LISP MACHINE MACSYMA (R), MACSYMA Newsletter (R), PC-MACSYMA, Document
-;;;> Examiner (R), Delivery Document Examiner, S-DYNAMICS (R), S-GEOMETRY (R), S-PAINT (R),
-;;;> S-RECORD, S-RENDER (R), Displacement Animation, FrameThrower, PaintAmation, "Your Next
-;;;> Step in Computing" (R), Ivory, MacIvory, MacIvory model 2, XL400, Symbolics UX400S, 
-;;;> Symbolics C, Symbolics Pascal (R), Symbolics Prolog, Symbolics Fortran (R), CLOE (R),
-;;;> CLOE Application Generator, CLOE Developer, CLOE Runtime, Common Lisp Developer,
-;;;> Symbolics Concordia, Joshua, and Statice (R) are trademarks of Symbolics, Inc.
-;;;> 
-;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Technical Data and Computer 
-;;;> Software Clause at DFAR 52.227-7013.
-;;;> 
-;;;>      Symbolics, Inc.
-;;;>      8 New England Executive Park, East
-;;;>      Burlington, Massachusetts  01803
-;;;>      United States of America
-;;;>      617-221-1000
-;;;> *****************************************************************************************
-;;;>
-;;; Created 5/22/88 13:04:14 by hes running on HOLBROOK at JP.
 
 (in-package :ji)
 
@@ -48,15 +10,18 @@
 
 (define-joshua-encapsulation (encaps-ask-internal ask-internal t '(:ask))
     :body-wrapper ((trace-ask predication :truth-value truth-value)
-		 (let ((original-rule-depth *rule-depth*)
-		       (original-continuation continuation))
-		   (flet ((my-continuation (just)
-			    (let ((*rule-depth* original-rule-depth))
-			      (trace-ask-success predication :truth-value truth-value :justification just))
-			    (funcall original-continuation just)))
-		     (setf continuation #'my-continuation)
-		     (with-another-rule 
+                   (let ((original-rule-depth *rule-depth*)
+                         (original-continuation continuation))
+                     (flet ((my-continuation (just)
+                              (let ((*rule-depth* original-rule-depth))
+                                (trace-ask-success predication :truth-value truth-value :justification just))
+                              (funcall original-continuation just)))
+                       (setf continuation #'my-continuation)
+                       (with-another-rule
                          (call-next))))))
+
+
+
 
 (define-joshua-encapsulation (encaps-tell-internal  tell-internal t '(:tell))
   :before-body
@@ -77,10 +42,10 @@
   (trace-act-on-truth-value-change database-predication
 				    :truth-value (predication-truth-value database-predication)
 				    :old-truth-value old-truth-value
-				    :old-state old-state)) 
+				    :old-state old-state))
 
 (define-joshua-encapsulation (encaps-justify justify t '(:justify))
-    :before-body 
+    :before-body
   (trace-justify conclusion
 		 :truth-value truth-value
 		 :justification (list mnemonic true-support false-support unknown-support))
@@ -112,13 +77,13 @@
     (when cause
       (when (listp cause) (setf cause (car cause)))
       (when (zerop (ltms::clause-number-of-satisfiable-literals clause))
-	(trace-contradiction cause 
+	(trace-contradiction cause
 			     :truth-value (if (= (predication-truth-value cause) +true+) +false+ +true+)
 			     :old-truth-value (predication-truth-value cause)
 			     :justification clause))))
 
-(define-joshua-encapsulation  (encaps-update-predication-to-reflect-retraction 
-				ltms::update-predication-to-reflect-retraction t 
+(define-joshua-encapsulation  (encaps-update-predication-to-reflect-retraction
+				ltms::update-predication-to-reflect-retraction t
 				'(:retract))
     :arglist (predication previous-truth-value)
   :before-body
@@ -221,13 +186,13 @@
 ;			   (push new-state-entry (rete-internal-state-children right-state))
 ;			   (rete-proceed-to-next-node new-state-entry node)))
 ;			(t (trace-fail-merge node :merge-left left-state
-;					     :merge-right right-state)))))))))) 
+;					     :merge-right right-state))))))))))
 
 
 
 (define-joshua-encapsulation (encaps-run-backward-queue run-backward-queue nil '(:enqueue-backward-rule))
   :before-body
-  (loop with key 
+  (loop with key
 	   with entry
 	   with something-there
 	   do
@@ -344,5 +309,4 @@
 				 :triggers (reverse (rete-internal-state-predications state-entry))
 				 :env (rete-internal-state-environment state-entry)
 				 :importance (number-from-importance (Rete-terminal-entry-importance child-entry))))
-       (t (push child-entry (rete-internal-state-stimulate-list state-entry))))) 
-
+       (t (push child-entry (rete-internal-state-stimulate-list state-entry)))))

@@ -1,41 +1,5 @@
 ;;; -*- Mode: LISP; Base: 10; Syntax: Common-lisp; Package: joshua-internals -*-
-;;;>
-;;;> *****************************************************************************************
-;;;> ** (c) Copyright 1990-1988 Symbolics, Inc.  All rights reserved.
-;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
-;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
-;;;> stored only in accordance with the terms of such license.
-;;;> 
-;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
-;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3653, Symbolics
-;;;> 3620 (R), Symbolics 3610 (R), Symbolics Common Lisp (R), Symbolics-Lisp (R),
-;;;> Zetalisp (R), Genera (R), Wheels (R), Dynamic Windows (R), Showcase, SmartStore (R),
-;;;> Semanticue (R), Frame-Up (R), Firewall (R), MACSYMA (R), COMMON LISP MACSYMA (R),
-;;;> CL-MACSYMA (R), LISP MACHINE MACSYMA (R), MACSYMA Newsletter (R), PC-MACSYMA, Document
-;;;> Examiner (R), Delivery Document Examiner, S-DYNAMICS (R), S-GEOMETRY (R), S-PAINT (R),
-;;;> S-RECORD, S-RENDER (R), Displacement Animation, FrameThrower, PaintAmation, "Your Next
-;;;> Step in Computing" (R), Ivory, MacIvory, MacIvory model 2, XL400, Symbolics UX400S, 
-;;;> Symbolics C, Symbolics Pascal (R), Symbolics Prolog, Symbolics Fortran (R), CLOE (R),
-;;;> CLOE Application Generator, CLOE Developer, CLOE Runtime, Common Lisp Developer,
-;;;> Symbolics Concordia, Joshua, and Statice (R) are trademarks of Symbolics, Inc.
-;;;> 
-;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Technical Data and Computer 
-;;;> Software Clause at DFAR 52.227-7013.
-;;;> 
-;;;>      Symbolics, Inc.
-;;;>      8 New England Executive Park, East
-;;;>      Burlington, Massachusetts  01803
-;;;>      United States of America
-;;;>      617-221-1000
-;;;> *****************************************************************************************
-;;;>
+
 
 ;;;; Notes for changes:
 ;;; Examine how the rule, forward-rule, backward-rule presentation-types are used
@@ -88,7 +52,7 @@
                      :test #'same-name-p)))
     (clim:completing-from-suggestions (stream)
       (loop for rule in *forward-rules*
-            do (clim:suggest 
+            do (clim:suggest
                 (if (and (duplicated-p rule)
                          (not (eq (symbol-package rule) *package*)))
                   (format nil "~s" rule)
@@ -96,7 +60,7 @@
                 rule)))))
 
 (clim:define-presentation-method clim:present (thing (type forward-rule) stream (view clim:textual-view) &key)
-  (princ thing stream)) 
+  (princ thing stream))
 
 (clim:define-presentation-method clim:presentation-typep (rule (type backward-rule))
   (and rule (backward-rule-test-p rule)))
@@ -109,7 +73,7 @@
              (member x (cdr (member x *backward-rules* :test #'same-name-p))
                      :test #'same-name-p)))
      (clim:completing-from-suggestions (stream)
-       (loop for rule in *backward-rules* 
+       (loop for rule in *backward-rules*
              do (clim:suggest
                  (if (and (duplicated-p rule)
                           (not (eq (symbol-package rule) *package*)))
@@ -169,7 +133,7 @@
   (declare (ignore error-object))
   (error 'parse-error :stream stream))
 
-(pushnew '(#\[ . #\]) clim-internals::*char-associations* :test #'equal)
+#-mcclim(pushnew '(#\[ . #\]) clim-internals::*char-associations* :test #'equal)
 
 (defvar *predication-delimiters* '(#\]))
 
@@ -198,34 +162,46 @@
 (clim:define-presentation-method clim:presentation-typep (thing (type predication))
   (typep thing 'predication))
 
-(clim:define-presentation-translator predication-identity 
+(clim:define-presentation-method clim:presentation-typep (thing (type tms-predication-presentation))
+  (and (typep thing 'predication) (nontrivial-tms-p thing)))
+
+(clim:define-presentation-translator predication-identity
    (predication predication joshua-trace
     :priority 2)		;beat out expression-identity
    (object)
    (values object 'predication ))
 
 (clim:define-presentation-translator predication-to-expression
-    (database-predication clim-env::command-or-form clim-env::lisp-listener
+    (database-predication #-mcclim clim-env::command-or-form #+mcclim clim:command-or-form
+                          #-mcclim clim-env::lisp-listener #+mcclim clim-listener::listener
 			  :pointer-documentation ((object stream)
 						   (format stream "~a" object)))
    (object)
   (values object 'database-predication))
 
+
+
 #+mcl
-(ccl:advise print-predication-internal 
+(ccl:advise print-predication-internal
             (destructuring-bind (statement stream) ccl:arglist
               (clim:with-output-as-presentation (stream statement 'predication)
                 (:do-it)))
-            :when :around 
-            :name print-with-presentation 
+            :when :around
+            :name print-with-presentation
             :define-if-not nil)
 #+allegro
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (def-fwrapper wrap-print-predication (statement stream)
     (clim:with-output-as-presentation (stream statement 'predication)
       (call-next-fwrapper)))
-
   (fwrap 'print-predication-internal 'joshua-tracing 'wrap-print-predication))
+
+#+sbcl
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun wrap-print-predication (function statement stream)
+    (clim:with-output-as-presentation (stream statement 'predication)
+      (funcall function statement stream)))
+  (sb-impl::encapsulate 'print-predication-internal 'joshua-tracing 'wrap-print-predication))
 
 
 (clim:define-presentation-method clim:accept ((type truth-value) stream (view clim:textual-view) &key)
@@ -237,7 +213,7 @@
           ))
 
 (clim:define-presentation-method clim:present (obj (type truth-value) stream (view clim:textual-view) &key)
-  (princ 
+  (princ
    (cond
     ((eql obj +true+) "true")
     ((eql obj +false+) "false")
@@ -262,7 +238,7 @@
 (clim:define-presentation-method clim:present (obj (type trigger-list) stream (view clim:textual-view) &key)
   (princ obj stream))
 
-(clim:define-presentation-translator ptrans-trigger-list-identity 
+(clim:define-presentation-translator ptrans-trigger-list-identity
    (trigger-list clim:form joshua-trace)
    (object)
   `(quote ,object))
@@ -281,7 +257,7 @@
   (clim:completing-from-suggestions (stream)
     (loop for predicate being the hash-keys of *all-predicates*
           do (clim:suggest (symbol-name predicate) predicate))
-    (loop for model in *models* 
+    (loop for model in *models*
           do (clim:suggest (symbol-name model) model))))
 
 (clim:define-presentation-method clim:present (obj (type joshua-predicate) stream (view clim:textual-view) &key)
@@ -312,9 +288,9 @@
                    :gesture t)
  (object)
   (list object))
- 
-  
-                                     
+
+
+
 
 
 
@@ -415,8 +391,8 @@
 				   for fragment in matching
 				   always (search (string fragment) symbol-name :test #'char-equal))
 			     (or (null triggered-by)
-				 (loop for trigger in triggered-by 
-				       when 
+				 (loop for trigger in triggered-by
+				       when
 					 (loop for (trigger-pattern) in
 						   (rule-debug-info-triggers
 						     (rule-debug-info symbol))
@@ -447,7 +423,7 @@
 		       (when (not (eq packages :all))
 			 (format t " in Package~P " (length packages))
 			 (format-textual-list packages #'princ
-					      :conjunction "and"	
+					      :conjunction "and"
 					      :stream *standard-output*))
 		       (when system
 			 (format t " that are in system ~a" system))|#
@@ -455,7 +431,10 @@
 		      (t
 		       (print-heading heading stream)
 		       (clim:formatting-item-list (stream
-					       :stream-width (clim:window-inside-width *standard-output*))
+                                                   ;; fix this.  This keyword arg is in the spec
+                                                   ;; and the macro accepts it but its expansion into
+                                                   ;; innvoke-form... doesn't
+					       #-mcclim :stream-width #-mcclim (clim:window-inside-width *standard-output*))
 			 (loop for x from 0 to (1- (fill-pointer found-array))
 			       as name = (aref found-array x)
 			       do
@@ -463,7 +442,7 @@
 			     (clim:present name 'rule :stream stream)))))))))
      (when (member type '(:all :forward))
        (sort-and-format *forward-rules* *standard-output* "Forward Rules"))
-     (when (member type '(:all :backward)) 
+     (when (member type '(:all :backward))
         (sort-and-format *backward-rules* *standard-output* "Backward Rules"))))
 
 ;;;
@@ -489,7 +468,7 @@
 	      (etypecase thing
 	        (symbol
 		 ;; name of a rule that's at the root of a Rete network
-		 (clim:with-output-as-presentation ((rule-debug-info thing) stream 'clim:expression
+		 (clim:with-output-as-presentation (stream (rule-debug-info thing) 'clim:expression
 						    :allow-sensitive-inferiors nil)
                    (clim:formatting-item-list (stream :n-columns 1 :row-wise nil)
                      (clim:formatting-cell (stream :align-x :center)
@@ -542,7 +521,12 @@
 	      (rete-terminal-entry nil)
 	      (basic-rete-node
 		(loop for child-entry in (rete-node-children parent)
-		      for child-node = (rete-child-entry-child child-entry)
+		      for child-node = (when (basic-rete-child-entry-p child-entry)
+                                         ;; Note: SBCL would infer that child-entry
+                                         ;; has the above type from this application
+                                         ;; and then deterine that it's not a terminal-entry
+                                         ;; the test above shuts it up
+                                         (rete-child-entry-child child-entry))
 		      when (member child-node desired-nodes)
 			collect (if (rete-terminal-entry-p child-entry)
 				    child-entry
@@ -554,9 +538,14 @@
                         (clim:draw-arrow* stream x1 y1 x2 y2))
         :stream stream
         ))))
+
 #+allegro
 (defun function-name (thing)
   (xref::object-to-function-name thing))
+
+#+sbcl
+(defun function-name (thing)
+  (sb-impl::%fun-name thing))
 
 ;;; Used by graph forward rule triggers
 (defun nodes-leading-to-goals (rule-names &optional (follow-extraneous-paths nil))
@@ -630,7 +619,7 @@
   (when (eql rules :all)
     (setf rules *forward-rules*))
   (let ((stream *standard-output*))
-    (if rules 
+    (if rules
       (graph-rete-network rules
                           :stream stream
                           :orientation orientation
@@ -638,7 +627,7 @@
       (clim:with-text-style (stream *deemphasis-character-style*)
         (format stream "No forward rules defined")))))
 
-;;; It could be that this command should be more carefull about its destructive 
+;;; It could be that this command should be more carefull about its destructive
 ;;; operations, and query the user first.
 (define-multiple-command (com-clear-joshua-database :name "Clear Joshua Database")
 			 (*joshua-command-table* *joshua-only-command-table* *joshua-tracing-command-table*)
@@ -690,7 +679,7 @@
 		    (format stream "~&Predications being removed:")))
 		(if (null preds-to-untell)
 		    (format stream "~%  None")
-		    (clim:format-items preds-to-untell 
+		    (clim:format-items preds-to-untell
 				       :stream stream
 				       :presentation-type 'predication)))
 	      (when (or (not query)
@@ -709,7 +698,7 @@
 		      (clim:note-progress count length)))))
 	      (when undefine-rules
 		(cond
-                 (query 
+                 (query
                   (terpri stream)
                   (when (clim:accept 'clim:boolean
                                      :stream stream
@@ -795,7 +784,7 @@
 		       (thing-in-system flavor))
 		   (or (eq packages :all)
 		       (thing-in-packages flavor))|#
-                  )))	      
+                  )))
     (let ((found-array (make-array 50 :fill-pointer 0 :adjustable t)))
       (declare (dynamic-extent found-array))
       (maphash #'(lambda (key ignore)
@@ -821,7 +810,7 @@
 	      (when (not (eq packages :all))
 		(format t " in Package~P " (length packages))
 		(clim:format-textual-list packages #'princ
-				     :conjunction "and"	
+				     :conjunction "and"
 				     :stream *standard-output*))
 	      (when system
 		(format t " that are in system ~a" system))|#
@@ -844,7 +833,7 @@
 		         (clim:formatting-cell (stream)
 		           (clim:present name 'joshua-predicate :stream stream)
 		           (let ((predicate-descriptor (gethash name *all-predicates*)))
-			     (when predicate-descriptor 
+			     (when predicate-descriptor
 			       (write-char #\space stream)
 			       (clim:format-items (predicate-descriptor-arglist predicate-descriptor)
                                                   :n-columns 10
@@ -889,9 +878,15 @@
 	     (terpri stream)
 	     (clim:present generic 'protocol-function :stream stream))
 	   (princ #\space stream)
-	   (clim:filling-output (stream)
-	     (loop for thing in (arglist (protocol-external-name generic))
-		   do (print thing stream)))
+           ;; mcclim implementation causes a note about deleting
+           ;; unreachable code which is actually correct given the
+           ;; particular arguments to filling output.  But fixing
+           ;; filling-output would be a big pain.
+           (locally
+               #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
+             (clim:filling-output (stream)
+               (loop for thing in (arglist (protocol-external-name generic))
+                     do (print thing stream))))
 	   (clim:with-text-style (stream '(nil :italic nil))
 	     (format stream "~%Implemented by:"))
 	   (loop for method in COMBINED-METHOD-LIST do
@@ -986,7 +981,7 @@
 	                     :prompt "database predication" :documentation "a database predication to explain")
                           (n '(clim:null-or-type (integer 0))
 	                     :prompt "to what depth"
-	                     :default nil))	
+	                     :default nil))
   ;; a real version of this would do it possibly graphically, and with incremental redisplay, etc.
   (explain p n *standard-output*))
 
@@ -995,14 +990,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Commands for manipulating tracing.
 
-;;; I would much prefer to use dw::alist-member here but it doesn't do the right 
+;;; I would much prefer to use dw::alist-member here but it doesn't do the right
 ;;; thing with mentioned defaults, its help is completely messed up on objects with
 ;;; spaces as well.
 
 (define-multiple-command (com-enable-joshua-tracing :Name "Enable Joshua Tracing")
 			 (*joshua-command-table*
 			   *joshua-only-command-table* *joshua-tracing-command-table*)
-    ((Type-of-tracing `(clim:member-alist 
+    ((Type-of-tracing `(clim:member-alist
                         ,(create-tracer-alist *joshua-debugger*
                                               :extra-items '(("All" :value :all :documentation "Enable all types of tracing"))
                                               :first-word-of-doc-strings "Enable"))
@@ -1205,19 +1200,19 @@
 
 #|
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; commands for the Joshua Tracing prompt - for stepping through the execution 
+;;; commands for the Joshua Tracing prompt - for stepping through the execution
 ;;; of the rules
 
 ;;; By making abort work only as an accelerator (all other aborts are caught), we
-;;; get the effect that hitting abort at the command prompt will abort the 
-;;; execution of the program while hitting abort while typing or executing a 
+;;; get the effect that hitting abort at the command prompt will abort the
+;;; execution of the program while hitting abort while typing or executing a
 ;;; command will bring you back to the command prompt
 (cp:define-command-accelerator acc-com-abort "Joshua portable Trace" (#\abort)
 			       ()
 			       ()
   (throw 'aborted t))
 
-;;; Commands that want to exit the command loop should retun :done, all others 
+;;; Commands that want to exit the command loop should retun :done, all others
 ;;; will simply finish and return to the command propmt
 (cp:define-command (com-continue :name "Step" :command-table "Joshua portable Trace")
     ()
@@ -1315,7 +1310,7 @@
               (terpri stream)
               (let ((current-justification (current-justification predication)))
                 (if (listp current-justification)
-                    (loop for just in current-justification do 
+                    (loop for just in current-justification do
                           (terpri stream)
                         (explain-justification just stream depth))
                   (explain-justification current-justification stream depth))))))))))
@@ -1411,14 +1406,14 @@
 (define-presentation-to-command-translator ptrans-rule-to-show-rule-source
    (rule
      :gesture :middle
-     :priority 1 ;;needs to override the Show Functions Arguments translator 
+     :priority 1 ;;needs to override the Show Functions Arguments translator
      :documentation "Show the definition for this rule")
    (rule-name)
   `(com-show-rule-source (,rule-name)))
 
 |#
 
-;;; Translators for predicate flavors 
+;;; Translators for predicate flavors
 (clim:define-presentation-to-command-translator ptrans-joshua-predicate-to-trace-predicate
    (joshua-predicate com-joshua-trace clim:global-command-table
      :gesture nil
@@ -1456,7 +1451,7 @@
 	      (traceable-tms-predicate-p *joshua-debugger* object))
      )
    (object)
-  `(joshua-predicate ,object 
+  `(joshua-predicate ,object
                      :tracing-options
 		     (add-trace-predicate
 		       ,(find-tracer-by-class-name *joshua-debugger* 'TMS-tracer))))
@@ -1483,9 +1478,9 @@
                                                              :tester ((object)
 	                                                              (traceable-forward-rule-trigger-p *joshua-debugger* object)))
                                                 (object)
-  `(predication ,object 
+  `(predication ,object
                 :tracing-options
-                (add-trace-forward-rule-trigger 
+                (add-trace-forward-rule-trigger
                  ,(find-tracer-by-class-name *joshua-debugger* 'forward-rule-tracer))))
 
 
@@ -1499,8 +1494,8 @@
                                                 (object)
   `(predication ,object
                 :tracing-options
-                (untrace-forward-rule-trigger 
-                 ,(find-tracer-by-class-name *joshua-debugger* 'forward-rule-tracer)))) 
+                (untrace-forward-rule-trigger
+                 ,(find-tracer-by-class-name *joshua-debugger* 'forward-rule-tracer))))
 
 (clim:define-presentation-to-command-translator ptrans-predication-to-trace-backward-rule-trigger
                                                 (predication com-joshua-trace clim:global-command-table
@@ -1512,7 +1507,7 @@
                                                              )
                                                 (object)
   `(predication ,object :tracing-options
-                (add-trace-backward-rule-trigger 
+                (add-trace-backward-rule-trigger
                  ,(find-tracer-by-class-name *joshua-debugger* 'backward-rule-tracer))))
 
 (clim:define-presentation-to-command-translator ptrans-predication-to-untrace-backward-rule-trigger
@@ -1525,7 +1520,7 @@
                                                              )
                                                 (object)
   `(predication ,object :tracing-options
-                (untrace-backward-rule-trigger 
+                (untrace-backward-rule-trigger
                  ,(find-tracer-by-class-name *joshua-debugger* 'backward-rule-tracer))))
 
 (clim:define-presentation-to-command-translator ptrans-predication-to-trace-predication
@@ -1579,25 +1574,32 @@
                                            (object)
   `(predication ,object :tracing-options
                 (untrace-pattern
-                 ,(find-tracer-by-class-name *joshua-debugger* 'TMS-tracer)))) 
+                 ,(find-tracer-by-class-name *joshua-debugger* 'TMS-tracer))))
 
 (clim:define-presentation-to-command-translator
-  pred-to-explain
-  (database-predication com-explain-predication clim-env::lisp-listener
-                   :gesture :describe)
-  (object)
+    pred-to-explain
+    (database-predication com-explain-predication
+                          #+(and clim (not mcclim)) clim-env::lisp-listener
+                          ;; mcclim doesn't export this, foo!
+                          #+mcclim clim-listener::listener
+                          :gesture :describe)
+    (object)
   (list object nil))
 
-(clim:define-presentation-translator 
+
+(clim:define-presentation-translator
   trans-predication-to-db-predication
-  (predication database-predication clim-env::lisp-listener
+    (predication database-predication
+                 #+(and clim (not mcclim)) clim-env::lisp-listener
+                 ;; mcclim doesn't export this, foo!
+                 #+mcclim clim-listener::listener
                :tester ((object) (has-been-in-database-p object)))
   (object)
   object)
 
 
 
-#| 
+#|
 
 (define-presentation-to-command-translator ptrans-tracing-event-to-trace-event
    (tracing-event
@@ -1660,20 +1662,24 @@
 (define-multiple-command (com-joshua-syntax :name t) (*joshua-command-table*)
                          ((yes-or-no 'clim:boolean
                                      :default t
-	                             :prompt "Use Johsua Syntax"))	
+	                             :prompt "Use Johsua Syntax"))
   ;; a real version of this would do it possibly graphically, and with incremental redisplay, etc.
   (let ((*error-output* *standard-output*))
     (if yes-or-no
       (joshua:enable-joshua)
       (joshua:disable-joshua))))
 
+;;; Need to see whether mcclim's input editor has similar features
+
+#-mcclim
 (defvar *joshua-break-chars*
     `(,#\[ ,#\] ,@clim-internals::*word-start-atom-break-chars*))
 
+#-mcclim
 (clim-internals::define-input-editor-command (com-ie-show-predicate-arglist :rescan nil)
     (stream input-buffer)
   "Show predicate arglist"
-  (multiple-value-bind (symbol package) 
+  (multiple-value-bind (symbol package)
       (let ((clim-internals::*word-start-atom-break-chars* *joshua-break-chars*))
 	(clim-internals::symbol-at-position Stream input-buffer '(#\[ )))
     (let* ((predicate (find-symbol (symbol-name symbol) package))
@@ -1689,11 +1695,13 @@
 		#+Cloe-Runtime
 		(format stream "~S (~A): (~{~:A~^ ~})"
 			symbol found-p arglist))))
-	(clim:beep stream)))))
+          (clim:beep stream)))))
 
+#-mcclim
 (clim-internals::define-input-editor-gestures
     (:ie-show-predicate-arglist :a :meta)
     )
 
+#-mcclim
 (clim-internals::assign-input-editor-key-bindings
  com-ie-show-predicate-arglist :ie-show-predicate-arglist)

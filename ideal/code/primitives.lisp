@@ -28,7 +28,7 @@
 	   REDUCE-PROBABILISTIC-NODE))
 
 ;--------------------------------------------------------
-      
+
 ; Influence diagram manipulation primitives.
 
 ; ******************* REMOVING BARREN NODES *********************************
@@ -57,9 +57,9 @@
 (defun remove-all-nodes-with-less-than-two-succ (diagram)
   (labels ((less-than-two-successors-p (n)(null (cdr (node-successors n)))))
     (let (candidate)
-      (loop					
+      (loop
 	(setq candidate (find-if #'less-than-two-successors-p diagram))
-	(if (null candidate)(return diagram))	
+	(if (null candidate)(return diagram))
 	(setq diagram (absorb-chance-node candidate diagram))))))
 
 ; ***************** REMOVING CHANCE NODES****************************************
@@ -196,13 +196,13 @@
     ((not (probabilistic-node-p pred))
      (error "The predecessor node ~A in the proposed arc reversal is not probabilistic"
 	    pred))
-    ((not (and (discrete-dist-node-p pred)(discrete-dist-node-p succ)	
+    ((not (and (discrete-dist-node-p pred)(discrete-dist-node-p succ)
 	       (every #'discrete-dist-node-p (node-predecessors pred))
 	       (every #'discrete-dist-node-p (node-predecessors succ))))
      (error "Non discrete nodes involved in reversing arc from ~A to ~A. Cannot handle"
 	    pred succ))
     ( t (if (deterministic-node-p succ)(convert-det-node-to-prob succ))
-	; Convert noisy or nodes if necessary 
+	; Convert noisy or nodes if necessary
      (if (noisy-or-node-p pred)(convert-noisy-or-node-to-chance-node pred))
      (if (noisy-or-node-p succ)(convert-noisy-or-node-to-chance-node succ))
      (ideal-debug-msg "~%Reversing arc from node ~A to node ~A" pred succ)
@@ -235,13 +235,13 @@
 	; Increase marginal by product of appropriate probs and set
 	; appropriate prob-of of pred to this joint prob.
 		  (setf (prob-of pred-case preds-cond-case)
-			(* (contents-of-dist-array-location 
+			(* (contents-of-dist-array-location
 			     succs-old-dist-array  succ-case
 			     (combine-cond-cases pred-case new-case) succs-old-predecessors)
-			   (contents-of-dist-array-location 
+			   (contents-of-dist-array-location
 			     preds-old-dist-array  pred-case  new-case
 			     preds-old-predecessors)))))
-	; Set prob of (succ-case / new-case ) to marginal 
+	; Set prob of (succ-case / new-case ) to marginal
 	  (setf (prob-of succ-case new-case) marginal-w.r.t-pred)
 	  (let ((default (if (zerop marginal-w.r.t-pred) (/ 1 (number-of-states pred)))))
 	    (for-all-cond-cases (pred-case (list pred))
@@ -257,7 +257,7 @@
 (defun propogate-deterministic-node (det-node succ-node &optional (diagram *diagram*))
   (cond
     ((not (deterministic-node-p det-node))
-     (error "Node ~A is not a deterministic node"))
+     (error "Node ~A is not a deterministic node" det-node))
     ((not (member succ-node (node-successors det-node)))
      (error "Node ~A is not a successor of det-node ~A" succ-node det-node))
     (t (ideal-debug-msg "Propogating  det node ~A into node ~A" det-node succ-node)
@@ -279,7 +279,7 @@
 		  old-succ-array new-succ-case
 		  (combine-cond-cases
 		    new-cond-case
-		    (make-conditioning-case 
+		    (make-conditioning-case
 		      (list (cons det-node (deterministic-state-of det-node new-cond-case)))))
 		  old-succ-preds)))))
     (values diagram)))
@@ -425,4 +425,3 @@
     (dolist (n diagram)
       (when (or (decision-node-p n)(value-node-p n))
 	(delete-predecessor-links n)))))
-

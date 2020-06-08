@@ -45,7 +45,7 @@
 (defun check-node-case (node-case)
   (cond
     ((not (and (listp node-case)(null (rest node-case))))
-     (error "~A is not a list of length 1. Cannot be a node-case"))
+     (error "~A is not a list of length 1. Cannot be a node-case" node-case))
     ((not (eq  (label-node (state-in node-case)) (node-in node-case)))
      (error " The state ~A in the node-case ~A is not a valid state of node ~A"
 	    (state-in node-case) node-case (node-in node-case)))
@@ -248,5 +248,4 @@
   (format t "~%; Printing beliefs in file ~A ...." file-name)
   (with-open-file (st file-name :direction :output)
     (diag-display-beliefs diagram st))
-  (format t "Done")(values)) 
-
+  (format t "Done")(values))

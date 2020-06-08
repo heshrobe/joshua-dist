@@ -1,6 +1,18 @@
 ;;; -*- Mode: LISP; Syntax: Ansi-common-lisp; Package: Cl-user -*-
 
 (in-package :cl-user)
+(eval-when (:execute :load-toplevel)
+  (let* ((loading-file *load-truename*)
+         (host (pathname-host loading-file))
+         (device (pathname-device loading-file))
+         (home-dir (butlast (pathname-directory loading-file)))
+         (wildcard-dir (append home-dir (list :wild-inferiors))))
+    (let ((home (make-pathname :directory home-dir :host host :device device))
+	  (wildcard (make-pathname :directory wildcard-dir :host host :device device)))
+      (setf (logical-pathname-translations "joshua")
+	    `(("home;*.*" ,home)
+	      ("**;*.*" ,wildcard)
+	       )))))
 
 (asdf:defsystem joshua
   :name "Joshua"

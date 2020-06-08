@@ -4,15 +4,15 @@
 ;;;> ** (c) Copyright 1989, 1988 Symbolics, Inc.  All rights reserved.
 ;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
 ;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
+;;;>    The software, data, and information contained herein are proprietary
+;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends
+;;;> to keep such software, data, and information confidential and to preserve
+;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant
+;;;> to a written license agreement, and may be used, copied, transmitted, and
 ;;;> stored only in accordance with the terms of such license.
-;;;> 
+;;;>
 ;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
-;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3620 (R), Symbolics 
+;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3620 (R), Symbolics
 ;;;> 3610 (R), Symbolics Common Lisp (R), Symbolics-Lisp (R), Zetalisp (R), Genera (R),
 ;;;> Wheels, Dynamic Windows (R), Showcase, SmartStore (R), Semanticue (R), Frame-Up (R),
 ;;;> Firewall (R), MACSYMA (R), COMMON LISP MACSYMA, CL-MACSYMA (R), LISP MACHINE
@@ -20,12 +20,12 @@
 ;;;> S-GEOMETRY (R), S-PAINT (R), S-RENDER (R), "Your Nextjoshua/code/ Step in Computing" (R), Ivory,
 ;;;> Symbolics C, Symbolics Pascal, Symbolics Prolog, Symbolics Fortran, CLOE, Joshua,
 ;;;> Concordia, and Statice are trademarks of Symbolics, Inc.
-;;;> 
+;;;>
 ;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer 
+;;;>    Use, duplication, and disclosure by the Government are subject to restrictions
+;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer
 ;;;> Software Clause at FAR 52.227-7013.
-;;;> 
+;;;>
 ;;;>      Symbolics, Inc.
 ;;;>      8 New England Executive Park, East
 ;;;>      Burlington, Massachusetts  01803
@@ -254,10 +254,10 @@
 ;;; Source code representations of Joshua logic variables and predications.
 ;;;
 
-;;; 
+;;;
 ;;; Design notes:
 ;;;
-;;; In the implementation until recently, there was a special variable called *known-lvs* which is 
+;;; In the implementation until recently, there was a special variable called *known-lvs* which is
 ;;; supposed to always be bound to the already seen logic-variables that lexically scope where we
 ;;; are in execution or compilation.  This was kept current using Compiler-let to rebind *known-lvs*
 ;;; as new logic-variables were introduced (by ask or rule matching for example).
@@ -423,7 +423,7 @@
 (defmacro logic-variable-maker (name &environment env)
   (let ((known-lvs (macroexpand '(known-lvs) env)))
     (unless (member name known-lvs)
-      (warn "The logic variable ~s has been used as a free reference. ~a" 
+      (warn "The logic variable ~s has been used as a free reference. ~a"
 	    name known-lvs))
     `(joshua-logic-variable-value ,name)))
 
@@ -453,7 +453,7 @@
 	 (cond ((atom form) form)
 	       ((logic-variable-maker-p form)
 		(collect-lv form)
-		(list '*backquote-comma-flag* form))		
+		(list '*backquote-comma-flag* form))
 	       (t (loop for sublist = form then (cdr sublist)
 			while (and (consp sublist)
 				   (not (logic-variable-maker-p sublist)))
@@ -631,7 +631,7 @@
     (setq char (peek-char t stream t nil recursive-p))
 	until (eql char limit-char)
 	doing
-    (cond 
+    (cond
       ((eql char #\.)
        (read-char stream t nil t)		; waste the dot.
        (let ((next-char (peek-char nil stream t nil recursive-p)))
@@ -653,7 +653,7 @@
 		    (let ((next-char (peek-char t stream t nil recursive-p)))
 		      (when (char= next-char limit-char)
 			(error "On ~s, delimiter \"~c\" read after consing dot." stream next-char))
-		      (loop 
+		      (loop
 			(multiple-value-bind (this-thing read-something-p)
 			    (read-maybe-nothing stream t nil t)
 			  (when read-something-p
@@ -663,7 +663,7 @@
 	   ;; Sure would be nice if we could ask the readtable whether a char
 	   ;; is whitespace or not...
 	 (if (member next-char '(#\space #\tab #\newline #\return #\linefeed #\page))
-	     ;; dot-whitespace = 
+	     ;; dot-whitespace =
 	     (handle-consing-dot)
 	     ;; maybe a funny thing...
 	     (multiple-value-bind (fn ntp) (get-macro-character next-char)
@@ -772,7 +772,7 @@
   (let* ((new-readtable (copy-readtable nil)))
     ;; tell this readtable where it came from ("Daddy, where did I come from?")
     #+(or genera cloe-developer)
-    (setf (zl:::si:readtable-appropriate-file-syntax new-readtable) 
+    (setf (zl:::si:readtable-appropriate-file-syntax new-readtable)
           #+cloe-developer :joshua-cloe #+genera :joshua)
     #+(or genera cloe-developer)
     (setf (zl:::si:readtable-name new-readtable) "Standard-Joshua")
@@ -790,13 +790,13 @@
 			 nil			;terminating (like parentheses)
 			 new-readtable)
     (set-syntax-from-char *joshua-close-predication-char* #\) new-readtable)
-    
+
     (set-macro-character *joshua-open-predication-maker-char*
 			 #'read-predication-maker
 			 nil			;terminating (like parentheses)
 			 new-readtable)
     (set-syntax-from-char *joshua-close-predication-maker-char* #\) new-readtable)
-    
+
     (set-macro-character #\, #'joshua-comma-reader nil new-readtable)
     (set-macro-character #\` #'joshua-top-level-backquote-reader nil new-readtable)
     new-readtable))
@@ -805,7 +805,7 @@
   "Creates a new Joshua readtable and installs it."
   (setq *joshua-readtable* new-readtable)	;put it in the standard place
   ;; innocuous value
-  t)						      
+  t)
 
 (install-new-joshua-readtable)
 
@@ -842,7 +842,7 @@
 ;;;
 ;;; We need a way of establishing a Lisp context. Here we define two
 ;;; functions: one to set up the context tobe joshua. the other to
-;;; return to what was there before. 
+;;; return to what was there before.
 ;;;
 ;;; Should we establish a way back to a standard CL?
 
@@ -853,7 +853,7 @@
   "This variable is a place holder for the old package.")
 
 ;;; Set up a way to use Joshua. We need to establish the readtable and
-;;; know about the packages. 
+;;; know about the packages.
 
 (defmacro with-joshua-readtable (&body body)
   `(let ((*readtable* *joshua-readtable*))
@@ -862,6 +862,8 @@
 (defun enable-joshua ()
   "This function sets up the joshua readtable and establishes the
 packages JI, JU, and Joshua as the current context."
+  #+mcclim
+  (setq drei:*in-joshua-mode* t)
   (unless (eql *readtable* *joshua-readtable*)
     (setq *old-readtable* *readtable*
 	  *old-package* *package*)
@@ -874,14 +876,16 @@ packages JI, JU, and Joshua as the current context."
 		  (member (find-package "JI") pul)
 		  (member (find-package "JU") pul))
 	;; package cannot possibly be a Joshua package, so set it to JU
-	(format *error-output* 
-                "~& Notice: Package ~A is not a Joshua package. Joshua-User will be used instead." 
+	(format *error-output*
+                "~& Notice: Package ~A is not a Joshua package. Joshua-User will be used instead."
                 (package-name *package*))
 	(setf *package* (find-package "JU"))))))
 
 (defun disable-joshua ()
   "This function returns us to where we were before setting up the
 Joshua readtable and the JI, JU, and Joshua packages. "
+  #+mcclim
+  (setq drei:*in-joshua-mode* nil)
   (when (and *old-readtable* (eql *readtable* *joshua-readtable*))
     (setf *readtable* *old-readtable*
 	  *package* *old-package*)))
@@ -916,7 +920,7 @@ Joshua readtable and the JI, JU, and Joshua packages. "
 			#+(or allegro sbcl) (write thing :stream stream)
                        ))
       (otherwise (write-string "[" stream)
-                 (loop for first-time = t then nil 
+                 (loop for first-time = t then nil
                        for thing in (cadr object)
                        unless first-time do (write-char #\space stream)
 		     do #+mcl (ccl::write-1 thing stream)

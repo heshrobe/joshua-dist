@@ -47,7 +47,7 @@
     `(fmakunbound ',signature)
     ))
 
-(defun fixed-defmethod-fspec (form) 
+(defun fixed-defmethod-fspec (form)
   (let (qualifiers)
     (do ((x (cddr form) (cdr x)))
 	((listp (car x))
@@ -65,5 +65,7 @@
 		  `(eql ,thing)
 		value))
 	  specializer))
-    specializer))
+      specializer))
 
+;;; this is all specific to allegro's eli
+;;; need to see what the equivalent would be in slime

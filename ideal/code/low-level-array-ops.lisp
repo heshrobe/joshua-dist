@@ -137,7 +137,7 @@
 
 (defun state-in (node-case)(cdar node-case))
 
-; For Mark 
+; For Mark
 
 (defsetf state-in (node-case)(value)
   `(setf (cdar ,node-case) ,value))
@@ -314,7 +314,7 @@
        (deterministic-node-p node-or-node-list)
        (or (value-node-p node-or-node-list)(chance-node-p node-or-node-list))))
 
-(defun special-case-2-old-syntax-p (node-or-node-list main-node)	
+(defun special-case-2-old-syntax-p (node-or-node-list main-node)
   (and (listp node-or-node-list)
 	; Meaning Length =1 (special-case-1 eliminates nil)
        (null (rest node-or-node-list))
@@ -336,6 +336,7 @@
 ; This is the latest of many versions. Runs slightly slower than the fastest version.
 ; Is more comprehensible.
 
+
 (defmacro for-all-cond-cases ((case-variable node-list &key (main-node nil)) &body body)
   (let ((template-var (gentemp "template"))(value-var (gentemp "value"))
 	(node-list-var (gentemp "node-list"))(special-case-p (gentemp "spl-case-p"))
@@ -343,25 +344,31 @@
     `(let* ((,node-list-var ,node-list)
 	    ,value-var ,case-variable ,special-case-p ,template-var ,pointer-list)
        (declare (inline special-case-1-p special-case-2-old-syntax-p  rotate-pointer-list
-			special-case-2-new-syntax-p prepare-nodes-and-make-template))
-	;This cond statement sets the special case flag if necessary and
-	; initializes the template-var.
+			special-case-2-new-syntax-p prepare-nodes-and-make-template)
+                )
+       ;;This cond statement sets the special case flag if necessary and
+       ;; initializes the template-var.
        (cond
 	 ((special-case-1-p ,node-list-var)
 	  (setq ,special-case-p t ,template-var nil))
 	 ((special-case-2-new-syntax-p ,node-list-var)
 	  (setq ,special-case-p t ,template-var (list (list ,node-list-var))))
-	 ((special-case-2-old-syntax-p ,node-list-var ,main-node)
+         ;; Note that if either this or the next clause succeeds
+         ;; it will apply first to node-list-var which can be either a
+         ;; node or a list of nodes.  So test whether you have a list first
+	 ((and (listp ,node-list-var)
+               (special-case-2-old-syntax-p ,node-list-var ,main-node))
 	  (setq ,special-case-p t ,template-var (list (list (first ,node-list-var)))))
-	 (t (setq ,special-case-p nil)
-	    (multiple-value-setq (,template-var ,pointer-list)
-	      (prepare-nodes-and-make-template ,node-list-var))))
-	;The actual loop. There is only one run if special-case-p is true.
+	 ((listp ,node-list-var)
+          (setq ,special-case-p nil)
+          (multiple-value-setq (,template-var ,pointer-list)
+            (prepare-nodes-and-make-template ,node-list-var))))
+       ;;The actual loop. There is only one run if special-case-p is true.
        (loop
-	; have removed the copy-list around template-var (17 Apr)
-	; This increment macro is temporary. Put in to caibrate estimation fns.
+         ;; have removed the copy-list around template-var (17 Apr)
+         ;; This increment macro is temporary. Put in to caibrate estimation fns.
 	 (INCREMENT-OPERATION-COUNT-IF-UNCHANGED
-	   (setq ,case-variable ,template-var ,value-var (progn ,@body)))
+          (setq ,case-variable ,template-var ,value-var (progn ,@body)))
 	 (if (or ,special-case-p
 		 (null (rotate-pointer-list ,pointer-list ,template-var)))
 	     (return ,value-var))))))
@@ -380,10 +387,3 @@
 		 (error "The cond-case ~A does not contain the node ~A that is in the
                          required node-list ~A" cond-case node node-list))))
     (mapcar #'find-node-in-cond-case node-list)))
-
-
-
-
-
-
-

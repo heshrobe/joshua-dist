@@ -31,13 +31,13 @@
    :description "a predication")
 
 (clim:define-presentation-type truth-value ()
-   :description "a truth value") 
+   :description "a truth value")
 
 
 ;;; This is here for compilation dependency reasons
 (eval-when (:compile-toplevel :load-toplevel :execute)
 (defclass tracing-event ()
-  ((name :initarg :name :accessor tracing-event-name) 
+  ((name :initarg :name :accessor tracing-event-name)
    (pretty-name :initarg :pretty-name :accessor tracing-event-pretty-name)
    (short-name :initarg :short-name :accessor tracing-event-short-name)
    (active-name :initarg :active-name :accessor tracing-event-active-name)
@@ -45,7 +45,7 @@
    (encapsulations :initform nil :initarg :encapsulations :accessor tracing-event-encapsulations)
    (enablers :initform () :initarg :enablers :accessor tracing-event-enablers)
    (documentation :initarg :documentation :accessor tracing-event-documentation)
-   (enabling-function :initarg :enabling-function :accessor tracing-event-enabling-function) 
+   (enabling-function :initarg :enabling-function :accessor tracing-event-enabling-function)
    (disabling-function :initarg :disabling-function :accessor tracing-event-disabling-function))))
 
 (clim:define-presentation-type tracing-event ()
@@ -68,6 +68,7 @@
   :inherit-from '(joshua-predicate)
   :description "a Joshua TMS predicate")
 
-(clim:define-presentation-type-abbreviation tms-predication-presentation ()
-  '(and predication (satisfies nontrivial-tms-p)))
-
+(clim:define-presentation-type tms-predication-presentation ()
+  :inherit-from '(predication)
+  :description "A Joshua predicadion that has non trivial tms support"
+  )

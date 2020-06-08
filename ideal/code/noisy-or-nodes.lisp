@@ -15,7 +15,7 @@
 (export '(NOISY-OR-NODE-P
 	   NOISY-OR-SUBTYPE
 	   CONVERT-NOISY-OR-NODE-TO-CHANCE-NODE
-	   CONVERT-CHANCE-NODE-TO-NOISY-OR-NODE 
+	   CONVERT-CHANCE-NODE-TO-NOISY-OR-NODE
 	   INHIBITOR-PROB-OF
 	   NOISY-OR-DET-FN-OF
 	   COMPILE-NOISY-OR-DISTRIBUTION
@@ -48,14 +48,14 @@
 (defun set-noisy-or-flag (node &key subtype)
   (cond
     ((not (chance-node-p node))
-     (error "Cant set Noisy Or flag for node ~A since its not a chance node"))
+     (error "Cant set Noisy Or flag for node ~A since its not a chance node" node))
     (t (setf  (discrete-dist-noisy-or-p (node-distribution node)) t)
        (setf (noisy-or-subtype node) subtype))))
 
 (defun unset-noisy-or-flag (node)
   (cond
     ((not (chance-node-p node))
-     (error "Cant set Noisy Or flag for node ~A since its not a chance node"))
+     (error "Cant set Noisy Or flag for node ~A since its not a chance node" node))
     (t (setf  (discrete-dist-noisy-or-p (node-distribution node)) nil)
        (setf (noisy-or-subtype node) nil)
        (setf (discrete-dist-noisy-or-info (node-distribution node)) nil))))
@@ -86,6 +86,16 @@
 ; noisy-or node with the det function being the same as the deterministi
 ; chance node's det function.
 
+(defun set-noisy-or-det-fn-of (node pred-case value)
+  (write-probability-array (noisy-or-det-fn-array
+			     (discrete-dist-noisy-or-info
+			       (node-distribution node)))
+			   pred-case
+			   (node-predecessors node)
+			   value))
+
+(defsetf noisy-or-det-fn-of set-noisy-or-det-fn-of)
+
 (defun convert-chance-node-to-noisy-or-node (n)
   (cond
     ((not (chance-node-p n))
@@ -113,7 +123,7 @@
 	; Compile the distribution
      (compile-noisy-or-distribution n)
      (values n))))
-       
+
 ;-----------------------
 
 (defun create-empty-noisy-or-distribution (node &key (default-inhibitor-prob 0))
@@ -184,7 +194,7 @@
     (node-predecessors node)
     pred-case))
 
-; This additional level of indirection is because this function is used
+; This Additional level of indirection is because this function is used
 ; to retrieve information from the previous det fn array when modifying
 ; the det fn array in diagram editing functions like add-arcs, delete-arcs,
 ; add-state etc.
@@ -194,15 +204,7 @@
 			  pred-case
 			  predecessors))
 
-(defun set-noisy-or-det-fn-of (node pred-case value)
-  (write-probability-array (noisy-or-det-fn-array
-			     (discrete-dist-noisy-or-info
-			       (node-distribution node)))
-			   pred-case
-			   (node-predecessors node)
-			   value))
 
-(defsetf noisy-or-det-fn-of set-noisy-or-det-fn-of)
 
 ;------------------------------
 
@@ -335,14 +337,14 @@
 (defun and-f (&rest args)
   (cond
     ((not (every #'(lambda (a)(and (numberp a)(or (= a 0)(= a 1)))) args))
-     (error "Incorrect argument pattern ~A"))
+     (error "Incorrect argument pattern ~A" args))
     (t (if (every #'(lambda (a) (= a 1)) args) 1 0))))
 
 
 (defun xor-f (&rest args)
   (cond
     ((not (every #'(lambda (a)(and (numberp a)(or (= a 0)(= a 1)))) args))
-     (error "Incorrect argument pattern ~A"))
+     (error "Incorrect argument pattern ~A" args))
     ((not (= (length args) 2))
      (error "Incorrect arg pattern"))
     (t (if (= (apply #'+ args) 1) 1 0))))
@@ -351,13 +353,13 @@
 (defun or-f (&rest args)
   (cond
     ((not (every #'(lambda (a)(and (numberp a)(or (= a 0)(= a 1)))) args))
-     (error "Incorrect argument pattern ~A"))
+     (error "Incorrect argument pattern ~A" args))
     (t (if (some #'(lambda (a) (= a 1)) args) 1 0))))
 
 (defun add-f (&rest args)
   (cond
     ((not (every #'(lambda (a)(numberp a)) args))
-     (error "Incorrect argument pattern ~A"))
+     (error "Incorrect argument pattern ~A" args))
     (t (apply #'+ args))))
 
 ;--------------------------------------
@@ -392,7 +394,7 @@
   (ecase new-subtype
     ((:BINARY :NARY)
      (set-noisy-or-det-fn-to-standard-nary-or-fn node))
-    ((:GENERIC) ; Just let the old function be. 
+    ((:GENERIC) ; Just let the old function be.
      ;;; (set-noisy-or-det-fn-randomly node)
      ))
   (compile-noisy-or-distribution node)
