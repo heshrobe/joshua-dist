@@ -621,7 +621,7 @@
                         query-identifier-list)))
             ;; Let success indicate the normal completion of the accepting values (No abort)
             (let ((success-p
-                   (catch 'aborted (break)
+                   (catch 'aborted
                      (clim:with-text-style (stream '(nil nil nil))
                        (terpri stream)
                        (restart-bind
