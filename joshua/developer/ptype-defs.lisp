@@ -69,6 +69,6 @@
   :description "a Joshua TMS predicate")
 
 (clim:define-presentation-type tms-predication-presentation ()
-  :inherit-from '(predication)
+  :inherit-from '()
   :description "A Joshua predicadion that has non trivial tms support"
   )
