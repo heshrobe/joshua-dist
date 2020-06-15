@@ -21,6 +21,8 @@
   :pathname "."
   :components (
 	       (:file "packaged")
+               #+mcclim
+               (:file "drei-interface")
 	       (:file "asdf-support" :depends-on ("packaged"))
 	       (:file "borrowin" :depends-on ("packaged"))
 	       (:file "mapfvars" :depends-on ("borrowin"))
