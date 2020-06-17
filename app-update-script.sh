@@ -28,7 +28,7 @@ git commit -a -m "Updating all apps"
 echo "\nPushing to Github.com"
 git push origin
 echo "\nPushing to MIT Github"
-git push mit
+git push mit master
 else echo "\nAttack Planner not present"
 fi
 
