@@ -19,9 +19,10 @@
 (defparameter *missing-systems* nil)
 (defparameter *existing-systems* nil)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (defmacro load-if-there (name pathname-spec)
   `(let ((pathname ,pathname-spec))
-     (cond 
+     (cond
       ((probe-file pathname)
        (load pathname)
        (pushnew ',name *existing-systems*)
@@ -32,7 +33,7 @@
 
 (defmacro if-there (name &body forms)
   `(unless (member ',name *missing-systems*)
-    ,@forms))
+    ,@forms)))
 
 
 (let* ((loading-file *load-truename*)
@@ -47,7 +48,7 @@
 			:device (pathname-device loading-file)
 			:name "system-class" :type "lisp"))
   ;; XML Parser
-  (load-if-there Xml-parser 
+  (load-if-there Xml-parser
 		 (make-pathname :directory `(:absolute ,@directory "xml-parser")
 				:device (pathname-device loading-file)
 				:name "xml-parser-defsystem" :type "lisp"))
@@ -57,11 +58,11 @@
 							 :device (pathname-device loading-file)
 							 :name "defsystem" :type "lisp"))
   ;; Clim Fixes
-   (load (make-pathname :directory `(:absolute ,@directory "clim-fixes") 
+   (load (make-pathname :directory `(:absolute ,@directory "clim-fixes")
 			:device (pathname-device loading-file)
 			:name "clim-fixes-defsystem" :type "lisp"))
    ;; Clim Env
-   (load (make-pathname :directory `(:absolute ,@directory "clim-env" "portable-lisp-environment") 
+   (load (make-pathname :directory `(:absolute ,@directory "clim-env" "portable-lisp-environment")
 			:device (pathname-device loading-file)
 			:name "load-env" :type "lisp"))
    ;; Joshua
@@ -88,7 +89,7 @@
    (load-if-there Attack-Planner "~/Research-Projects/attack-planning/code/defsystem.lisp")
    )
 
-  
+
 #+Allegro
 (eval-when (:compile-toplevel :load-toplevel)
   (setq excl:*additional-logical-pathname-name-chars* '(#\_ #\*)))

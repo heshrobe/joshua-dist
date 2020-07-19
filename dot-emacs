@@ -12,50 +12,10 @@
 ;; _____________________________________________________________________________
 
 
-;; Added by Package.el.  This must come before configurations of
-;; installed packages.  Don't delete this line.  If you don't want it,
-;; just comment it out by adding a semicolon to the start of the line.
-;; You may delete these explanatory comments.
-
-(require 'package)
-
-;; MELPA is probably the most complete package repo out there for
-;; emacs. Add it to the list of repos for package.el to use. This adds
-;; the "unstable" MELPA repo. In practice it tends to be pretty
-;; stable, but since it builds from a git branch it's very possible
-;; for someone to accidentally push broken code. If you want to be
-;; extra careful (but miss out on new features), add stable.melpa.org
-;; instead.
-
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/"))
-
-;; Init package.el
-(package-initialize)
-
-;; If we haven't downloaded any package listing before (i.e., this is
-;; the first time we've started Emacs), get the latest package
-;; listing.
-
-(when (not package-archive-contents)
-  (package-refresh-contents))
-
-;; Now, make sure use-package.el is installed.
-(unless (package-installed-p 'use-package)
-  (package-install 'use-package))
-
-
-(use-package form-feed
-  :ensure t
-  :diminish form-feed-mode
-  :commands (form-feed-mode)
-  :init
-  (add-hook 'prog-mode-hook 'form-feed-mode))
 
 (setq x-select-enable-clipboard 't)
 
 (setq ispell-program-name "/usr/local/bin/aspell")
-(load "~/quicklisp/local-projects/McCLIM/Tools/hyperclim.el")
 
 (autoload 'flyspell-mode "flyspell" "On-the-fly spelling checker." t)
 (autoload 'flyspell-delay-command "flyspell" "Delay on command." t) 
