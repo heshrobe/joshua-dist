@@ -8,7 +8,7 @@ git push origin
 echo "\nPushing to MIT Github"
 git push mit
 
-FILE= ~/Research-Projects/awdrat
+FILE=~/Research-Projects/awdrat
 if test -d $FILE; then
 echo "\nDoing AWDRAT\n"
 cd ~/Research-Projects/awdrat/
