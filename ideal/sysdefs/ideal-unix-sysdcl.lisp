@@ -126,59 +126,7 @@ Notes:
   "peot-simulation"
   ))
 
-#+asdf
-(asdf:defsystem ideal
-  :name "Ideal"
-  :maintainer "Howie Shrobe"
-  :description "Ideal Baysian Inference System"
-  :pathname "../code"
-  :serial t
-  :components
-  (
-   (:file "ideal-package-name")
-   (:file "global-vars")
-   (:file "store-ideal-struct-info")
-   (:file "struct")
-   (:file "wrapped-access-functions")
-   (:file "low-level-array-ops")
-   (:file "probability-access-fns")
-   (:file "utils-macros")
-   (:file "utils")
-   (:file "display-and-query-fns")
-   (:file "ordering")
-   (:file "consistency-checking")
-   (:file "noisy-or-nodes")
-   (:file "copy-diagram-macros")
-   (:file "copy-diagram")
-   (:file "file-io")
-   (:file "edit-functions-macros")
-   (:file "primitives")
-   (:file "id-creation")
-   (:file "edit-functions")
-   (:file "algorithms")
-   (:file "message-processing")
-   (:file "evidence+dummy-nodes")
-   (:file "poly-tree-utils")
-   (:file "clique-struct")
-   (:file "clique-macros")
-   (:file "clique-node-manipulation")
-   (:file "join-tree")
-   (:file "poly-tree")
-   (:file "clustering-algorithm")
-   (:file "clustering-est")
-   (:file "conditioning-utils")
-   (:file "conditioning")
-   (:file "lw-utils")
-   (:file "lw-infer")
-   (:file "pearl-simulation-utils")
-   (:file "pearl-simulation")
-   (:file "jensen-join-tree")
-   (:file "jensen-search")
-   (:file "jensen-infer")
-   (:file "jensen-est")
-   (:file "peot-simulation-macros")
-   (:file "peot-simulation")
-  ))
+
 
 #+(and asdf (not Allegro) (not mcl))
 (defun compile-ideal-system (&rest keys)

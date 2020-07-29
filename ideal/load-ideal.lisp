@@ -79,9 +79,9 @@ Notes:
 
 ;;;
 ;;; if the lisp does not have a built-in defsystem facility, load a portable one
-;;; 
+;;;
 
-#-(or allegro genera)
+#-(or allegro genera asdf)
 (unless (find-package :clim-defsys)
   (load "ideal:sysdefs;defsystem.lisp")
   )
@@ -90,13 +90,18 @@ Notes:
 ;;;
 ;;; load the defsystem for this system
 ;;;
-
+#-asdf
 (load "ideal:home;sysdcl.lisp" #+mcl :external-format #+mcl :unix)
 
+#+asdf
+(load (translate-logical-pathname "Ideal:sysdefs;ideal.asd"))
+#+asdf
+(defun load-ideal-system (&rest args)
+  (apply #'asdf:load-system 'ideal args))
 
 ;;;
 ;;; define load and compile functions for this system
-;;; 
+;;;
 
 (defun compile-ideal (&rest args)
   (apply 'compile-ideal-system args)
@@ -105,5 +110,3 @@ Notes:
 (defun load-ideal (&rest args)
   (apply 'load-ideal-system args)
   )
-
-
