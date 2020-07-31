@@ -7,8 +7,8 @@
 ;;;  Copyright 1990 Robert P. Goldman, All rights reserved.
 ;;; 
 
-
-(export '( ))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '( )))
 
 ;----------------------------------------------------------------------------------
 

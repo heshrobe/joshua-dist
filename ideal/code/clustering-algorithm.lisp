@@ -13,8 +13,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-
-(export '(CREATE-CLIQUE-DIAGRAM CLUSTERING-INFER DUMMY-CLIQUE-NODE-P ))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(CREATE-CLIQUE-DIAGRAM CLUSTERING-INFER DUMMY-CLIQUE-NODE-P )))
 
 ;--------------------------------------------------------
 

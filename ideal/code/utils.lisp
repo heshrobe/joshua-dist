@@ -11,28 +11,28 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
-
-(export '(DISTRIBUTION-TYPE
-	   SAFE-APPEND
-	   EXACTLY-ONE
-	   DESCENDANT-P
-	   CHANCE-NODE-P
-	   ANCESTOR-P
-	   VALUE-NODE-P
-	   DECISION-NODE-P
-	   ANCESTORS REMOVE-NODE DESCENDANTS
-	   CREATE-EMPTY-DISTRIBUTION
-	   INSTANTIATED-P
-	   GENERATE-DIAGRAM
-	   DISCRETE-DIST-NODE-P
-	   DETERMINISTIC-NODE-P PROBABILISTIC-NODE-P
-	   FIND-VALUE-NODE
-	   BARREN-NODE-P SMOOTH-PROBABILITIES
-	   INFORMATIONAL-PREDECESSORS
-	   CONVERT-AND-SMOOTH-DIAGRAM
-	   SINGLE-DIRECTED-PATH-P
-	   CREATE-RANDOM-DIAGRAM
-	   CREATE-RANDOM-EVIDENCE))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(DISTRIBUTION-TYPE
+            SAFE-APPEND
+            EXACTLY-ONE
+            DESCENDANT-P
+            CHANCE-NODE-P
+            ANCESTOR-P
+            VALUE-NODE-P
+            DECISION-NODE-P
+            ANCESTORS REMOVE-NODE DESCENDANTS
+            CREATE-EMPTY-DISTRIBUTION
+            INSTANTIATED-P
+            GENERATE-DIAGRAM
+            DISCRETE-DIST-NODE-P
+            DETERMINISTIC-NODE-P PROBABILISTIC-NODE-P
+            FIND-VALUE-NODE
+            BARREN-NODE-P SMOOTH-PROBABILITIES
+            INFORMATIONAL-PREDECESSORS
+            CONVERT-AND-SMOOTH-DIAGRAM
+            SINGLE-DIRECTED-PATH-P
+            CREATE-RANDOM-DIAGRAM
+            CREATE-RANDOM-EVIDENCE)))
 			       
 ; ****************************** FOR ID-CREATION  ***************************************
 
@@ -226,7 +226,8 @@
 (defun exactly-one (list)
   (and list (null (cdr list))))
 
-(proclaim '(inline safe-append exactly-one))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline safe-append exactly-one)))
 
 ; Returns non-nil if node precedes the value node and no other node.
 
@@ -329,7 +330,8 @@
 
 ; This is required for setting up the join tree in the clustering algorithms.
 
-(proclaim '(inline prob-/))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline prob-/)))
 
 ; Man, this fn is 100 times slower than regular division.
 

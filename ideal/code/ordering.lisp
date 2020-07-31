@@ -12,8 +12,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
-
-(export '(ORDER ACYCLIC-P))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+(export '(ORDER ACYCLIC-P)))
 
 ;------------------------------------------------------------
 

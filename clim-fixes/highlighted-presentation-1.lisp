@@ -6,9 +6,10 @@
 (in-package :clim-internals)
 
 (Fmakunbound 'FRAME-DOCUMENT-HIGHLIGHTED-PRESENTATION-1)
+;;; apparently this is redone in patch-clim-franz
 
 ;;; "-*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Package: CLIM-INTERNALS; Base: 10; Lowercase: Yes -*-"
-
+#|
 (defmethod frame-document-highlighted-presentation-1
        ((frame standard-application-frame) presentation input-context window x y stream)
   (let ((modifier-state (window-modifier-state window)))
@@ -69,3 +70,4 @@
 	  ;; Return non-NIL if any pointer documentation was produced
 	  (or left middle right))))))
 
+|#

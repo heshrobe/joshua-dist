@@ -14,7 +14,8 @@
 
 
 
-(export '( ))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '( )))
 
 
 ;----- Assembling a join tree structure -------------------

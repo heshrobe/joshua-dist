@@ -13,8 +13,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-(export '( CONTENTS-OF DETERMINISTIC-STATE-OF PROB-OF DISTRIBUTION-REPN
-	  CONTENTS-OF-DET-ARRAY-LOCATION CONTENTS-OF-DIST-ARRAY-LOCATION))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '( CONTENTS-OF DETERMINISTIC-STATE-OF PROB-OF DISTRIBUTION-REPN
+            CONTENTS-OF-DET-ARRAY-LOCATION CONTENTS-OF-DIST-ARRAY-LOCATION)))
 
       
 ;********* ACCESS FUNCTIONS *********************************

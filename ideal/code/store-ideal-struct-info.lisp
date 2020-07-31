@@ -11,7 +11,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-(export '(IDEAL-STRUCTURE IDEAL-STRUCT-P))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(IDEAL-STRUCTURE IDEAL-STRUCT-P)))
 
 ;------------------------------------------
 
@@ -126,7 +127,8 @@
 					   new-struct)
 					  (recursively-copy
 					    (,(get-field-name struct-name (car name.access-fn))
-					     new-struct) new-diag)))
+					     new-struct) 
+                                            new-diag)))
 			       (get struct-name 'IDEAL-STRUCT-FIELDS))
 			   (values new-struct))))))
     (setf (get struct-name 'recursive-copier) fn)))

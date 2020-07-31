@@ -10,8 +10,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
-
-(export '(JENSEN-INFER))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(JENSEN-INFER)))
 
 ;--------------------------------------------------------
 

@@ -11,14 +11,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-
-(export '(CLIQUE-NODE
-	  CLIQUE-NODE-NAME
-	  CLIQUE-NODE-PRINT-NAME
-	  CLIQUE-NODE-UNUSED-SLOT
-	  CLIQUE-NODE-COMPONENT-NODES
-	  CLIQUE-NODE-SEPERATOR-NODES
-	  CLIQUE-NODE-RESIDUAL-NODES))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(CLIQUE-NODE
+            CLIQUE-NODE-NAME
+            CLIQUE-NODE-PRINT-NAME
+            CLIQUE-NODE-UNUSED-SLOT
+            CLIQUE-NODE-COMPONENT-NODES
+            CLIQUE-NODE-SEPERATOR-NODES
+            CLIQUE-NODE-RESIDUAL-NODES)))
 
 ;--------------------------------------------------------
 ; Clique node structures

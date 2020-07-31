@@ -79,10 +79,12 @@
 	  (shell-output-stream frame) stream)))
 
 (defmethod send-unix-command ((frame shell) command)
+  #-Lispworks (declare (ignore command))
   #+Lispworks
   (write-line command (shell-output-stream frame)))
 
 (defmethod get-unix-output ((frame shell) &key (timeout 1/4))
+  #-Lispworks (declare (ignore timeout))
   #+Lispworks
   (let ((stream (shell-input-stream frame))
         (buffer (make-array 256 :element-type 'base-char

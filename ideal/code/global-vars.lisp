@@ -13,12 +13,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
-
-(export '( *DISPLAY-PRECISION*
-	  *DEFAULT-DIAG-PATH-NAME*
-	  *IDEAL-DEBUG*
-	  *DIAGRAM-FORMAT-CHANGE-DATE*
-	  *DIAGRAM*))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '( *DISPLAY-PRECISION*
+            *DEFAULT-DIAG-PATH-NAME*
+            *IDEAL-DEBUG*
+            *DIAGRAM-FORMAT-CHANGE-DATE*
+            *DIAGRAM*)))
 
 ;--------- Some implementation specific compiler declarations---------
 

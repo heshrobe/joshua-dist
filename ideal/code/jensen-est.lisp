@@ -12,7 +12,8 @@
 
 
 
-(export '(JENSEN-INFER-EST))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(JENSEN-INFER-EST)))
 
 ;--------------------------------------------------------
 

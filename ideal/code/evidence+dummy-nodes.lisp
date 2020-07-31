@@ -12,7 +12,8 @@
 
 
 
-(export '(CREATE-EVIDENCE RESET-EVIDENCE REMOVE-EVIDENCE DUMMY-NODE-P CHECK-EVIDENCE))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(CREATE-EVIDENCE RESET-EVIDENCE REMOVE-EVIDENCE DUMMY-NODE-P CHECK-EVIDENCE)))
 
 ; ----------- Crude input function to create evidence lists
 

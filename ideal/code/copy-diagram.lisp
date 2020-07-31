@@ -12,8 +12,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-
-(export '(COPY-DIAGRAM))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(COPY-DIAGRAM)))
 
 ;--------------------------------------------------------
       
@@ -165,9 +165,10 @@
 	  (cdr (assoc name-of-node-corresponding-to-label
 		      new-node-table :key #'node-name)) :key #'label-name)))
 
-(proclaim '(inline find-new-node-to-replace-node-ref
-		   find-new-node-to-replace-node
-		   find-new-label-to-replace-label))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline find-new-node-to-replace-node-ref
+              find-new-node-to-replace-node
+              find-new-label-to-replace-label)))
 
 (defun recursively-copy (item new-node-table &key (top-level-call nil))
   (etypecase item

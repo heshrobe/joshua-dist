@@ -75,9 +75,9 @@
 			:name "jd-defsystem" :type "lisp"))
    ;; Ideal Bayesian Inference Sysetm
    (load-if-there ideal
-		  (make-pathname :directory `(:absolute ,@directory "ideal")
+		  (make-pathname :directory `(:absolute ,@directory "ideal" "code")
 				 :device (pathname-device loading-file)
-				 :name "load-ideal" :type "lisp"))
+				 :name "defsystem" :type "lisp"))
    ;; load the defsystems for the all the current apps
    ;; Programmer's Apprentice
    (load-if-there Natsoft  "~/Research-Projects/natural-software/code/defsystem.lisp")

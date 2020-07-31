@@ -13,12 +13,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-(export '(CONDITIONING-CASE-P COMBINE-COND-CASES
-			      FOR-ALL-COND-CASES
-			      COPY-CONDITIONING-CASE
-			      NODE-IN STATE-IN
-			      MAKE-COND-CASE
-			      MAKE-CONDITIONING-CASE))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(CONDITIONING-CASE-P COMBINE-COND-CASES
+            FOR-ALL-COND-CASES
+            COPY-CONDITIONING-CASE
+            NODE-IN STATE-IN
+            MAKE-COND-CASE
+            MAKE-CONDITIONING-CASE)))
 
 
 ;----------------------- LOWEST LEVEL ARRAY ACCESS AND CREATION ------------------------
@@ -142,8 +143,8 @@
 (defsetf state-in (node-case)(value)
   `(setf (cdar ,node-case) ,value))
 
-
-(proclaim '(inline node-in state-in))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline node-in state-in)))
 
 ;----------------------------------CONDITIONING CASE OPERATIONS -----------------------
 

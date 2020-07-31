@@ -11,10 +11,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-
-(export '(ADD-NODE DELETE-NODE
-		   ADD-ARCS DELETE-ARCS
-		   ADD-STATE DELETE-STATE))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(ADD-NODE DELETE-NODE
+            ADD-ARCS DELETE-ARCS
+            ADD-STATE DELETE-STATE)))
 
 ;--------------------------------------------------------
 

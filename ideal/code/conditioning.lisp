@@ -12,7 +12,8 @@
 
 
 
-(export '(CONDITIONING-INFER))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(CONDITIONING-INFER)))
 
 ;--------------------------------------------------------
  

@@ -13,14 +13,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-(export '(DISPLAY-DIST
-	   IDEAL-WARNING
-	   DIAG-DISPLAY-DIST
-	   IDEAL-ACTION
-	   PROB-STRING-OF-COND-CASE
-	   DIAG-DISPLAY-BEL
-	   C-CASE-STRING
-	   DIAG-DISPLAY-LINKS))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(DISPLAY-DIST
+            IDEAL-WARNING
+            DIAG-DISPLAY-DIST
+            IDEAL-ACTION
+            PROB-STRING-OF-COND-CASE
+            DIAG-DISPLAY-BEL
+            C-CASE-STRING
+            DIAG-DISPLAY-LINKS)))
 
 ;----------------------------------------
 
@@ -128,7 +129,6 @@
 		      (tabs tab-level)))))
 	     (tabs (tab-level)
 	       (dotimes (x tab-level)
-		 #-sbcl (declare (ignore x))
 		 (format t fmt ""))))
       (format t "~%----------- Deterministic function -----------------------~%")
       (dolist (p (node-predecessors node))
@@ -200,7 +200,6 @@
 (defun move-tab (tab-stops &optional (tab-width 12))
   (terpri)
   (dotimes (k (* (- tab-stops 1) tab-width))
-    #-sbcl (declare (ignore k))
     (princ " ")))
 
 (defvar *my-print* nil)

@@ -13,19 +13,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-
-(export '(REMOVE-BARREN-NODE
-	   REMOVE-ALL-BARREN-NODES
-	   ABSORB-CHANCE-NODE
-	   REMOVE-DECISION-NODE
-	   REVERSE-ARC
-	   PROPOGATE-DETERMINISTIC-NODE
-	   CONVERT-DET-NODE-TO-PROB
-	   REDUCE-CHANCE-NODE
-	   MAKE-NODE-BARREN
-	   REDUCE-DETERMINISTIC-NODE
-	   REDUCE-ALL-DETERMINISTIC-NODES
-	   REDUCE-PROBABILISTIC-NODE))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(REMOVE-BARREN-NODE
+            REMOVE-ALL-BARREN-NODES
+            ABSORB-CHANCE-NODE
+            REMOVE-DECISION-NODE
+            REVERSE-ARC
+            PROPOGATE-DETERMINISTIC-NODE
+            CONVERT-DET-NODE-TO-PROB
+            REDUCE-CHANCE-NODE
+            MAKE-NODE-BARREN
+            REDUCE-DETERMINISTIC-NODE
+            REDUCE-ALL-DETERMINISTIC-NODES
+            REDUCE-PROBABILISTIC-NODE)))
 
 ;--------------------------------------------------------
 

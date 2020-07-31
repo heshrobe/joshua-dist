@@ -359,7 +359,7 @@
   (format nil "mailto:~A" address))
 
 (defun make-tel-url (number &optional (include-plus-p t))
-  (format nil "tel:~:[+~]~A" (not include-plus-p) number))
+  (format nil "tel:~@[+~]~A" (not include-plus-p) number))
 
 
 ;;; ----------------------------------------------------------------------------

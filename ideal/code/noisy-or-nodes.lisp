@@ -11,16 +11,16 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
-
-(export '(NOISY-OR-NODE-P
-	   NOISY-OR-SUBTYPE
-	   CONVERT-NOISY-OR-NODE-TO-CHANCE-NODE
-	   CONVERT-CHANCE-NODE-TO-NOISY-OR-NODE
-	   INHIBITOR-PROB-OF
-	   NOISY-OR-DET-FN-OF
-	   COMPILE-NOISY-OR-DISTRIBUTION
-	   NOISY-OR-FALSE-CASE-P
-	   CONVERT-NOISY-OR-NODE-TO-SUBTYPE))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(NOISY-OR-NODE-P
+            NOISY-OR-SUBTYPE
+            CONVERT-NOISY-OR-NODE-TO-CHANCE-NODE
+            CONVERT-CHANCE-NODE-TO-NOISY-OR-NODE
+            INHIBITOR-PROB-OF
+            NOISY-OR-DET-FN-OF
+            COMPILE-NOISY-OR-DISTRIBUTION
+            NOISY-OR-FALSE-CASE-P
+            CONVERT-NOISY-OR-NODE-TO-SUBTYPE)))
 
 ;-----------------------------------------------------------------------------------------
 ;---------- ABSTRACT data structure level ----------------------------------------

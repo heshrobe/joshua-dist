@@ -17,7 +17,8 @@
 ; symbols will be printable without package qualifiers since they will
 ; all be in the using package. (I think).
 
-(export '(NODE-REF NODE-REF-NAME))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(NODE-REF NODE-REF-NAME)))
 
 ;--------------------------------------------------------
 ; Actually, this macro was used when dealing with the multi-dimensional

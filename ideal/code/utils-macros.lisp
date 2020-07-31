@@ -12,9 +12,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
-
-(export '(FIND-NODE FIND-LABEL PROBABILITY< FIND-NODES IDEAL-DEBUG-MSG
-		    GET-STATE-LABEL IDEAL-DEBUG-ACTIONS MAPAPPEND))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(FIND-NODE FIND-LABEL PROBABILITY< FIND-NODES IDEAL-DEBUG-MSG
+            GET-STATE-LABEL IDEAL-DEBUG-ACTIONS MAPAPPEND)))
 
 
 ;***************************** The #% macro **********************************

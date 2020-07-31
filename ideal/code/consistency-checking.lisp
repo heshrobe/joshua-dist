@@ -12,11 +12,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-(export '(CONSISTENT-P
-	   STRICTLY-POSITIVE-DISTRIBUTIONS-P
-	   BELIEF-NET-P
-	   CHANGED-DIAGRAM-P
-	   SINGLY-CONNECTED-BELIEF-NET-P))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(CONSISTENT-P
+            STRICTLY-POSITIVE-DISTRIBUTIONS-P
+            BELIEF-NET-P
+            CHANGED-DIAGRAM-P
+            SINGLY-CONNECTED-BELIEF-NET-P)))
 
 ;--------------------------------------------------------
 

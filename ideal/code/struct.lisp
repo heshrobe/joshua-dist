@@ -15,9 +15,9 @@
 
 ; The fields that are not exported are useful only to a person hacking
 ; IDEAL itself.
-
-(export '(node node-name node-print-name node-state node-unused-slot
-	       label label-print-name label-node))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(node node-name node-print-name node-state node-unused-slot
+            label label-print-name label-node)))
 
 
 

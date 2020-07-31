@@ -11,8 +11,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-
-(export '(CLUSTERING-INFER-EST))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(CLUSTERING-INFER-EST)))
 
 ;--------------------------------------------------------
 

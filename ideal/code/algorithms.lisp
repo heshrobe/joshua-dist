@@ -14,15 +14,16 @@
 
 
 
-(export '(SHAC-EVAL
-	   SHAC-INFER
-	   IDES-EVAL
-	   IDES-INFER
-	   NUMBER-OF-PREDECESSORS
-	   NUMBER-OF-SUCCESSORS
-	   FIND-MIN
-	   FIND-MAX
-	   PROBABILISTIC-ID-P))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(SHAC-EVAL
+            SHAC-INFER
+            IDES-EVAL
+            IDES-INFER
+            NUMBER-OF-PREDECESSORS
+            NUMBER-OF-SUCCESSORS
+            FIND-MIN
+            FIND-MAX
+            PROBABILISTIC-ID-P)))
 
 ;--------------------------------------------------------
 

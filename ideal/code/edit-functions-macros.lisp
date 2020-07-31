@@ -12,7 +12,8 @@
 
 
 
-(export '())
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '()))
 
 ;--------------------------------------------------------
 

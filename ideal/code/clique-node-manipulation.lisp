@@ -10,13 +10,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
-
-(export '( CLIQUE-PROB-OF
-	  CLIQUE-PI-OF
-	  CLIQUE-PI-MSG-OF
-	  CLIQUE-LAMBDA-OF
-	  CLIQUE-LAMBDA-MSG-OF
-	  INITIALIZE-FOR-CLUSTERING))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '( CLIQUE-PROB-OF
+            CLIQUE-PI-OF
+            CLIQUE-PI-MSG-OF
+            CLIQUE-LAMBDA-OF
+            CLIQUE-LAMBDA-MSG-OF
+            INITIALIZE-FOR-CLUSTERING)))
 
 ;--------------------------------------------------------
 

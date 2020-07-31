@@ -12,8 +12,8 @@
 
 
 
-
-(export '(UNIV CREATE-JENSEN-JOIN-TREE))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(UNIV CREATE-JENSEN-JOIN-TREE)))
 ;--------------------------------------------------------------------------
 
 (defstruct (jensen-join-tree (:print-function print-jensen-join-tree))

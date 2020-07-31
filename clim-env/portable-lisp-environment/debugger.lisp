@@ -772,7 +772,7 @@
 (defun stack-frame-relative-exit-pc (stack-frame)
   #+Genera (sys:frame-relative-exit-pc stack-frame)
   #+Lispworks (dbg::call-frame-call-address stack-frame)
-  #+Allegro 0)
+  #+Allegro (declare (ignore stack-frame)) #+allegro 0)
 
 (defmacro with-language-for-stack-frame ((stack-frame) &body body)
   #-Genera (declare (ignore stack-frame))
@@ -1382,7 +1382,7 @@
 			       &key stack-frame headerp warnp
 				    (show-source *show-source-code*)
 				    (stream *standard-output*))
-  (declare (ignore stack-frame warnp))
+  #+allegro (declare (ignore show-source warnp))
    (unless (functionp function)
       (setq function (and (fboundp function)
 			  (fdefinition function))))
@@ -2463,7 +2463,9 @@
      (matching '(null-or-type string)
 	       :default nil
 	       :documentation "Show only specials matching string"))
+  #+allegro (declare (ignore all matching ))
   (with-frame-standard-output (stream)
+    #+allegro (declare (ignore stream))
     #+Genera (let ((*standard-output* stream)
 		   (dbg:*current-frame* (debugger-current-frame *application-frame*)))
 	       (dbg:show-frame-bindings (not all) matching))))
@@ -2472,7 +2474,9 @@
     (&key (all 'boolean
 	       :default nil :mentioned-default t
 	       :documentation "Show handlers for entire stack"))
+  #+allegro (declare (ignore all))
   (with-frame-standard-output (stream)
+    #+allegro (declare (ignore stream))
     #+Genera (let ((*standard-output* stream)
 		   (dbg:*current-frame* (debugger-current-frame *application-frame*)))
 	       (dbg:com-show-condition-handlers :all all))))
@@ -2516,6 +2520,8 @@
 
 (defun mail-bug-report (&key process-name system prompt
 			     additional-body point-before-additional-body)
+  #+allegro (declare (ignore process-name system prompt
+                             additional-body point-before-additional-body))
   #+Genera (let ((dbg:*printing-monitor-message* t))
 	     (dbg:mail-bug-report-1
 	       :process-name process-name
@@ -2525,9 +2531,11 @@
 	       :point-before-additional-body point-before-additional-body)))
 
 (defun bug-report-recipient-system (error)
+  #+allegro  (declare (ignore error))
   #+Genera (dbg:bug-report-recipient-system error))
 
 (defun bug-report-description (error stream nframes)
+  #+allegro (declare (ignore error stream nframes))
   #+Genera (let ((nframes (case nframes
 			    (:all t)
 			    (:default nil)

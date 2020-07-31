@@ -335,6 +335,7 @@
   #+CCL (ccl::class-make-instance-initargs class))
 
 (defun class-make-instance-allow-other-keys (class)
+  #+allegro (declare (ignore class))
   #+Genera (ldb-test clos-internals::%%standard-class-make-instance-allow-other-keys-p
 		     (clos-internals::class-bits class))
   #-Genera nil)

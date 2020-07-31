@@ -11,13 +11,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-
-(export '(CLIQUE-NODE-PREDECESSORS
-	   FOR-EACH-CLIQUE-PROB-DIST-LOCATION
-	   CLIQUE-NODE-PREDECESSORS
-	   FOR-ALL-CLIQUE-NODE-CASES
-	   CLIQUE-NODE-SUCCESSORS 
-	   PARENT))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(CLIQUE-NODE-PREDECESSORS
+            FOR-EACH-CLIQUE-PROB-DIST-LOCATION
+            CLIQUE-NODE-PREDECESSORS
+            FOR-ALL-CLIQUE-NODE-CASES
+            CLIQUE-NODE-SUCCESSORS 
+            PARENT)))
 
 ;--------------------------------------------------------
 

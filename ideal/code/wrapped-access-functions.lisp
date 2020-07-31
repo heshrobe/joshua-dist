@@ -13,8 +13,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;; Sampath ;;;;;;;;;;;;;;;;;;;;
 
 
-(export '(NODE-TYPE RELATION-TYPE STATE-LABELS NODE-PREDECESSORS
-		    NODE-SUCCESSORS NUMBER-OF-STATES PRODUCT-OVER))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(NODE-TYPE RELATION-TYPE STATE-LABELS NODE-PREDECESSORS
+            NODE-SUCCESSORS NUMBER-OF-STATES PRODUCT-OVER)))
 
 ;-----------------------------------------------------------------------
 
@@ -33,7 +34,8 @@
 
 (defun node-type (node)(node-type-* node))
 
-(proclaim '(inline node-type))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline node-type)))
 
 (defun set-node-type (node value)
   (while-setting-change-flag-of (node)
@@ -45,7 +47,8 @@
 
 (defun node-predecessors (node)(node-predecessors-* node))
 
-(proclaim '(inline node-predecessors))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline node-predecessors)))
 
 (defun set-node-predecessors (node value)
   (while-setting-change-flag-of (node)
@@ -57,7 +60,8 @@
 
 (defun node-successors (node)(node-successors-* node))
 
-(proclaim '(inline node-successors))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline node-successors)))
 
 (defun set-node-successors (node value)
   (while-setting-change-flag-of (node)
@@ -72,7 +76,8 @@
 (defun relation-type (node)
   (discrete-dist-relation-type-* (node-distribution node)))
 
-(proclaim '(inline relation-type))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline relation-type)))
 
 (defun set-relation-type (node value)
   (while-setting-change-flag-of (node)
@@ -86,7 +91,8 @@
 (defun state-labels (node)
   (discrete-dist-state-labels-* (node-distribution node)))
 
-(proclaim '(inline state-labels))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline state-labels)))
 
 (defun set-state-labels (node list)
   (while-setting-change-flag-of (node)
@@ -99,7 +105,8 @@
 (defun number-of-states (node)
   (discrete-dist-number-of-states-* (node-distribution node)))
 
-(proclaim '(inline number-of-states))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline number-of-states)))
 
 (defun set-number-of-states (node number)
   (while-setting-change-flag-of (node)

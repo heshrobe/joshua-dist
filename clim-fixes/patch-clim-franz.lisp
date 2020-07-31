@@ -27,9 +27,12 @@
 	     (note-command-disabled (frame-manager frame) frame name)))
       enabled)))
 
-(export '(command-menu-enabled) :clim-internals)
-(import '(clim-internals:command-menu-enabled) :clim)
-(export '(command-menu-enabled) :clim)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(command-menu-enabled) :clim-internals))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (import '(clim-internals:command-menu-enabled) :clim))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(command-menu-enabled) :clim))
 
 ;;;; -------------------------------------------------------------------------------------
 ;;;; Franz seem to have not gotten this far ...

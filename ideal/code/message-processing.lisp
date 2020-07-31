@@ -12,8 +12,9 @@
 
 
 
-(export '(BELIEF-OF LAMBDA-OF PI-OF PI-MSG-OF DISPLAY-BELIEFS
-		    DIAG-DISPLAY-BELIEFS PRINT-DIAG-BELIEFS))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export '(BELIEF-OF LAMBDA-OF PI-OF PI-MSG-OF DISPLAY-BELIEFS
+            DIAG-DISPLAY-BELIEFS PRINT-DIAG-BELIEFS)))
 
 
 ;--------------------------------------------------------
@@ -51,7 +52,8 @@
 	    (state-in node-case) node-case (node-in node-case)))
     (t t )))
 
-(proclaim '(inline get-msg-array check-node-case))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline get-msg-array check-node-case)))
 
 ;---------
 (defun location-of (node-case msg-type neighbour-node)
@@ -64,7 +66,8 @@
     (setf (aref (get-msg-array node-case neighbour-node msg-type)
 		(label-id-number (state-in node-case))) value)))
 
-(proclaim '(inline location-of write-to-location-of))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(inline location-of write-to-location-of)))
 
 (defsetf location-of write-to-location-of)
 
