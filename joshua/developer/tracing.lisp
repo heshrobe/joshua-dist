@@ -2442,17 +2442,17 @@ Allegro also has a facility called fwrapper which is more general, but not avail
                  ;; which is in fact true since no caller of print-pred provides
                  ;; the optional preint-t-v-p argument.  But I'm just
                  ;; muffling the report in case somebody should want to change that.
-                 (locally
-                     #+sbcl (declare (sb-ext:muffle-conditions sb-ext:compiler-note))
-                     (if print-with-t-v-p
-                         (clim:present predication 'database-predication :stream *standard-output*)
-                         ;; Note SBCL determined this is unreachable since all calls to print-pred
-                         ;; don't provide the optional argument.  Probably a legacy of something.
-                         (print-database-predication-without-truth-value predication *standard-output*))))
-               (unless (or (= +true+ truth-value) print-with-t-v-p)
-                 (format *standard-output* " as ")
-                 (clim:with-text-style (*standard-output* *emphasis-character-style*)
-                   (clim:present truth-value 'truth-value :stream *standard-output*))))
+                 (locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+                   (if print-with-t-v-p
+                       (clim:present predication 'database-predication :stream *standard-output*)
+                       ;; Note SBCL determined this is unreachable since all calls to print-pred
+                       ;; don't provide the optional argument.  Probably a legacy of something.
+                       (print-database-predication-without-truth-value predication *standard-output*))))
+               (locally (declare #+sbcl (sb-ext:muffle-conditions sb-ext:code-deletion-note))
+                 (unless (or (= +true+ truth-value) print-with-t-v-p)
+                   (format *standard-output* " as ")
+                   (clim:with-text-style (*standard-output* *emphasis-character-style*)
+                     (clim:present truth-value 'truth-value :stream *standard-output*)))))
              (print-support ()
                (when justification
                  (let ((name (ltms::clause-name justification)) ; used to be destructure-justification
@@ -2470,7 +2470,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
         (write-char #\space *standard-output*)
         (case event
           ((:bring-in :retract)
-           (print-pred)
+           (print-pred )
            (print-support))
           (:contradiction
            (format *standard-output* "Establishing ")

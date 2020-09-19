@@ -4,15 +4,15 @@
 ;;;> ** (c) Copyright 1988 Symbolics, Inc.  All rights reserved.
 ;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
 ;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
+;;;>    The software, data, and information contained herein are proprietary
+;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends
+;;;> to keep such software, data, and information confidential and to preserve
+;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant
+;;;> to a written license agreement, and may be used, copied, transmitted, and
 ;;;> stored only in accordance with the terms of such license.
-;;;> 
+;;;>
 ;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
-;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3620 (R), Symbolics 
+;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3620 (R), Symbolics
 ;;;> 3610 (R), Symbolics Common Lisp (R), Symbolics-Lisp (R), Zetalisp (R), Genera (R),
 ;;;> Wheels, Dynamic Windows (R), Showcase, SmartStore (R), Semanticue (R), Frame-Up (R),
 ;;;> Firewall (R), MACSYMA (R), COMMON LISP MACSYMA, CL-MACSYMA (R), LISP MACHINE
@@ -20,12 +20,12 @@
 ;;;> S-GEOMETRY (R), S-PAINT (R), S-RENDER (R), "Your Next Step in Computing" (R), Ivory,
 ;;;> Symbolics C, Symbolics Pascal, Symbolics Prolog, Symbolics Fortran, CLOE, Joshua,
 ;;;> Concordia, and Statice are trademarks of Symbolics, Inc.
-;;;> 
+;;;>
 ;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer 
+;;;>    Use, duplication, and disclosure by the Government are subject to restrictions
+;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer
 ;;;> Software Clause at FAR 52.227-7013.
-;;;> 
+;;;>
 ;;;>      Symbolics, Inc.
 ;;;>      11 Cambridge Center
 ;;;>      Cambridge, Massachusetts  02142
@@ -59,18 +59,18 @@
 ;;; * Documented user-available things in Joshua.
 ;;;   These are in the JOSHUA package.
 
-;;; Here's how that is implemented.  There are 3 packages: Joshua-Internals, Joshua, 
+;;; Here's how that is implemented.  There are 3 packages: Joshua-Internals, Joshua,
 ;;; and Joshua-User.  Implementation is done in Joshua-Internals which uses Joshua.
 ;;; So symbols in category 3 are simply defined in Joshua and put into the export-list of Joshua.
 ;;; User programs should be written in packages which use Joshua and either CL or SCL.
-;;; Joshua-User is an example of such a package.  
+;;; Joshua-User is an example of such a package.
 ;;; Such packages inherit all the category 3 symbols, making them accessible without prefix.
 ;;; Category 2 symbols are put in the export list of JI.  This makes them accessible as JI:foobar.
 
 ;;; Implementors note:  If you want to "promote" a symbol from category 1 (protected internals)
 ;;; to category 2 (an accessible internal).
 ;;; then you add it to the :EXPORT list
-;;; of JI (but don't patch the defpackage).   
+;;; of JI (but don't patch the defpackage).
 ;;; Then put (export '(JI::foo)) in the patch.  Note that you must not do this in your
 ;;; running  world before you make the patch, or the patch's bin file
 ;;; will get ji:foo as opposed to ji::foo  dumped to it.  You could
@@ -120,20 +120,20 @@
     "LOGIC-VARIABLE-MAKER" "LOGIC-VARIABLE-MAKER-NAME" "LOGIC-VARIABLE-MAKER-P"
     "KNOWN" "PROVABLE"
     ;; how to define elements of the protocol
-    "UNDEFINE-PREDICATE-METHOD" "DEFINE-PREDICATE-METHOD" 
+    "UNDEFINE-PREDICATE-METHOD" "DEFINE-PREDICATE-METHOD"
     ;; the joshua protocol
-    "SAY" 
+    "SAY"
     "ASK" "TELL" "UNTELL"
     "ASK-DATA" "ASK-RULES" "ASK-QUESTIONS"
     "CLEAR" "AFTER-CLEAR" "INSERT" "FETCH" "UNINSERT"
-    "JUSTIFY" "NOTICE-TRUTH-VALUE-CHANGE" "ACT-ON-TRUTH-VALUE-CHANGE" "UNJUSTIFY" 
+    "JUSTIFY" "NOTICE-TRUTH-VALUE-CHANGE" "ACT-ON-TRUTH-VALUE-CHANGE" "UNJUSTIFY"
     "SUPPORT" "CONSEQUENCES" "FIND-INDEPENDENT-SUPPORT"
     "CURRENT-JUSTIFICATION" "ALL-JUSTIFICATIONS"
     "BUILD-JUSTIFICATION-FROM-BACKWARD-SUPPORT"
     "NONTRIVIAL-TMS-P"
     "PREFETCH-FORWARD-RULE-MATCHES"
     "MAP-OVER-FORWARD-RULE-TRIGGERS" "MAP-OVER-BACKWARD-RULE-TRIGGERS" "MAP-OVER-BACKWARD-QUESTION-TRIGGERS"
-    "ADD-FORWARD-RULE-TRIGGER" "ADD-BACKWARD-RULE-TRIGGER" "ADD-BACKWARD-QUESTION-TRIGGER" 
+    "ADD-FORWARD-RULE-TRIGGER" "ADD-BACKWARD-RULE-TRIGGER" "ADD-BACKWARD-QUESTION-TRIGGER"
     "DELETE-FORWARD-RULE-TRIGGER" "DELETE-BACKWARD-RULE-TRIGGER" "DELETE-BACKWARD-QUESTION-TRIGGER"
     "LOCATE-FORWARD-RULE-TRIGGER" "LOCATE-BACKWARD-RULE-TRIGGER" "LOCATE-BACKWARD-QUESTION-TRIGGER"
     "WRITE-FORWARD-RULE-FULL-MATCHER" "WRITE-FORWARD-RULE-SEMI-MATCHER"
@@ -141,7 +141,7 @@
     "WRITE-BACKWARD-RULE-MATCHER" "EXPAND-BACKWARD-RULE-TRIGGER" "EXPAND-BACKWARD-RULE-ACTION"
     "POSITIONS-FORWARD-RULE-MATCHER-CAN-SKIP"
     ;; iterative syntax for the above mapcar-like versions
-    "DO-QUERIES*" "DO-QUERIES-NAMED*" 
+    "DO-QUERIES*" "DO-QUERIES-NAMED*"
     ;; ask without the justification and the lambda form
     "ASK*"
     ;; discrimination net stuff
@@ -169,7 +169,7 @@
     "DEFQUESTION" "UNDEFQUESTION"
     ;; tms interface
     "TRIGGERS" "TMS-CONTRADICTION" "TMS-CONTRADICTION-HARD-CONTRADICTION-FLAVOR"
-    "TMS-HARD-CONTRADICTION" 
+    "TMS-HARD-CONTRADICTION"
     "TMS-CONTRADICTION-JUSTIFICATION" "TMS-CONTRADICTION-CONTRADICTORY-PREDICATION"
     "TMS-CONTRADICTION-PREMISES" "TMS-CONTRADICTION-NON-PREMISES" "TMS-CONTRADICTION-SUPPORT"
     "TMS-BITS"
@@ -219,6 +219,7 @@
      "CF-MIXIN" "CF-PREDICATE-MODEL"
      "CERTAINTY-FACTOR"
      "SLOT-DEFINITION-ALLOCATION" "CLASS-SLOTS" "FINALIZE-INHERITANCE" "CLASS-FINALIZED-P" "INTERN-EQL-SPECIALIZER"
+     #+mcclim *in-joshua-mode*
     )
   )
 
@@ -239,7 +240,7 @@
                       class-precedence-list function-name generic-function-methods method-specializers)
   #+genera (:import-from "SYS" "FUNCTION-NAME")
   #+genera (:import-from "LISP" "DEFINE-SETF-METHOD" "GET-SETF-METHOD" "COMPILER-LET" )
-  #+genera (:import-from clos class-slots slot-definition-name class-precedence-list 
+  #+genera (:import-from clos class-slots slot-definition-name class-precedence-list
 			 generic-function-methods method-specializers class-direct-subclasses)
   #+genera (:import-from scl arglist)
   #+(or genera cloe-developer) (:import-from scl record-source-file-name)
@@ -267,7 +268,7 @@
     "BACKQUOTE" "*BACKQUOTE-COMMA-FLAG*" "*BACKQUOTE-COMMA-ATSIGN-FLAG*" "*BACKQUOTE-COMMA-DOT-FLAG*"
     ;; defaults to go into the attr list made by m-x create initial joshua attribute list
     "*DEFAULT-PACKAGE-FOR-JOSHUA-MODE*"     "*DEFAULT-LOWERCASE-FOR-JOSHUA-MODE*"
-    "*DEFAULT-BASE-FOR-JOSHUA-MODE*"        
+    "*DEFAULT-BASE-FOR-JOSHUA-MODE*"
     ;; readtable management
     ;; maybe define a mode on top of this?
     "JOSHUA-MODE"
@@ -283,8 +284,8 @@
     "MAKE-PREDICATION-MAKER"
     "CLEAR-RULE"
     "PREDICATE-SYNONYMS"
-    "PREDICATE-IS-SYNONYM-FOR" "UNDEFINE-PREDICATE-SYNONYM" "DEFINE-PREDICATE-SYNONYM" 
-    "PREDICATE-MAX-ARGS" "PREDICATE-MIN-ARGS" "PREDICATE-REST-ARG" "PREDICATE-ARGLIST" 
+    "PREDICATE-IS-SYNONYM-FOR" "UNDEFINE-PREDICATE-SYNONYM" "DEFINE-PREDICATE-SYNONYM"
+    "PREDICATE-MAX-ARGS" "PREDICATE-MIN-ARGS" "PREDICATE-REST-ARG" "PREDICATE-ARGLIST"
     ;; iv's of a contradiction flavor; used by tms writers
     "STATEMENT" "BITS" "PREDICATION-BITS"
     "PREMISES" "JUSTIFICATION" "CONTRADICTORY-PREDICATION" "NON-PREMISES"
@@ -321,7 +322,7 @@
   ;; A typical Joshua application package.
   ;; Applications should imitate this to get their own packages.
   (:nicknames :ju)
-  ;; (:relative-names-for-me (joshua user)) ;make user a synonym for ju relative to joshua 
+  ;; (:relative-names-for-me (joshua user)) ;make user a synonym for ju relative to joshua
   #+mcl (:shadowing-import-from "JOSHUA" "CLEAR")
   #+lucid (:shadowing-import-from "JOSHUA" "USING-RESOURCE" "CLEAR-RESOURCE")
   (:use :joshua
@@ -357,7 +358,7 @@
   (:use :joshua :joshua-internals :common-lisp)
   ;; This is for the object-modelling Stuff
   (:shadow common-lisp:find common-lisp:union common-lisp:intern)
-  (:export 
+  (:export
    "MERGE" "CONGRUENT" "FIND" "EQUATE" "UNION"
    "INIT" "INTERN-TERM" "INTERN" "INTERN-SYMBOL"
    "ANONYMOUS-INDIVIDUAL" "TERM-SURROGATE" "CONSTANT"
@@ -385,16 +386,16 @@
    "USED-VARIABLES"
    "EFFECT" "SMASH" "PROP" "TEST" "SYMEVAL"
    "START" "TAG" "BODY" "COMPLETION"
-   "BODY-START" "BODY-END" 
+   "BODY-START" "BODY-END"
    "INTERNAL-FUNCTION-START" "INTERNAL-FUNCTION-END" "INTERNAL-FUNCTION-DEFINITION"
     *MAPFORMS-BOUND-VARIABLES* *MAPFORMS-BLOCK-NAMES* *MAPFORMS-GO-TAGS* *MAPFORMS-LEVEL*
     *MAPFORMS-NON-FORM-KINDS* *MAPFORMS-LOCATOR-START* *MAPFORMS-LOCATOR-END*
     *MAPFORMS-BLOCK-ALIST* *MAPFORMS-FUNCTION* *MAPFORMS-STATE*
-    *MAPFORMS-LEXICAL-FUNCTION-ENVIRONMENT* 
+    *MAPFORMS-LEXICAL-FUNCTION-ENVIRONMENT*
     env-variables env-functions env-blocks env-tagbodies env-declarations env-evacuation env-parent
     *COPYFORMS-FLAG*
     *MAPFORMS-APPLY-FUNCTION* *MAPFORMS-ITERATION-HOOK* *MAPFORMS-EXPAND-SUBSTS*
     *MAPFORMS-PARALLEL-BINDS* *COPYFORMS-EXPAND-ALL-MACROS*
-    
+
     )
   )

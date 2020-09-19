@@ -859,11 +859,13 @@
   `(let ((*readtable* *joshua-readtable*))
      ,@body))
 
+#+mcclim
+(defvar *in-joshua-mode* nil)
 (defun enable-joshua ()
   "This function sets up the joshua readtable and establishes the
 packages JI, JU, and Joshua as the current context."
   #+mcclim
-  (setq drei:*in-joshua-mode* t)
+  (setq *in-joshua-mode* t)
   (unless (eql *readtable* *joshua-readtable*)
     (setq *old-readtable* *readtable*
 	  *old-package* *package*)
@@ -885,7 +887,7 @@ packages JI, JU, and Joshua as the current context."
   "This function returns us to where we were before setting up the
 Joshua readtable and the JI, JU, and Joshua packages. "
   #+mcclim
-  (setq drei:*in-joshua-mode* nil)
+  (setq *in-joshua-mode* nil)
   (when (and *old-readtable* (eql *readtable* *joshua-readtable*))
     (setf *readtable* *old-readtable*
 	  *package* *old-package*)))

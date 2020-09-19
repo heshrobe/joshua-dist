@@ -356,7 +356,7 @@
 	       (when backward-support
 		 (destructuring-bind (mnemonic truth-value type &rest stuff) backward-support
 		   (declare (ignore mnemonic))
-		   (let ((cached-result-in-query (when (listp type) (third type))))
+		   (let ((cached-result-in-query (when (and (listp type) (typep (third type) 'predication)) (third type))))
 		     (cond
 		       ((typep type 'predication)
 			(truth-value-case truth-value
@@ -1341,7 +1341,9 @@
            for slot-name in slot-names
            for slot-options in slot-options
            for tms? = (getf slot-options :truth-maintenance)
-           for predication-name = (if tms? (if (eql tms? t) 'ltms:value-of tms?) 'value-of)
+           for predication-name = (cond ((eql tms? t) 'ltms:value-of)
+                                        ((not (null tms?)) tms?)
+                                        (t 'value-of))
            for set-valued? = (getf slot-options :set-valued)
            do (loop for (indicator value) on slot-options by #'cddr
                   when (eql indicator :initarg)

@@ -533,6 +533,8 @@
 		 (add-backward-rule-trigger trigger ,truth-value entry ',if-part ',rule-name)))))))
 
 
+(defvar *backward-support* nil)
+
 (defun write-backward-rule-body (rule-name trigger trigger-negated if-part environment arguments)
   ;; Write the body of a backward rule.  This is more complicated than you might think,
   ;; because it has to cons all structures containing logic variables in order to be
@@ -659,8 +661,10 @@
 						      `#'(lambda (,support-var)
 							   #+cloe (declare (sys:downward-function))
                                                            (declare (dynamic-extent))
-							   ,@(when lv-name `((unify ,lv-name ,support-var)))
-							   ,body)))
+                                                           (let ((*backward-support* *backward-support*))
+                                                             (push ,support-var *backward-support*)
+                                                             ,@(when lv-name `((unify ,lv-name ,support-var)))
+                                                             ,body))))
 						  nil)))))
 		     (compile-and-list (cdr node) nil)))
 		 (compile-or-node (node continuation top-level?)
@@ -712,7 +716,8 @@
 	       (when (eql .truth-value.
 			  ,(if trigger-negated '+false+ '+true+))
 		 (let ((*running-rule* ',rule-name)
-                       (*goal* .goal.))
+                       (*goal* .goal.)
+                       (*backward-support* nil))
 		   ,body-form)))
 	    trigger))))))))
 

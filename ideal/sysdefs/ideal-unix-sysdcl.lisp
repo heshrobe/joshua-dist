@@ -8,29 +8,6 @@
 ;;;;********************************************************
 
 
-;;; My call tree analysis says that these are the only
-;;; files that AWDRAT needs but I only did this for
-;;; called funtions, not variables
-; "algorithms.lisp"
-; "consistency-checking.lisp"
-; "display-and-query-fns.lisp"
-; "edit-functions.lisp"
-; "evidence+dummy-nodes .lisp"
-; "jensen-infer.lisp"
-; "jensen-join-tree.lisp"
-; "jensen-search.lisp"
-; "join-tree.lisp"
-; "low-level-array-op s.lisp"
-; "message-processing.lisp"
-; "noisy-or-nodes.lisp"
-; "primitives.lisp"
-; "primitives.lisp"
-; "probability-access-fns.lisp"
-; "struct.lisp"
-; "utils-macros.lisp"
-; "utils.lisp"
-; "wrapped-access-functions.lisp"
-
 
 (unless (find-package :ideal)
   (make-package :ideal :use '(:common-lisp) :nicknames '())
@@ -58,11 +35,11 @@
   "utils-macros"
   "utils"
   "display-and-query-fns"
-  ;; "ordering"
-  ;; "consistency-checking"
+  "ordering"
+  "consistency-checking"
   "noisy-or-nodes"
-  ;; "copy-diagram-macros"
-  ;; "copy-diagram"
+  "copy-diagram-macros"
+  "copy-diagram"
   ;; "file-io"
   "edit-functions-macros"
   "primitives"
@@ -72,15 +49,15 @@
   "message-processing"
   "evidence+dummy-nodes"
   ;; "poly-tree-utils"
-  ;; "clique-struct"
-  ;; "clique-macros"
-  ;; "clique-node-manipulation"
+  "clique-struct"
+  "clique-macros"
+  "clique-node-manipulation"
   "join-tree"
   ;; "poly-tree"
-  ;; "clustering-algorithm"
+  "clustering-algorithm"
   ;; "clustering-est"
   ;; "conditioning-utils"
-  "conditioning"
+  ;; "conditioning"
   ;; "lw-utils"
   ;; "lw-infer"
   ;; "pearl-simulation-utils"
@@ -92,4 +69,3 @@
   ;; "peot-simulation-macros"
   ;; "peot-simulation"
   ))
-

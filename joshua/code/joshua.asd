@@ -21,13 +21,13 @@
   :pathname "."
   :components (
 	       (:file "packaged")
-               #+mcclim
-               (:file "drei-interface")
 	       (:file "asdf-support" :depends-on ("packaged"))
 	       (:file "borrowin" :depends-on ("packaged"))
 	       (:file "mapfvars" :depends-on ("borrowin"))
 	       (:file "mapforms" :depends-on ("mapfvars"))
 	       (:file "readnnwr" :depends-on ("mapforms"))
+               #+mcclim
+               (:file "drei-interface" :depends-on ("readnnwr"))
 	       (:file "preddefs" :depends-on ("readnnwr"))
 	       (:file "predicat" :depends-on ("preddefs"))
 	       (:file "unificat" :depends-on ("predicat"))
