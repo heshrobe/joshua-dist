@@ -9,7 +9,7 @@
 
 (require :climxm)
 
-(load "~/josh-dist/driver.lisp")
+(load "~/joshua-dist/driver.lisp")
 
 (handler-bind ((fasl-casemode-mismatch #'(lambda (c) (invoke-restart 'excl::fasl-casemode-mismatch-continue)))) 
   (build-it)

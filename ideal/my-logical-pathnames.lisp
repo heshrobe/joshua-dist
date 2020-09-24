@@ -2,8 +2,8 @@
 ;;; ideal
 
 "ideal"
-'("home;*.*" "/Users/hes/josh-dist/ideal/*.*")
-'("code;*.*" "/Users/hes/josh-dist/ideal/code/*.*")
-'("ideal-edit;*.*" "/Users/hes/josh-dist/ideal/ideal-edit/*.*")
-'("diagrams;*.*" "/Users/hes/josh-dist/ideal/diagrams/*.*")
-'("**;*.*" "/Users/hes/josh-dist/ideal/**/*.*")
+'("home;*.*" "/Users/hes/joshua-dist/ideal/*.*")
+'("code;*.*" "/Users/hes/joshua-dist/ideal/code/*.*")
+'("ideal-edit;*.*" "/Users/hes/joshua-dist/ideal/ideal-edit/*.*")
+'("diagrams;*.*" "/Users/hes/joshua-dist/ideal/diagrams/*.*")
+'("**;*.*" "/Users/hes/joshua-dist/ideal/**/*.*")

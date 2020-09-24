@@ -11,19 +11,19 @@
 
 (require :xml-rpc)
 
-(load "~/josh-dist/driver.lisp")
+(load "~/joshua-dist/driver.lisp")
 
 (handler-bind ((fasl-casemode-mismatch #'(lambda (c) (invoke-restart 'excl::fasl-casemode-mismatch-continue)))) 
   (build-it :xml-server #+MacOSX t #-MacOSX nil :apps t)
   ;;
   ;; I think that loading driver.lisp takes care of all of the loading
   ;;
-  ;; (load "~/josh-dist/xml-parser/xml-parser-defsystem.lisp")
+  ;; (load "~/joshua-dist/xml-parser/xml-parser-defsystem.lisp")
   ;; (load-system 'xml-parser)
   ;; covered by :xml-server switch to build-it
   ;; (load-system 'sample-xml-rpc-server)
 
-  ;; (load "~/josh-dist/ideal/load-ideal.lisp")
+  ;; (load "~/joshua-dist/ideal/load-ideal.lisp")
   ;; (load-system 'ideal)
 
   (push "~/my-logical-pathnames.lisp"

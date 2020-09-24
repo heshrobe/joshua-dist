@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Doing Joshua"
-cd ~/josh-dist/
+cd ~/joshua-dist/
 git pull
 
 echo "Doing AWDRAT"

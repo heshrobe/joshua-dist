@@ -6,21 +6,21 @@
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(optimize (debug 3) (safety 3) (speed 1) (space 1))))
 
-(load "~/josh-dist/find-lisp-listener")
+(load "~/joshua-dist/find-lisp-listener")
 
 (require :climxm)
 
 (require :xml-rpc)
 
-(load "~/josh-dist/driver.lisp")
+(load "~/joshua-dist/driver.lisp")
 
 (handler-bind ((fasl-casemode-mismatch #'(lambda (c) (invoke-restart 'excl::fasl-casemode-mismatch-continue)))) 
   (build-it)
 
-  (load "~/josh-dist/xml-parser/xml-parser-defsystem.lisp")
+  (load "~/joshua-dist/xml-parser/xml-parser-defsystem.lisp")
   (load-system 'xml-parser)
 
-  (load "~/josh-dist/ideal/load-ideal.lisp")
+  (load "~/joshua-dist/ideal/load-ideal.lisp")
   (load-system 'ideal)
 
   (push "~/my-logical-pathnames.lisp"

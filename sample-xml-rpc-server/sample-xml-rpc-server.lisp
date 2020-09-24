@@ -281,7 +281,7 @@
 
 (defparameter *radio-icon* nil)
 (defparameter *radio-pattern* nil)
-(defparameter *radio-icon-pathname* "~/josh-dist/clim-fixes/radio.xpm")
+(defparameter *radio-icon-pathname* "~/joshua-dist/clim-fixes/radio.xpm")
 (defparameter *radio-frame* nil)
 (defparameter *radio-window* nil)
 

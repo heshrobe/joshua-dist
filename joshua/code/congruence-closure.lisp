@@ -14,7 +14,7 @@
 ;;; system.
 ;;;
 ;;; Like in my thesis (and more recent congruence closure systems
-;;; see paper in josh-dist/joshua/cc-book.pdf) Predications are flattened
+;;; see paper in joshua-dist/joshua/cc-book.pdf) Predications are flattened
 ;;; to term free form by substituting a skolem constant for terms nested in 
 ;;; in predications and then asserting that the term and the constant are congruent
 ;;;

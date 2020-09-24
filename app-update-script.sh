@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ~/josh-dist/
+cd ~/joshua-dist/
 echo "\nDoing Joshua Distribution\n"
 git commit -a -m "Updating all code"
 echo "\nPushing to Github.com"

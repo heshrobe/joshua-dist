@@ -6,12 +6,12 @@
 
 (defparameter *repo-pathname* #p"~/Research-Projects/CHASE/wilee/threat-planner/threat_planner/joshua/code/")
 
-(defparameter *local-pathname* #p"~/josh-dist/joshua/code/*.lisp")
+(defparameter *local-pathname* #p"~/joshua-dist/joshua/code/*.lisp")
 
-(defparameter *excluded-files* (list #p"~/josh-dist/joshua/code/move-to-wilee-repo.lisp"
-				     #p"~/josh-dist/joshua/code/cloehacks.lisp"
-				     #p"~/josh-dist/joshua/code/joshua-defsystem.lisp"
-				     #p"~/josh-dist/joshua/code/original-mapforms.lisp"
+(defparameter *excluded-files* (list #p"~/joshua-dist/joshua/code/move-to-wilee-repo.lisp"
+				     #p"~/joshua-dist/joshua/code/cloehacks.lisp"
+				     #p"~/joshua-dist/joshua/code/joshua-defsystem.lisp"
+				     #p"~/joshua-dist/joshua/code/original-mapforms.lisp"
 				     ))
 
 

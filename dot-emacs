@@ -26,7 +26,7 @@
 ;;; Getting stuff from the joshua distribution
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(setq *josh-directory* (expand-file-name "~/josh-dist/"))
+(setq *josh-directory* (expand-file-name "~/joshua-dist/"))
 
 (load (format "%sparedit.elc" *josh-directory*))
 (load (format "%smouse-copy.elc" *josh-directory*))
