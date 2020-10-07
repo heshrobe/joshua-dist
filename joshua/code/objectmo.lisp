@@ -350,6 +350,51 @@
 	  (stack-let ((backward-support `(,query ,+true+ ,current-predication)))
 	    (funcall continuation backward-support)))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; What a backward support is supposed to look like:
+;;; (query truth-value type . stuff)
+;;; Where type can be:
+;;;  1)  A predication, meaning the thing was true in the database
+;;;  2)  A pair of a keyword, such as rule, question, or something supplied
+;;;       by an ask-data method
+;;;      In this case, stuff will be a list of more such entries
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun build-justification-from-backward-support (backward-support)
+  (let (true false unknown)
+    (labels 
+        ((build-justification-from-backward-support-internal (backward-support)
+           (when (consp backward-support)
+             (destructuring-bind (query truth-value type . rest) backward-support
+               (declare (ignore query))
+               (etypecase type
+                 (predication
+                  (truth-value-case truth-value
+                                    (+true+ (pushnew type true))
+                                    (+false+ (pushnew type false))
+                                    (+unknown+ (pushnew type unknown))))
+                 (cons                      
+                  ;; rules can have support of nil when the if part is trivial
+                  (when (first rest)
+                    (build-justification-from-backward-support-internal (first rest)))
+                  (loop for sub-support in (rest rest)
+                      do (when sub-support
+                           (build-justification-from-backward-support-internal sub-support))))
+                 (symbol
+                  (ecase type
+                    ((and or)
+                     (unless (null rest)
+                       (build-justification-from-backward-support-internal (first rest) )
+                       (loop for sub-support in (rest rest)
+                           do (build-justification-from-backward-support-internal sub-support))))
+                    ((known provable)
+                     (when (eql truth-value +true+)
+                       (build-justification-from-backward-support-internal (first rest)))))))))))
+      (declare (dynamic-extent #'build-justification-from-backward-support-internal))
+      (build-justification-from-backward-support-internal backward-support))
+    (list (when (consp (third backward-support)) (second (third backward-support))) true false unknown)))
+
+#|
 (defun build-justification-from-backward-support (backward-support)
   (let (true false unknown)
     (labels ((build-justification-from-backward-support-internal (backward-support)
@@ -360,14 +405,14 @@
 		     (cond
 		       ((typep type 'predication)
 			(truth-value-case truth-value
-			  (+true+ (push type true))
-			  (+false+ (push type false))
-			  (+unknown+ (push type unknown))))
+			  (+true+ (pushnew type true))
+			  (+false+ (pushnew type false))
+			  (+unknown+ (pushnew type unknown))))
 		       (cached-result-in-query
 			(truth-value-case truth-value
-			  (+true+ (push cached-result-in-query true))
-			  (+false+ (push cached-result-in-query false))
-			  (+unknown+ (push cached-result-in-query unknown))))
+			  (+true+ (pushnew cached-result-in-query true))
+			  (+false+ (pushnew cached-result-in-query false))
+			  (+unknown+ (pushnew cached-result-in-query unknown))))
 		       (t (loop for thing in stuff
 				doing (build-justification-from-backward-support-internal thing)))))))))
       (declare (dynamic-extent #'build-justification-from-backward-support-internal))
@@ -392,6 +437,8 @@
       (declare (dynamic-extent #'collect-preds-from-backward-support-internal))
       (collect-preds-from-backward-support-internal backward-support))
     preds))
+|#
+
 
 
 ;;; This mixin allows this slot to be connected to other slots.
