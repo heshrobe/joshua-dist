@@ -4,13 +4,13 @@
 ;;;> ** (c) Copyright 1989, 1988 Symbolics, Inc.  All rights reserved.
 ;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
 ;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
+;;;>    The software, data, and information contained herein are proprietary
+;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends
+;;;> to keep such software, data, and information confidential and to preserve
+;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant
+;;;> to a written license agreement, and may be used, copied, transmitted, and
 ;;;> stored only in accordance with the terms of such license.
-;;;> 
+;;;>
 ;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
 ;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3653, Symbolics
 ;;;> 3620 (R), Symbolics 3610 (R), Symbolics XL400, Symbolics Common Lisp (R),
@@ -20,12 +20,12 @@
 ;;;> Examiner (R), S-DYNAMICS (R), S-GEOMETRY (R), S-PAINT (R), S-RENDER (R), "Your Next
 ;;;> Step in Computing" (R), Ivory, MacIvory, Symbolics C, Symbolics Pascal, Symbolics Prolog,
 ;;;> Symbolics Fortran, CLOE, Joshua, Concordia, and Statice are trademarks of Symbolics, Inc.
-;;;> 
+;;;>
 ;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer 
+;;;>    Use, duplication, and disclosure by the Government are subject to restrictions
+;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer
 ;;;> Software Clause at FAR 52.227-7013.
-;;;> 
+;;;>
 ;;;>      Symbolics, Inc.
 ;;;>      8 New England Executive Park, East
 ;;;>      Burlington, Massachusetts  01803
@@ -60,7 +60,7 @@
 ;;;; The slot protocol.
 
 ;;; This predicate model is the mixin that links us to the slot protocol.
-;;; It's defined here (but all the methods come much later) so that we can refer to 
+;;; It's defined here (but all the methods come much later) so that we can refer to
 ;;; a writable-instance-variable from the slot methods.
 
 (define-predicate-model slot-value-mixin
@@ -160,7 +160,7 @@
   (declare (ignore value predication old-truth-value))
   nil)
 
-;;; This should be :DEFAULT, if there were such a thing in CLOS. 
+;;; This should be :DEFAULT, if there were such a thing in CLOS.
 (defmethod act-on-new-value progn  ((self basic-slot) predication old-truth-value)
   (declare (ignore predication old-truth-value))
   nil)
@@ -208,7 +208,7 @@
 
 ;;; This is used when querying with a truth-value of NIL at the ask-data level.
 ;;; It returns all possible values whether they're the current ones or not.
-;;; This is here for a possible extention for "stateful predications" that can 
+;;; This is here for a possible extention for "stateful predications" that can
 ;;; be true in one state of the world and false in another
 (defmethod map-over-all-values ((self basic-slot) query continuation value-in-query)
   (with-slots (all-predications) self
@@ -362,7 +362,7 @@
 
 (defun build-justification-from-backward-support (backward-support)
   (let (true false unknown)
-    (labels 
+    (labels
         ((build-justification-from-backward-support-internal (backward-support)
            (when (consp backward-support)
              (destructuring-bind (query truth-value type . rest) backward-support
@@ -373,7 +373,7 @@
                                     (+true+ (pushnew type true))
                                     (+false+ (pushnew type false))
                                     (+unknown+ (pushnew type unknown))))
-                 (cons                      
+                 (cons
                   ;; rules can have support of nil when the if part is trivial
                   (when (first rest)
                     (build-justification-from-backward-support-internal (first rest)))
@@ -393,6 +393,12 @@
       (declare (dynamic-extent #'build-justification-from-backward-support-internal))
       (build-justification-from-backward-support-internal backward-support))
     (list (when (consp (third backward-support)) (second (third backward-support))) true false unknown)))
+
+
+(defun supporting-predications-from-backward-support (backward-support)
+  (destructuring-bind (mnemonic true false unknown) (build-justification-from-backward-support backward-support)
+    (declare (ignore mnemonic))
+    (append true false unknown)))
 
 #|
 (defun build-justification-from-backward-support (backward-support)
@@ -448,7 +454,7 @@
 	  ()
   ((equal-cells :initform nil :initarg :equal-cells :accessor slot-equal-cells)
    (block-propagation :initform nil :initarg :block-propagation :accessor slot-block-propagation))
-  ) 
+  )
 
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(inline propagate-equality)))
@@ -502,7 +508,7 @@
 ;; If there is no value in this slot, we spread out an activation
 ;; ring to everyone it's connected to, ASK'ing each of those
 ;; slots to get the value.  We allow rules and questions to be
-;; invoked on them.  
+;; invoked on them.
 ;;
 ;; Since we cache deduced values, if one of the slots chained to
 ;; deduces a value, he'll TELL that that's his
@@ -564,7 +570,7 @@
   (:function (if (typep slot-or-path 'slot-with-attached-actions-mixin)
 		 (funcall (flavor:generic add-action) slot-or-path function name)
 		 (let ((real-slot (follow-path-to-slot slot-or-path)))
-		   (funcall (flavor:generic add-action) real-slot function name))))) 
+		   (funcall (flavor:generic add-action) real-slot function name)))))
 ||#
 
 ;;; This covers everything that's not a S.-W.-A.-A.-Mixin instance.
@@ -592,7 +598,7 @@
 
 (defmethod remove-action ((self slot-with-attached-actions-mixin) &optional (name :action))
   (with-slots (actions) self
-    (setq actions (delete name actions :key #'car)))) 
+    (setq actions (delete name actions :key #'car))))
 
 
 ;;; This mixin notifies the parent object that the slot has been updated.
@@ -658,7 +664,7 @@
 
 (defmacro create-all-slot-types ()
   (let ((all-slot-names nil)
-	(package (find-package "JI")))    
+	(package (find-package "JI")))
     (flet ((decode-integer-to-slot-options (i)
 	     (loop for bit-position below 5
 		   for option-name in *slot-options*
@@ -747,7 +753,7 @@
 		 (loop for supertype in (object-type-supertypes type)
 		       do (do-one-supertype supertype)))))
       (declare (dynamic-extent #'do-one-supertype))
-      (do-one-supertype self)))) 
+      (do-one-supertype self))))
 
 (defmethod clean-up-for-redefinition ((self object-type))
   (with-slots (rebuild-list) self
@@ -791,7 +797,7 @@
 	for his-prototype = (object-type-typical-instance type)
 	when his-prototype
 	  do (kill his-prototype))
-  (values))) 
+  (values)))
 
 
 (defmethod initialize-instance :after ((self object-type) &rest stuff)
@@ -821,7 +827,7 @@
 ;;; There's no issue of needing to push to subtypes since
 ;;; they're going to get rebuilt too and only after I'm rebuilt.
 
-(defvar *im-handling-bad-rule-patterns* nil) 
+(defvar *im-handling-bad-rule-patterns* nil)
 
 (defvar *rebuilding-rules-for-type-redefinition* nil)
 
@@ -860,7 +866,7 @@
 							    when (and (eql rule-name (match-id-rule-name match-id))
 								      ;; Note: This used to check eql, which is clearly wrong
 								      ;; because when you actually build the network, if you find
-								      ;; a pattern that is a variant of the one in the rule, then you use 
+								      ;; a pattern that is a variant of the one in the rule, then you use
 								      ;; it.  So this is correct here.  For backward rules
 								      ;; I don't think we do that kind of interning.
 									(variant pattern (match-id-pattern match-id)))
@@ -872,11 +878,11 @@
 											       rule-name)
 								     (bad-path () (pushnew node losing-match-nodes)))
 								   (return-from find-node (values)))
-						 finally (error "No such pattern ~a ~a" 
+						 finally (error "No such pattern ~a ~a"
 								pattern pattern-truth-value)))))
 				(:backward
 				  (destructuring-bind (pattern truth-value) (first (rule-debug-info-triggers debug-info))
-				    (handler-case 
+				    (handler-case
 				      (add-backward-rule-trigger pattern
 								 truth-value
 								 (rule-debug-info-network debug-info)
@@ -1005,7 +1011,7 @@
     (unless *building-prototype*
       (labels ((link-up (prototype object)
 		 (let ((slot-names (all-slot-names prototype)))
-		   (loop for slot-name in slot-names 
+		   (loop for slot-name in slot-names
 		       for object-slot = (funcall slot-name object nil)
 		       for prototype-slot = (funcall slot-name prototype nil)
 		       do (setf (slot-prototype-slot object-slot) prototype-slot)
@@ -1023,7 +1029,7 @@
 ;; This gets called when a new object is created
 ;; and its slos already have init values that match rule triggers
 ;; Right now it's being called as each sub-object of the parent is built
-;; in a bottom up fashion.  
+;; in a bottom up fashion.
 ;; It's possible that we might need to delay this until the full
 ;; object is built, then pass through the structure again.  Trick would be to bind
 ;; some special variable saying don't do this, I'll handle it later.  Motivation for that approach
@@ -1260,12 +1266,12 @@
 		  ))))))))
 
 
-;;; The motivating case: Imaging a rule that talks about the sub-structure of an object 
+;;; The motivating case: Imaging a rule that talks about the sub-structure of an object
 ;;; (e.g. a plane with wings and stabilizers) and these sub-structures have initializations
 ;;; that fill in default values for some property of the wing that the rule talks about.
 ;;; Were we to do things the obvious way, then the Tell's corresponding to those initiazations
-;;; would happen before the wing object was hooked up to the wing object in the plane prototype 
-;;; (it would be hooked up to the prototype for wings in general) which is where the rule trigger 
+;;; would happen before the wing object was hooked up to the wing object in the plane prototype
+;;; (it would be hooked up to the prototype for wings in general) which is where the rule trigger
 ;;; is.  This could be fixed by checking for predications that match the rule trigger as it's inserted
 ;;; and there's even code below that can do that in trigger-rules-of-linked-up-slot which could be called
 ;;; from add-object (which is where this happens).  However, this guarantees that rules won't get run
@@ -1279,7 +1285,7 @@
     (maphash #'(lambda (key object)
 		 (declare (ignore key))
 		 (kill object))
-	     subparts)		 
+	     subparts)
     ;;(loop for object being the hash-values of subparts with-key key
     ;;      doing (progn key)
     ;;            (kill object))
@@ -1301,7 +1307,7 @@
 (setq *root* (make-instance 'basic-object :role-name nil))
 
 (defun make-object (object-type &rest stuff &key name superpart-object &allow-other-keys)
-  (when (null superpart-object) (setq superpart-object *root*)) 
+  (when (null superpart-object) (setq superpart-object *root*))
   (when (subpart-named superpart-object name)
     (error "There is already a subpart of ~a named ~a"
 	   superpart-object name))
@@ -1312,7 +1318,7 @@
 
 (defmethod type-of-predicate-for-object-type ((thing basic-object)) 'object-type-of)
 (defmethod type-of-predicate-for-object-type ((thing tms-object-mixin)) 'ltms:object-type-of)
-					      
+
 
 (defmethod part-of-predicate-for-object-type ((thing basic-object)) 'named-part-of)
 (defmethod part-of-predicate-for-object-type ((thing tms-object-mixin)) 'ltms:named-part-of)
@@ -1338,11 +1344,11 @@
 		  :role-name ',role-name
 		  :superpart-object *root*))
 
-;;; In the CLOS version you'll provide CLOS slot-descriptors for the 
+;;; In the CLOS version you'll provide CLOS slot-descriptors for the
 ;;; "other instance variables" field.
 
 (defun build-init-tell (predicate slot-name init-form-present init-form key-variable key-p set-valued?)
-  (cond 
+  (cond
    ((and key-p init-form-present set-valued?)
     `(if ,key-p
          (loop for value in ,key-variable
@@ -1381,7 +1387,7 @@
            finally (return (values slot-names slot-options)))
      (let ((initialization-tells nil)
            (slot-keys nil))
-       (loop for init-form-present = nil 
+       (loop for init-form-present = nil
            for slot-key-variable = nil
            for slot-key-p = nil
            for init-form = nil
@@ -1396,12 +1402,12 @@
                   when (eql indicator :initarg)
                   do (setq slot-key-p (intern (string-upcase (concatenate 'string (string value) "-p")))
                            slot-key-variable (intern (string value)))
-                     (push (list slot-key-variable nil slot-key-p) slot-keys)			    
+                     (push (list slot-key-variable nil slot-key-p) slot-keys)
                   when (eql indicator :initform)
                   do (setq init-form-present t init-form value))
            when (or init-form-present slot-key-p)
            do (push (build-init-tell predication-name slot-name init-form-present init-form
-                                     slot-key-variable slot-key-p set-valued?) 
+                                     slot-key-variable slot-key-p set-valued?)
                     initialization-tells))
        `(progn
           (let ((old-type-object (object-type-named ',name)))
@@ -1419,8 +1425,8 @@
           ,@(when slot-names
               `((defmethod basic-object-prototype-builder progn ((self ,name))
                   (with-slots ,slot-names self
-                    ,@(loop for slot-name in slot-names 
-                          collect `(setq ,slot-name 
+                    ,@(loop for slot-name in slot-names
+                          collect `(setq ,slot-name
                                      (make-prototype-slot ',slot-name self)))))
                 (defmethod basic-object-body-builder progn ((self ,name))
                   (with-slots ,slot-names self
@@ -1430,7 +1436,7 @@
                           collect `(setq ,slot-name (make-instance ',slot-type-name :name ',slot-name :my-object self)))))))
           ,@(when parts
               `((defmethod basic-object-substructure-builder progn ((self ,name))
-                  ,@(loop for (role-name type) in parts 
+                  ,@(loop for (role-name type) in parts
                         if (symbolp type)
                         collect `(make-instance ',type :role-name ',role-name :superpart-object self)
                         else collect `(make-instance ,type :role-name ',role-name :superpart-object self)))))
@@ -1527,7 +1533,7 @@
 	  for next-object = (or (subpart-named current-object key)
 				(and (member key (all-slot-names current-object))
 				     (funcall key current-object)))
-				
+
             when (null next-object)
             do (if error-if-bad-path
                  (error 'bad-path
@@ -1551,15 +1557,15 @@
 (defun follow-path-to-slot* (path &optional continuation (error-if-bad-path t))
   (if (typep path 'basic-slot)
       path
-      (labels 
+      (labels
 	  ((do-one-more (current-object list-of-keys)
 	     (let ((key (pop list-of-keys)))
 	       (cond
 		;; If this is the last key then this has to be a slot name or
 		;; or a part of the object
-		;; or we'll error if asked to		
+		;; or we'll error if asked to
 		((null list-of-keys)
-		 (cond 
+		 (cond
 		  ((member key (all-slot-names current-object))
 		   (funcall continuation (funcall key current-object nil)))
 		  ((subpart-named current-object key)
@@ -1691,7 +1697,7 @@
 		     (loop for slot-name in (object-type-all-slot-names type)
 			 for slot = (funcall slot-name typical-instance nil)
 			 when slot
-			 do (setf (slot-forward-triggers slot) nil))))					
+			 do (setf (slot-forward-triggers slot) nil))))
 		 (setf (object-type-rule-triggers type) nil)
 		 (setf (object-type-all-rules type) nil))
 	     *all-object-types*)
@@ -1700,7 +1706,7 @@
     ;;	           (setf (object-type-all-rules type) nil))
     ))
 
-(define-predicate-method (insert slot-value-mixin) () 
+(define-predicate-method (insert slot-value-mixin) ()
   (with-statement-destructured (path value) self
     (let ((final-slot (if (listp path) (follow-path-to-slot path) path)))
       (insert-new-predication final-slot self value))))
@@ -1826,7 +1832,7 @@
 
 ;;; This is duplicating code that's in the ask method
 ;;; This allows you to call ask-data directly without going through ask.
-;;; This in turn means you get to pass in the truth-value directly and so 
+;;; This in turn means you get to pass in the truth-value directly and so
 ;;; you can pass in a Null value, meaning give me everything true or not.
 ;;; This assumes that my-slot is bound, which would be true if called from ask
 ;;; But if called as a top-level, you'll have to follow paths to slots
@@ -1878,7 +1884,7 @@
   (with-statement-destructured (path value) self
     (let ((type-name (find-object-type-in-trigger-pattern self (car path) context)))
       ;; map over sub-hierarchy to find all objects of this type
-      (map-over-subtypes 
+      (map-over-subtypes
        (object-type-named type-name)
        #'(lambda (type)
 	   (loop for object in (object-type-instances type)
@@ -1886,7 +1892,7 @@
 	       do (let ((final-slot (let ((*root* object)) (follow-path-to-slot (cdr path)))))
 		    (with-unification
 			(unify (car path) object)
-		      (map-over-values final-slot self 
+		      (map-over-values final-slot self
 				       #'(lambda (derivation)
 					   (funcall continuation (ask-database-predication derivation)))
 				       value)))))))))
@@ -2132,7 +2138,7 @@
 		;; needn't deal with tail variable, since variables can't ever be skipped anyway
 		when (or (symbolp (car token)) (numberp (car token))) collect token))))
 
-;;; This checks every instance to see if its ultimate parent 
+;;; This checks every instance to see if its ultimate parent
 ;;; is a typical instance and if so shoves the thing there also.
 
 ;;; I discovered a long-standing bug 7/15/2014 in how this works.
@@ -2142,7 +2148,7 @@
 ;;; But the continuation that's passed to tell whether things are the same or not, doesn't
 ;;; check for that.  The fix is to make sure that not only do we agree on truth-value and variant of the pattern
 ;;; but that the object-type of the two are also the same.
-;;; To see that this is right, consider that the [value-of (?foo )...] predication in effect has another argument, the 
+;;; To see that this is right, consider that the [value-of (?foo )...] predication in effect has another argument, the
 ;;; type of ?foo which is provided by the [object-type-of ?foo ] predication elsewhere in the pattern.
 ;;; So the variant check for merging needs to include a check for identical types.
 
@@ -2192,7 +2198,7 @@
     (destructuring-bind (object &rest path) full-path
       (let ((type-name (find-object-type-in-trigger-pattern self object context))
 	    (type nil))
- 	(unless type-name 
+ 	(unless type-name
 	  (error "This rule uses slot-value pattern ~s but does not contain a type pattern" self))
 	(setq type (object-type-named type-name))
 	(unless type
@@ -2244,7 +2250,7 @@
 
 (define-predicate-method (map-over-forward-rule-triggers slot-value-mixin) (continuation)
   (let ((final-slot (slot-prototype-slot (predication-my-slot self))))
-    (loop for trigger in (slot-forward-triggers final-slot) 
+    (loop for trigger in (slot-forward-triggers final-slot)
 	  do (funcall continuation trigger))))
 
 (define-predicate value-of (path value) (slot-value-mixin trivial-tms-mixin default-protocol-implementation-model))
@@ -2337,8 +2343,8 @@
                                     (with-unification
                                       (unify type supertype)
                                       (stack-let ((backward-support (list self +true+ '(ask-data object-type-of))))
-                                        (funcall continuation backward-support))))))                      
-           
+                                        (funcall continuation backward-support))))))
+
 	  (t (when (typep the-object type)
 	       (stack-let ((backward-support (list self +true+ '(ask-data object-type-of))))
 		 (funcall continuation backward-support)))))))
@@ -2426,7 +2432,7 @@
 
 (define-predicate object-type-of (object-name type) (type-of-mixin default-predicate-model))
 
-(define-predicate ltms:object-type-of (object-name type) (type-of-mixin ltms:ltms-predicate-model)) 
+(define-predicate ltms:object-type-of (object-name type) (type-of-mixin ltms:ltms-predicate-model))
 
 (define-predicate-model part-of-mixin () (tell-error-model ask-data-only-mixin))
 
@@ -2462,13 +2468,13 @@
      ;; child is unbound, parent must be bound but might need dereferencing
      ((unbound-logic-variable-p child-object)
       (let ((parent-object (joshua-logic-variable-value parent-object)))
-	(cond 
+	(cond
 	 ((typep parent-object 'basic-object)
 	  (maphash #'(lambda (key child)
 		       (declare (ignore key))
 		       (with-unification
 			   (unify child-object child)
-			   (stack-let ((backward-support (list self +true+ (basic-object-part-predication child) 
+			   (stack-let ((backward-support (list self +true+ (basic-object-part-predication child)
 							       '(ask-data part-of))))
 				    (funcall continuation backward-support))))
 		   (basic-object-subparts parent-object)))
@@ -2493,7 +2499,7 @@
 		return (values)
 		finally (with-unification
 			    (unify (first parent-object) next-parent)
-			    (stack-let ((backward-support (list self +true+ (basic-object-part-predication child-object) 
+			    (stack-let ((backward-support (list self +true+ (basic-object-part-predication child-object)
 								'(ask-data part-of))))
 				     (funcall continuation backward-support))))))
 	 ((listp parent-object)
@@ -2524,9 +2530,9 @@
 
 ;;; I added code here to manifest an actual predication for this relationship
 ;;; This was motivated by the stateful predication stuff in the attack planner
-;;; which should get moved into Joshua per se.  But it then turns out that 
+;;; which should get moved into Joshua per se.  But it then turns out that
 ;;; since name-part-of relationships never change and are only true in the initial
-;;; state, there's really no need for an interned predication around which to 
+;;; state, there's really no need for an interned predication around which to
 ;;; organize a state map.  But I've left this code in place anyhow.
 (define-predicate-method (ask-data named-part-of-mixin) (truth-value continuation)
   (unless (eql truth-value +true+)
@@ -2582,7 +2588,7 @@
 			;;   (setf (basic-object-my-predication child) child-predication))
 			(stack-let ((backward-support (list self +true+ child-predication '(ask-data named-part-of))))
 			  (funcall continuation backward-support)))))
-		 (basic-object-subparts 
+		 (basic-object-subparts
 		  ;; parent is either provided or a pathname
 		  (if (typep parent-object 'basic-object)
 		      parent-object
@@ -2660,7 +2666,7 @@
 
 (define-predicate part-of (superpart-object subpart-object) (part-of-mixin default-predicate-model))
 
-(define-predicate named-part-of (superpart-object name subpart-object) 
+(define-predicate named-part-of (superpart-object name subpart-object)
   (named-part-of-mixin default-predicate-model))
 
 (define-predicate ltms:part-of (superpart-object subpart-object) (part-of-mixin ltms:ltms-predicate-model))
@@ -2757,7 +2763,7 @@
 ;;;   :expander 'sys:expression)
 ;;;
 ;;;(define-multiple-command (com-change-slot-value :name "Change Slot Value")
-;;;			 (*joshua-command-table* *joshua-only-command-table*) 
+;;;			 (*joshua-command-table* *joshua-only-command-table*)
 ;;;    ((the-slot 'slot-presentation)
 ;;;     (new-value 'sys:expression :prompt "New value for this slot" :provide-default nil))
 ;;;   (tell `[value-of ,the-slot ,new-value]))
@@ -2822,5 +2828,3 @@
 
 #-genera
 (eval-when (:compile-toplevel :execute :load-toplevel) (disable-joshua))
-
-
