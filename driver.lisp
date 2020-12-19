@@ -14,7 +14,7 @@
 
 (load "~/quicklisp/setup.lisp")
 
-(ql:quickload :cl-json)
+(ql:quickload '(:cl-json :drakma :cxml))
 
 (defparameter *missing-systems* nil)
 (defparameter *existing-systems* nil)
@@ -79,6 +79,8 @@
 				 :device (pathname-device loading-file)
 				 :name "defsystem" :type "lisp"))
    ;; load the defsystems for the all the current apps
+   ;; Start Interface
+   (load-if-there start-interface "~/Research-Projects/start-interface/code/defsystem.lisp")
    ;; Programmer's Apprentice
    (load-if-there Natsoft  "~/Research-Projects/natural-software/code/defsystem.lisp")
   ;; AWDRAT
@@ -127,6 +129,10 @@
 		(compile-system 'sample-xml-rpc-server :recompile recompile))
 	      (load-system 'sample-xml-rpc-server)))
   (when apps
+    (if-there start-interface
+              (when compile
+                (compie-system 'start-interface :recompile recompile))
+              (load-system 'start-interface))
     (if-there natsoft
 	      (when compile
 		(compile-system 'natsoft :recompile recompile))
