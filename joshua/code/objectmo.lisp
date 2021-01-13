@@ -1374,7 +1374,7 @@
 
 (def-defining-form define-object-type
     :definer
-  ((name &key slots parts equalities initializations included-object-types
+  ((name &key slots parts equalities initializations included-object-types super-types
 	 tms
          other-instance-variables other-flavors other-classes base-classes)
    (multiple-value-bind (slot-names slot-options)
@@ -1414,7 +1414,7 @@
             (when old-type-object
               (clean-up-for-redefinition old-type-object)))
           (defclass ,name
-              (,@other-flavors ,@other-classes ,@included-object-types ,@(when tms (list 'tms-object-mixin)) ,@base-classes basic-object)
+              (,@other-flavors ,@other-classes ,@(or included-object-types super-types) ,@(when tms (list 'tms-object-mixin)) ,@base-classes basic-object)
             (,@slot-names ,@other-instance-variables))
           ,@(loop for slot-name in slot-names
                 collect `(defmethod ,slot-name ((self ,name) &optional (value t))
@@ -1448,7 +1448,7 @@
             ,@(when equalities
                 `((impose-equalities self ',equalities))))
           (make-instance 'object-type
-			:supertypes (loop for name in ',included-object-types
+			:supertypes (loop for name in ',(or included-object-types super-types)
                             collect (object-type-named name))
 			:name ',name
 			:part-names ',parts
@@ -1484,37 +1484,55 @@
 
 (defun object-named (name) (subpart-named *root* name))
 
-;; Signal goes to KMP error?
+(defun explode-string (string delim)
+  ;; so it can handle a symbol
+  (setq string (string string))
+  (loop for last-pos = 0 then (1+ next-pos)
+        for next-pos = (position delim string :start last-pos)
+        collect (subseq string last-pos next-pos)
+      until (null next-pos)))
+
+(defmethod explode ((thing symbol) delimeter)
+  (loop for string in (explode-string thing delimeter)
+      collect (intern string)))
+
+(defmethod explode ((thing list) delimeter)
+  (if (logic-variable-maker-p thing)
+      (destructuring-bind (first . rest) (explode (logic-variable-maker-name thing) delimeter)
+        (list* (ji:make-logic-variable-maker first) rest))
+    thing))
+
 (defun follow-path (path &optional (fetch-value t) (error-if-bad-path t))
-  (if (null path)
-      *root*
-    (multiple-value-bind (initial-object list-of-keys)
-	(if (symbolp (car path))
-	    (values *root* path)
-	  (values (car path) (cdr path)))
-      (loop for keys on list-of-keys
-	  for key = (first keys)
-	  for current-object = initial-object then next-object
-	  until (null (cdr keys))
-	  for next-object = (or (subpart-named current-object key)
-				(and (member key (all-slot-names current-object))
-				     (funcall key current-object)))
-	  when (and error-if-bad-path (null next-object))
-	  do (error 'bad-path
-		    :remaining-path keys
-		    :whole-path path
-		    :first-bad-token key
-		    :current-object current-object)
-	  finally (return
-		    (cond ((subpart-named current-object key))
-			  ((member key (all-slot-names current-object))
-			   (funcall key current-object fetch-value))
-			  ((null error-if-bad-path) nil)
-			  (t (error 'bad-path
-				    :remaining-path keys
-				    :whole-path path
-				    :first-bad-token key
-				    :current-object current-object))))))))
+  (cond
+   ((null path) *root*)
+   (t (setq path (explode path #\.))
+      (multiple-value-bind (initial-object list-of-keys)
+          (if (symbolp (car path))
+              (values *root* path)
+            (values (car path) (cdr path)))
+        (loop for keys on list-of-keys
+            for key = (first keys)
+            for current-object = initial-object then next-object
+            until (null (cdr keys))
+            for next-object = (or (subpart-named current-object key)
+                                  (and (member key (all-slot-names current-object))
+                                       (funcall key current-object)))
+            when (and error-if-bad-path (null next-object))
+            do (error 'bad-path
+                      :remaining-path keys
+                      :whole-path path
+                      :first-bad-token key
+                      :current-object current-object)
+            finally (return
+                      (cond ((subpart-named current-object key))
+                            ((member key (all-slot-names current-object))
+                             (funcall key current-object fetch-value))
+                            ((null error-if-bad-path) nil)
+                            (t (error 'bad-path
+                                      :remaining-path keys
+                                      :whole-path path
+                                      :first-bad-token key
+                                      :current-object current-object)))))))))
 
 ;;; for internal use only - always returns a slot
 
