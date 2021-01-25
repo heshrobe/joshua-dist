@@ -1502,10 +1502,11 @@
         (list* (ji:make-logic-variable-maker first) rest))
     thing))
 
-(defun follow-path (path &optional (fetch-value t) (error-if-bad-path t))
+(defun follow-path (path &optional (fetch-value t) (error-if-bad-path t) (explode-dot t))
   (cond
    ((null path) *root*)
-   (t (setq path (explode path #\.))
+   ((typep path 'basic-slot) (if fetch-value (slot-current-value path) path))
+   (t (when (and (null (rest path)) explode-dot) (setq path (explode (first path) #\.)))
       (multiple-value-bind (initial-object list-of-keys)
           (if (symbolp (car path))
               (values *root* path)

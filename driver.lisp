@@ -131,7 +131,7 @@
   (when apps
     (if-there start-interface
               (when compile
-                (compie-system 'start-interface :recompile recompile))
+                (compile-system 'start-interface :recompile recompile))
               (load-system 'start-interface))
     (if-there natsoft
 	      (when compile
