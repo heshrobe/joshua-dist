@@ -1575,7 +1575,8 @@
 ;;; This is what should be used by the ask-data method for value-of predicates
 (defun follow-path-to-slot* (path &optional continuation (error-if-bad-path t))
   (if (typep path 'basic-slot)
-      path
+      ;; call the continuation on the slot
+      (funcall continuation path)
       (labels
 	  ((do-one-more (current-object list-of-keys)
 	     (let ((key (pop list-of-keys)))
@@ -1869,29 +1870,31 @@
 (define-predicate-method (ask-data slot-value-mixin) (truth-value continuation)
   ;; (declare (ignore truth-value))
   (with-statement-destructured (slot-in-query value-in-query) self
-    (if (null truth-value)
-	;; In this case the caller is asking for all possible answers regardess of truth-value
-	;; that match the query.  So first of all get to the slot or if the path ends at a part
-	;; then the object
-	(follow-path-to-slot* slot-in-query
-		  #'(lambda (thing)
-		      (typecase thing
-			(basic-slot
-			 ;; if a slot then map over all possible values in the slot
-			 ;; (not the current value)
-			 (map-over-all-values thing self continuation value-in-query))
-			;; This happens if the path resolves to a sub-part of the object
-			;; rather than a slot of the object
-			(basic-object
-			 ;; There's nothing more to do at this point other than to
-			 ;; invoke the caller's continuation
-			 (stack-let ((backward-support `(,self ,+true+  ,(basic-object-part-predication thing)
-							       (ask-data ,(part-of-predicate-for-object-type thing))
-							       ,thing)))
-			   (funcall continuation backward-support))
-			 )))
-		  nil)
-      (map-over-values my-slot self continuation value-in-query))))
+    (cond
+     ((null truth-value)
+      ;; In this case the caller is asking for all possible answers regardess of truth-value
+      ;; that match the query.  So first of all get to the slot or if the path ends at a part
+      ;; then the object
+      (follow-path-to-slot* slot-in-query
+                            #'(lambda (thing)
+                                (typecase thing
+                                  (basic-slot
+                                   ;; if a slot then map over all possible values in the slot
+                                   ;; (not the current value)
+                                   (map-over-all-values thing self continuation value-in-query))
+                                  ;; This happens if the path resolves to a sub-part of the object
+                                  ;; rather than a slot of the object
+                                  (basic-object
+                                   ;; There's nothing more to do at this point other than to
+                                   ;; invoke the caller's continuation
+                                   (stack-let ((backward-support `(,self ,+true+  ,(basic-object-part-predication thing)
+                                                                         (ask-data ,(part-of-predicate-for-object-type thing))
+                                                                         ,thing)))
+                                     (funcall continuation backward-support))
+                                   )))
+                            t))
+     (t
+      (map-over-values my-slot self continuation value-in-query)))))
 
 (define-predicate-method (map-over-backward-rule-triggers slot-value-mixin) (continuation)
   (map-over-slot-backward-rule-triggers my-slot continuation))

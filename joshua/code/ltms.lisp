@@ -783,13 +783,19 @@
 
 (defun pick-and-unjustify-a-supporter (support clause originator &optional condition-builder)
   ;; signal a condition with enough information to help anybody
-  (loop with premises and non-premises
+  (loop with premises and non-premises and assumptions
       for unit-clause in support
       if (member (clause-name unit-clause) '(:premise nogood))
       do (push unit-clause premises)
       else unless (assumption-clause-dont-use-me unit-clause)
       do (push unit-clause non-premises)
+         (when (and (is-unit-clause unit-clause) (eql (clause-name unit-clause) :assumption))
+           (push unit-clause assumptions))
       finally
+        ;; If the only non-premise is an assumption
+        ;; the override it.  Should this really be automatic?
+        (if (null (rest assumptions))
+            (remove-justification (first assumptions))
         (with-ltms-queuing
 	    (build-nogood support)
           (restart-case
@@ -809,7 +815,7 @@
 		  (lambda ()
 		    (ji::contradiction-restart-interactively-unjustify-subset
 		     premises non-premises))
-	      (ji::contradiction-restart-unjustify-subset predications))))))
+	      (ji::contradiction-restart-unjustify-subset predications)))))))
 
 (defun build-nogood (unit-clauses)
   (loop for clause in unit-clauses
