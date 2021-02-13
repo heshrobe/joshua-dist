@@ -455,12 +455,15 @@
 	   ,body-code
 	   ,trigger-code
 	   ,@subsidiary-functions
-	   (funcall (get ',rule-name 'install-triggers))
-	   ;; register the name
+           ;; register the name.  Do this before installing the triggers
+           ;; so that the rule-debug-info is only set up after the rule
+           ;; is registered.  This guarantees that clear will be able
+           ;; to find the rule-debug-info even if there's an error
+           ;; during rule installation
 	   (pushnew ',rule-name *forward-rules*)
+	   (funcall (get ',rule-name 'install-triggers))
 	   ;; return the name
 	   ',rule-name)))))
-
 
 ;;;
 ;;; Rule compilation for backward chaining.  The actions must be consed on the stack if
@@ -479,9 +482,9 @@
 		;; put body first, 'cause it's usually what we're interested in looking at.
 		,body-code
 		,trigger-code
-		(funcall (get ',rule-name 'install-triggers))
-		;; register the name
+		;; register the name -- see comment above for forward rules
 		(pushnew ',rule-name *backward-rules*)
+		(funcall (get ',rule-name 'install-triggers))
 		;; return the name
 		',rule-name)))))
 
