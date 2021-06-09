@@ -120,7 +120,7 @@
   (when compile
     (if-there ideal
      (compile-system 'ideal :recompile recompile)))
-  (load-system 'ideal)
+  (if-there (load-system 'ideal))
   ;; xml-parser
   (if-there xml-parser
 	      (when compile
