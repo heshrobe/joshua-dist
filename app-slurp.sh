@@ -39,4 +39,31 @@ if test -e "$FILE";
 	cd ~/Research-Projects/natural-software/
 	git pull
 else "Natural Software Directory doesn't exist.  Skipping"
+fi
+
+echo "Doing Start Interface"
+FILE=~/Research-Projects/start-interface
+if test -e "$FILE";
+   then echo "Pulling Start Interface"
+	cd ~/Research-Projects/start-interface/
+	git pull
+else "Start Interface Directory doesn't exist.  Skipping"
+     fi
+
+echo "Doing Recipes"
+FILE=~/Research-Projects/recipes
+if test -e "$FILE";
+   then echo "Pulling Recipes"
+	cd ~/Research-Projects/recipes/
+	git pull
+else "Recipes Directory doesn't exist.  Skipping"
+     fi
+
+echo "Doing Guide"
+FILE=~/Research-Projects/guide
+if test -e "$FILE";
+   then echo "Pulling Guide"
+	cd ~/Research-Projects/ASIST/guide/
+	git pull
+else "Guide Directory doesn't exist.  Skipping"
      fi

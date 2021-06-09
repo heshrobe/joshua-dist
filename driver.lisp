@@ -89,6 +89,10 @@
    (load-if-there Control-System "~/Research-Projects/control-system/defsystem.lisp")
   ;; Attack Planner
    (load-if-there Attack-Planner "~/Research-Projects/attack-planning/code/defsystem.lisp")
+   ;; Recipes
+   (load-if-there Recipes "~/Research-Projects/recipes/code/defsystem.lisp")
+   ;; Guide
+   (load-if-there Guide "~/Research-Projects/ASIST/guide/defsystem.lisp")
    )
 
 
@@ -133,6 +137,14 @@
               (when compile
                 (compile-system 'start-interface :recompile recompile))
               (load-system 'start-interface))
+    (if-there recipes
+              (when compile
+                (compile-system 'recipes :recompile recompile))
+              (load-system 'recipes))
+    (if-there guide
+              (when compile
+                (compile-system 'guide :recompile recompile))
+              (load-system 'guide))
     (if-there natsoft
 	      (when compile
 		(compile-system 'natsoft :recompile recompile))
