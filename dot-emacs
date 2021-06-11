@@ -11,6 +11,125 @@
 ;; ~/Library/Preferences/Aquamacs Emacs/Preferences
 ;; _____________________________________________________________________________
 
+;;; Stuff borrowed from the MERS configuration
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+
+(require 'package)
+
+;; MELPA is probably the most complete package repo out there for
+;; emacs. Add it to the list of repos for package.el to use. This adds
+;; the "unstable" MELPA repo. In practice it tends to be pretty
+;; stable, but since it builds from a git branch it's very possible
+;; for someone to accidentally push broken code. If you want to be
+;; extra careful (but miss out on new features), add stable.melpa.org
+;; instead.
+
+(add-to-list 'package-archives
+             '("melpa" . "https://melpa.org/packages/"))
+
+;; Init package.el
+(package-initialize)
+
+;; If we haven't downloaded any package listing before (i.e., this is
+;; the first time we've started Emacs), get the latest package
+;; listing.
+
+(when (not package-archive-contents)
+  (package-refresh-contents))
+
+;; Now, make sure use-package.el is installed.
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+
+(use-package diminish
+  :ensure t)
+
+;; For our OSX friends, get sane PATH values.
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+  (when (memq window-system '(mac ns))
+    (exec-path-from-shell-initialize)))
+
+;; which-key.el displays a help buffer showing what keys you can press
+;; after a short delay.
+(use-package which-key
+  :ensure t
+  :diminish which-key-mode
+  :config
+  (which-key-mode))
+
+;; Highlight common "todo" tokens in comment strings.
+(use-package hl-todo
+  :ensure t
+  :config
+  (setq hl-todo-activate-in-modes '(prog-mode))
+  (global-hl-todo-mode 1))
+
+(use-package form-feed
+  :ensure t
+  :diminish form-feed-mode
+  :commands (form-feed-mode)
+  :init (progn (add-hook 'fi:common-lisp-mode-hook 'form-feed-mode)
+               (add-hook 'common-lisp-mode-hook 'form-feed-mode)
+               (add-hook 'lisp-mode-hook 'form-feed-mode)
+               (add-hook 'prog-mode-hook 'form-feed-mode)))
+
+(use-package company
+  :ensure t
+  :demand t
+  :diminish company-mode
+  :config
+  (global-company-mode)
+  :bind (:map company-active-map
+              ("C-n" . company-select-next)
+              ("C-p" . company-select-previous)
+              ("C-d" . company-show-doc-buffer)
+              ("M-." . company-show-location)))
+
+
+;; ;; Always show column numbers on the modeline.
+(setq column-number-mode t)
+
+;; Never, ever indent with tabs.
+(setq-default indent-tabs-mode nil)
+
+;; Put the scroll bars on the right.
+(set-scroll-bar-mode 'right)
+
+(use-package ansi-color
+  :ensure t)
+
+
+;; Provides highlighting of control sequences in format strings for
+;; some common forms.
+(use-package cl-format
+  :ensure t
+  :config
+  (defconst cl-fontify-defforms-alist
+    '((format . 2)
+      (formatter . 1)
+      (error . 1)
+      (signal . 1)
+      (warn . 1)
+      (cerror . 1)
+      (assert . 3)
+      (invalid-method-error . 2)
+      (method-combination-error . 2)
+      (break . 1)
+      (with-simple-restart . 2)
+      (y-or-n-p . 1)))
+  (defun fontify-control-strings ()
+    (set
+     (make-local-variable 'cl-format-fontify-defforms-alist)
+     (append cl-format-fontify-defforms-alist
+             cl-fontify-defforms-alist))
+    (cl-format-font-lock-mode 1))
+  (add-hook 'lisp-mode-hook 'fontify-control-strings))
+
 
 
 (setq x-select-enable-clipboard 't)
