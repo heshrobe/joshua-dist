@@ -952,8 +952,8 @@ Joshua readtable and the JI, JU, and Joshua packages. "
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defmacro with-keywords-removed ((new-list list keywords-to-remove) &body body)
-    `(let ((,new-list (remove-keywords ,list ,keywords-to-remove)))
+  (defmacro with-keywords-removed ((new-list list &rest keywords-to-remove) &body body)
+    `(let ((,new-list (remove-keywords ,list '(,@keywords-to-remove))))
        ,@body))
 
   (defun remove-keywords (list keywords)
