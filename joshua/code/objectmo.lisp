@@ -116,12 +116,14 @@
 (defgeneric slot-is-set-valued (slot)
   (:documentation "Does this slot store multiple values?"))
 
-(defclass prototype-slot ()
+(defclass trigger-holding-mixin ()
+  ((forward-triggers :initform nil :accessor slot-forward-triggers) 
+   (backward-triggers :initform nil :accessor slot-backward-triggers)
+   (backward-question-triggers :initform nil :accessor slot-backward-question-triggers)))
+
+(defclass prototype-slot (trigger-holding-mixin)
     ((name :initarg :name)
-     (my-object :initarg :my-object :accessor slot-my-object)
-     (forward-triggers :initform nil :accessor slot-forward-triggers)
-     (backward-triggers :initform nil :accessor slot-backward-triggers)
-     (backward-question-triggers :initform nil :accessor slot-backward-question-triggers))
+     (my-object :initarg :my-object :accessor slot-my-object))
   )
 
 (defmacro make-prototype-slot (name object)
@@ -2211,6 +2213,57 @@
 	   ;; nothing in the index changed
       return (values triggers nil rete-node)
       finally (return (values (cons new-Rete-node triggers) t new-rete-node))))
+
+;;; This is like the method below and should probably replace most of it and be callred by it.
+;;; But for the moment I don't want to break everything.
+(defmethod locate-prototype-slot ((self slot-value-mixin) truth-value continuation context rule-name)
+  (unless (eql truth-value +true+)
+    (error "this rule's pattern ~s has a truth value which isn't +true+" self))
+  (with-statement-destructured (full-path ignore) self
+    (declare (ignore ignore))
+    (destructuring-bind (object &rest path) full-path
+      (let ((type-name (find-object-type-in-trigger-pattern self object context))
+	    (type nil))
+ 	(unless type-name
+	  (error "This rule uses slot-value pattern ~s but does not contain a type pattern" self))
+	(setq type (object-type-named type-name))
+	(unless type
+	  (error "The rule pattern ~s believes that ~s has object-type ~s which isn't defined" self object type-name))
+	(labels ((do-one-type (subtype)
+                   ;; (format t "~&Doing subtype ~a for type ~s for rule ~s pattern ~s" (object-type-name subtype) (object-type-name type) rule-name self)
+                   (let ((typical-instance (cond (*rebuilding-rules-for-type-redefinition*
+                                                  (find-or-create-typical-instance subtype))
+                                                 (t (if (eql subtype type)
+                                                        (find-or-create-typical-instance subtype)
+                                                      (object-type-typical-instance subtype))))))
+                     ;; Make sure there is one.
+                     ;; Necessary because this can get called during the course
+                     ;; of redefining a type.  In that case the type has subtypes
+                     ;; but their typical instances have been killed.
+                     ;; We don't need to push stuff forward to those guys anyhow
+                     ;; since they're about to get built and they'll get this stuff
+                     ;; by pulling it.
+                     (when typical-instance
+                       (do-one-object typical-instance)))
+                   (loop for instance in (object-type-instances subtype)
+                       when (basic-object-typical-instance-of-type? (ultimate-superpart instance))
+                       do (do-one-object instance)))
+                 (do-one-object (object)
+                   ;; (format t "~%Doing object ~a" object)
+                   (let ((real-path (cons object path)))
+                     (let ((slot (handler-bind
+				     ((bad-path
+                                       #'(lambda (condition)
+                                           (declare (ignore condition))
+                                           (unless *im-handling-bad-rule-patterns*
+                                             (format *error-output*
+                                                     "~%While trying to install the ~a pattern~%of the forward rule ~a~%"
+                                                     self rule-name))
+                                           nil)))
+                                   (follow-path-to-slot real-path))))
+                       (funcall continuation slot)))))
+          (declare (dynamic-extent #'do-one-type #'do-one-object))
+          (map-over-subtypes type #'do-one-type))))))
 
 (define-predicate-method (locate-forward-rule-trigger slot-value-mixin) (truth-value continuation context rule-name)
   (unless (eql truth-value +true+)
