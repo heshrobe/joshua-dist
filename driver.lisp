@@ -8,7 +8,7 @@
 #+mcl(require :appleevent-toolkit)
 
 #+(and allegro macosx) (require :climxm)
-#+(and allegro linux (not smp)) (require :climxm)
+#+(and allegro linux (not smp)) (load "/Applications/AllegroCL64.app/Contents/Resources/code/climxm.dylib")(require :climxm)
 #+allegro (require :asdf)
 #+(and allegro microsoft) (require :climnt)
 

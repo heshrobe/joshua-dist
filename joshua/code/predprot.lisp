@@ -79,6 +79,7 @@
     ;;        do it for all lisps.
     #+sbcl
     (when declaration
+      (setq declaration (copy-seq declaration))
       (setf (rest declaration)
 	    (loop for decl in (rest declaration)
 	       for (name) = decl

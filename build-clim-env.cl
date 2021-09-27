@@ -7,6 +7,8 @@
   (proclaim '(optimize (debug 3) (safety 3) (speed 1) (space 1))))
 
 
+(load "/Applications/AllegroCL64.app/Contents/Resources/code/climxm.dylib")
+
 (require :climxm)
 
 (require :xml-rpc)
