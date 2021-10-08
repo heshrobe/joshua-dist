@@ -366,7 +366,7 @@
 
 (defun predication-maker-predicate (form)
   (let ((statement-container (second form)))
-    (if (member (car statement-container) '(quote backquote))
+    (if (member (car statement-container) '(quote backquote #+sbcl sb-int:quasiquote))
 	;; this is the "nice" case of strictly quoted stuff
 	(first (second statement-container))
 	;; it's one of the Messy xr-bq-?? stuff
@@ -982,3 +982,41 @@ Joshua readtable and the JI, JU, and Joshua packages. "
             (t
              (remove-keywords-1 name (member name keywords))))))
   )
+
+
+;;; This assumes that you've done:
+;;; (ql:quickload '(:cl-interpol :rutils))
+;;; and this is an awful hack to get my existing joshua readtable
+;;; to be treated as a named readtable
+#+(and sbcl swank)
+(ql:quickload '(:cl-interpol :rutils))
+
+;; #+(and sbcl swank)
+;; (setf (named-readtables:find-readtable :joshua) ji::*joshua-readtable*)
+
+;;; This is a hack that allows SBCL's xfef to record uses of predications
+;;; at the moment they get recorded as a call.  As I learn more
+;;; I might create a new xref category is that's possible (probably not since
+;;; the compression scheme depends on a constant with a list of all type).
+
+
+#+sbcl
+(sb-int:encapsulate 'sb-c::ir1-convert-global-functoid 'joshua-hack
+                    #'(lambda (orginal-function start next result form fun)
+                        (let ((*macro-form* form))
+                          ;; I need to bind the so that the other guy
+                          ;; can reach into the form.  That info isn't available
+                          ;; easily in the call.
+                          (declare (special *macro-form*))
+                          (funcall orginal-function start next result form fun))))
+
+#+sbcl
+(sb-int:encapsulate 'sb-c::record-macroexpansion 'joshua-hack
+                   #'(lambda (original-function macro-name  block path)
+                       (declare (special *macro-form*))
+                       (cond
+                         ((eql macro-name 'predication-maker)
+                          ;; record it as a call not a macroexpansion
+                          ;; and don't record the expansion of predication-maker
+                          (sb-c::record-call (predication-maker-predicate *macro-form*) block path))
+                         (t (funcall original-function macro-name block path)))))

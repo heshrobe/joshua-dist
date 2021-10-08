@@ -4,13 +4,13 @@
 ;;;> ** (c) Copyright 1989, 1988 Symbolics, Inc.  All rights reserved.
 ;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
 ;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
+;;;>    The software, data, and information contained herein are proprietary
+;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends
+;;;> to keep such software, data, and information confidential and to preserve
+;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant
+;;;> to a written license agreement, and may be used, copied, transmitted, and
 ;;;> stored only in accordance with the terms of such license.
-;;;> 
+;;;>
 ;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
 ;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3653, Symbolics
 ;;;> 3620 (R), Symbolics 3610 (R), Symbolics XL400, Symbolics Common Lisp (R),
@@ -20,12 +20,12 @@
 ;;;> Examiner (R), S-DYNAMICS (R), S-GEOMETRY (R), S-PAINT (R), S-RENDER (R), "Your Next
 ;;;> Step in Computing" (R), Ivory, MacIvory, Symbolics C, Symbolics Pascal, Symbolics Prolog,
 ;;;> Symbolics Fortran, CLOE, Joshua, Concordia, and Statice are trademarks of Symbolics, Inc.
-;;;> 
+;;;>
 ;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer 
+;;;>    Use, duplication, and disclosure by the Government are subject to restrictions
+;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer
 ;;;> Software Clause at FAR 52.227-7013.
-;;;> 
+;;;>
 ;;;>      Symbolics, Inc.
 ;;;>      8 New England Executive Park, East
 ;;;>      Burlington, Massachusetts  01803
@@ -229,13 +229,13 @@
 
 #-(or genera cloe allegro)
 (defmacro with-stack-list ((var &rest elements) &body body)
-  `(let ((,var (list ,.elements)))
+  `(let ((,var (list ,@elements)))
      (declare (dynamic-extent ,var))
      ,@body))
 
 #-(or genera cloe allegro)
 (defmacro with-stack-list* ((var &rest elements) &body body)
-  `(let ((,var (list* ,.elements)))
+  `(let ((,var (list* ,@elements)))
      (declare (dynamic-extent ,var))
      ,@body))
 
