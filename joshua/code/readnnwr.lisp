@@ -859,7 +859,7 @@
   `(let ((*readtable* *joshua-readtable*))
      ,@body))
 
-#+mcclim
+
 (defvar *in-joshua-mode* nil)
 (defun enable-joshua ()
   "This function sets up the joshua readtable and establishes the

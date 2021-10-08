@@ -219,12 +219,12 @@
      "CF-MIXIN" "CF-PREDICATE-MODEL"
      "CERTAINTY-FACTOR"
      "SLOT-DEFINITION-ALLOCATION" "CLASS-SLOTS" "FINALIZE-INHERITANCE" "CLASS-FINALIZED-P" "INTERN-EQL-SPECIALIZER"
-     #+mcclim *in-joshua-mode*
+     "*IN-JOSHUA-MODE*"
     )
   )
 
 
-#+allegro (eval-when (:compile-toplevel :load-toplevel :execute) (require :cltl1))
+#+ALLEGRO (eval-when (:compile-toplevel :load-toplevel :execute) (require :cltl1))
 
 ;;; Note: get-setf-method in cltl1 goes to get-setf-expansion in ansi
 ;;;       define-setf-method               define-setf-expander
