@@ -72,7 +72,7 @@ echo "Doing Guide"
 FILE=~/quicklisp/local-projects/mcclim-additions
 if test -e "$FILE";
    then echo "Pulling Guide"
-	cd ~/quicklisp/local-projects/mcclim-additions/b
+	cd ~/quicklisp/local-projects/mcclim-additions/
 	git pull
 else "MccClim Additions doesn't exist.  Skipping"
      fi
