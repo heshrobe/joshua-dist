@@ -67,3 +67,12 @@ if test -e "$FILE";
 	git pull
 else "Guide Directory doesn't exist.  Skipping"
      fi
+
+echo "Doing Guide"
+FILE=~/quicklisp/local-projects/mcclim-additions
+if test -e "$FILE";
+   then echo "Pulling Guide"
+	cd ~/quicklisp/local-projects/mcclim-additions/b
+	git pull
+else "MccClim Additions doesn't exist.  Skipping"
+     fi

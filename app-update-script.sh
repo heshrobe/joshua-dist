@@ -93,3 +93,15 @@ git push mit
 else echo "\nGuide not present"
 fi
 
+FILE=~/quicklisp/local-projects/mcclim-additions
+if test -e $FILE; then
+echo "\nDoing McClim Additions\n"
+cd ~/quicklisp/local-projects/mcclim-additions/"
+git commit -a -m "Updating all apps"
+echo "\nPushing to Github.com"
+git push origin master
+echo "\nPushing to MIT Github"
+git push mit master
+else echo "\nMcClim Additions not present"
+fi
+
