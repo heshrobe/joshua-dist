@@ -19,6 +19,10 @@
   :description "Joshua Inference System"
   :maintainer "Howie Shrobe"
   :pathname "."
+  ;; These two are necessary to support the named-readtable
+  ;; feature.  They're probably innocuous even in a bare
+  ;; bones environnent
+  :depends-on (:cl-interpol :rutils) 
   :components (
 	       (:file "packaged")
 	       (:file "asdf-support" :depends-on ("packaged"))
@@ -26,8 +30,8 @@
 	       (:file "mapfvars" :depends-on ("borrowin"))
 	       (:file "mapforms" :depends-on ("mapfvars"))
 	       (:file "readnnwr" :depends-on ("mapforms"))
-               #+mcclim
-               (:file "drei-interface" :depends-on ("readnnwr"))
+               ;; Moved to joshua-developer
+               ;; (:file "drei-interface" :depends-on ("readnnwr"))
 	       (:file "preddefs" :depends-on ("readnnwr"))
 	       (:file "predicat" :depends-on ("preddefs"))
 	       (:file "unificat" :depends-on ("predicat"))

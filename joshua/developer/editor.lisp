@@ -5,12 +5,12 @@
 ;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
 ;;;>
 ;;;>    The software, data, and information contained herein are proprietary to,
-;;;> and comprise valuable trade secrets of, Symbolics, Inc., which intends 
+;;;> and comprise valuable trade secrets of, Symbolics, Inc., which intends
 ;;;> to keep such software, data, and information confidential and to preserve them
-;;;> as trade secrets.  They are given in confidence by Symbolics pursuant 
+;;;> as trade secrets.  They are given in confidence by Symbolics pursuant
 ;;;> to a written license agreement, and may be used, copied, transmitted, and stored
 ;;;> only in accordance with the terms of such license.
-;;;> 
+;;;>
 ;;;> Symbolics, Symbolics 3600, Symbolics 3675, Symbolics 3630, Symbolics 3640,
 ;;;> Symbolics 3645, Symbolics 3650, Symbolics 3653, Symbolics 3620, Symbolics 3610,
 ;;;> Zetalisp, Open Genera, Virtual Lisp Machine, VLM, Wheels, Dynamic Windows,
@@ -21,19 +21,19 @@
 ;;;> Symbolics Prolog, Symbolics Fortran, CLOE, CLOE Application Generator,
 ;;;> CLOE Developer, CLOE Runtime, Common Lisp Developer, Symbolics Concordia,
 ;;;> Joshua, Statice, and Minima are trademarks of Symbolics, Inc.
-;;;> 
+;;;>
 ;;;> Symbolics 3670, Symbolics Common Lisp, Symbolics-Lisp, and Genera are registered
 ;;;> trademarks of Symbolics, Inc.
 ;;;>
 ;;;> GOVERNMENT PURPOSE RIGHTS LEGEND
-;;;> 
+;;;>
 ;;;>      Contract No.: various
 ;;;>      Contractor Name: Symbolics, Inc.
 ;;;>      Contractor Address: c/o Ropes & Gray
 ;;;> 			 One International Place
 ;;;> 			 Boston, Massachusetts 02110-2624
 ;;;>      Expiration Date: 2/27/2018
-;;;>      
+;;;>
 ;;;> The Government's rights to use, modify, reproduce, release, perform, display or
 ;;;> disclose this software are restricted by paragraph (b)(2) of the "Rights in
 ;;;> Noncommercial Computer Software and Noncommercial Computer Software Documentation"
@@ -42,7 +42,7 @@
 ;;;> marked with this legend must also reproduce the markings.  Questions regarding
 ;;;> the Government's rights may be referred to the AS&T Contracts Office of the
 ;;;> National Reconnaissance Office, Chantilly, Virginia 20151-1715.
-;;;> 
+;;;>
 ;;;>      Symbolics, Inc.
 ;;;>      c/o Ropes & Gray
 ;;;>      One International Place
@@ -53,13 +53,13 @@
 ;;;>
 ;;; Created 5/04/89 11:26:45 by JGA running on JUBJUB at SCRC.
 
-;;; Editor support stuff for Joshua.  It's necessaryD,#TD1PsT[Begin using 006 escapes](1 0 (NIL 0) (NIL :BOLD NIL) "CPTFONTCB") 0so that buffers can
-;;; be hacked with the right readtable, so that [] and {} match,1 0blink,
+;;; Editor support stuff for Joshua.  It's necessary so that buffers can
+;;; be hacked with the right readtable, so that [] and {} match, blink,
 ;;; and can be c-m-F'd over.  Also a zwei:Joshua-mode-hook, for those
 ;;; who want to set it to electric-style-lock, or something similar.
 ;;;
-;;; Unlike earlier versions, this doesn't attempt any ambitious package-defaulting, 
-;;; automatic code-fonting, etc.  We assume people will use Electric Style-Lock mode 
+;;; Unlike earlier versions, this doesn't attempt any ambitious package-defaulting,
+;;; automatic code-fonting, etc.  We assume people will use Electric Style-Lock mode
 ;;; as a default minor mode if that's what they want.  (Should document how to do that.)
 ;;; Also, we provide a command m-X Create Initial Joshua Attribute List that
 ;;; puts in reasonable defaults.
@@ -105,7 +105,7 @@
 ;;;
 
 (defparameter *joshua-mode-list-syntax-table* nil	;initialized below
-  "List syntax table for Joshua mode in the editor.")	
+  "List syntax table for Joshua mode in the editor.")
 
 (defparameter *joshua-mode-word-syntax-table* nil	;initialized below
   "word syntax table for Joshua mode in the editor.")
@@ -209,7 +209,7 @@
   ;; don't blink anything if you're at the beginning of the interval
   ;; this fixes a long-standing bug where (forward-char bp -1) sometimes returned nil!
   (unless (zwei:bp-= bp (zwei:interval-first-bp zwei:*interval*))
-    ;; this is sort of like using a cannon against a flea.  
+    ;; this is sort of like using a cannon against a flea.
     (cond ((and (= (zwei:list-syntax (zwei:bp-char-before bp)) zwei:list-double-quote)
 		(scl:neq zwei:*interval* (zwei:window-interval zwei:*mini-buffer-window*))
 		(multiple-value-bind (in-string slashified in-comment)
@@ -264,7 +264,7 @@
 	    ;; it's something else.  let the system handle it.
 	    (let ((bp-value (scl:continue-whopper bp start-limit-bp end-limit-bp)))
 	      ;; bp-value is bp AT, not after the corresponding opening delimiter.
-	      (cond ((null bp-value)               
+	      (cond ((null bp-value)
 		     ;; system doesn't know either, so do nothing.
 		     nil)
 		    ((or (matching-joshua-delimiter-p (zwei:bp-char-before bp) (zwei:bp-char bp-value))
@@ -275,7 +275,7 @@
 			 bp-value
 			 ;; blink switch is off
 			 nil))
-		    ;; the delimiters do not match. 
+		    ;; the delimiters do not match.
 		    ((not (zwei:bp-= bp (scl:send zwei:*interval* :get 'matching-char-to-blink-error-bp)))
 		     ;; Furthermore, this is not the same as the last such
 		     ;; error.  So note this occurence...
@@ -297,7 +297,7 @@
 ;;;		 ;; get syntactic context of char AT bp
 ;;;		 (zwei:lisp-bp-syntactic-context bp)
 ;;;	       in-comment))
-;;;	;; if comment blink switch is on and 
+;;;	;; if comment blink switch is on and
 ;;;	;; if we're not in the minubuffer window, and
 ;;;	;; char AT bp is in a comment, then blink leftmost ; in this line.
 ;;;	(zwei:forward-char (zwei:beg-line bp) (zwei:find-comment-start (zwei:bp-line bp))))
@@ -375,7 +375,7 @@
 (zwei:defcom com-create-initial-joshua-attribute-list "create an initial attribute list for Joshua buffers" ()
   (let ((start-bp (zwei:copy-bp (zwei:interval-first-bp zwei:*interval*))))
     ;; start-bp is now the bp of the top of the file
-    (zwei:insert-moving start-bp 
+    (zwei:insert-moving start-bp
 			;; insert the first line of the file
 			(format nil
 				"~&;;; -*- Mode: Joshua; Package: ~A; Syntax: Joshua~@[; Vsp: ~D~] -*-~%"
@@ -400,4 +400,3 @@
 (zwei:set-comtab zwei:*zmacs-comtab*
 		 nil
 		 (zwei:make-command-alist '(com-create-initial-joshua-attribute-list com-joshua-mode)))
-
