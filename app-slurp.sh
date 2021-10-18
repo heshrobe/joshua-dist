@@ -60,7 +60,7 @@ else "Recipes Directory doesn't exist.  Skipping"
      fi
 
 echo "Doing Guide"
-FILE=~/Research-Projects/guide
+FILE=~/Research-Projects/ASIST/guide
 if test -e "$FILE";
    then echo "Pulling Guide"
 	cd ~/Research-Projects/ASIST/guide/

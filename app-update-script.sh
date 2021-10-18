@@ -81,7 +81,7 @@ git push mit
 else echo "\nRecipes not present"
 fi
 
-FILE=~/Research-Projects/guide
+FILE=~/Research-Projects/ASIST/guide
 if test -e $FILE; then
 echo "\nDoing Guide\n"
 cd ~/Research-Projects/ASIST/guide/
