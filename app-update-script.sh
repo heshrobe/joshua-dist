@@ -96,7 +96,7 @@ fi
 FILE=~/quicklisp/local-projects/mcclim-additions
 if test -e $FILE; then
 echo "\nDoing McClim Additions\n"
-cd ~/quicklisp/local-projects/mcclim-additions/"
+cd ~/quicklisp/local-projects/mcclim-additions/
 git commit -a -m "Updating all apps"
 echo "\nPushing to Github.com"
 git push origin master
