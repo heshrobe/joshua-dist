@@ -26,7 +26,7 @@ echo "\nDoing Attack Planner\n"
 cd ~/Research-Projects/attack-planning/
 git commit -a -m "Updating all apps"
 echo "\nPushing to Github.com"
-git push origin
+git push origin master
 echo "\nPushing to MIT Github"
 git push mit master
 else echo "\nAttack Planner not present"
