@@ -22,7 +22,7 @@
   ;; These two are necessary to support the named-readtable
   ;; feature.  They're probably innocuous even in a bare
   ;; bones environnent
-  :depends-on (:cl-interpol :rutils) 
+  ;; :depends-on (:cl-interpol :rutils) 
   :components (
 	       (:file "packaged")
 	       (:file "asdf-support" :depends-on ("packaged"))
