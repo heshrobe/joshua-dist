@@ -30,8 +30,6 @@
 	       (:file "mapfvars" :depends-on ("borrowin"))
 	       (:file "mapforms" :depends-on ("mapfvars"))
 	       (:file "readnnwr" :depends-on ("mapforms"))
-               ;; Moved to joshua-developer
-               ;; (:file "drei-interface" :depends-on ("readnnwr"))
 	       (:file "preddefs" :depends-on ("readnnwr"))
 	       (:file "predicat" :depends-on ("preddefs"))
 	       (:file "unificat" :depends-on ("predicat"))
