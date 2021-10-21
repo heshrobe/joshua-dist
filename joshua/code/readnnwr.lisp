@@ -988,8 +988,8 @@ Joshua readtable and the JI, JU, and Joshua packages. "
 ;;; (ql:quickload '(:cl-interpol :rutils))
 ;;; and this is an awful hack to get my existing joshua readtable
 ;;; to be treated as a named readtable
-#+(and sbcl swank)
-(ql:quickload '(:cl-interpol :rutils))
+;;; #+(and sbcl swank)
+;;; (ql:quickload '(:cl-interpol :rutils))
 
 ;; #+(and sbcl swank)
 ;; (setf (named-readtables:find-readtable :joshua) ji::*joshua-readtable*)
