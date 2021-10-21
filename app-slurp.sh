@@ -2,7 +2,7 @@
 
 echo "Doing Joshua"
 cd ~/joshua-dist/
-git pull mit mastert
+git pull mit master
 
 echo "Doing AWDRAT"
 FILE=~/Research-Projects/awdrat
