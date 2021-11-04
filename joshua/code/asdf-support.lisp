@@ -37,4 +37,21 @@
   ;; here we just need to make sure it's using the right readtable
   (let ((*readtable* (find-joshua-readtable)))
     (call-next-method)))
-  
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; I'm not sure where to put this really
+;;; It's really an extension to asdf that's independent of joshua
+;;; But for the moment the only place I really care about it is in
+;;; Aplan which I broke down into subsystems
+;;; The problem is that my patches to clim-listener uses
+;;; this to determine all the files in a system and joshua
+;;; need not be loaded before clim-listener
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export (intern (string-upcase "subsystem") 'asdf/system) 'asdf/system))
+
+(defclass asdf/system:subsystem (asdf:system) ())
