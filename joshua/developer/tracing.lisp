@@ -1718,6 +1718,7 @@ Allegro also has a facility called fwrapper which is more general, but not avail
 							       ("Selectively" :value nil
 								:documentation "Specify which rules to trace")))
 					  :prompt "Trace backward rules"
+                                          :view clim:+radio-box-view+
 					  :default trace-everything-p
 					  :query-identifier :trace-all-backward-rules-p
 					  :stream stream))

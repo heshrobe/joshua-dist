@@ -137,10 +137,17 @@
 
 (defvar *predication-delimiters* '(#\]))
 
+#+mcclim
+(defun mcclim-peek-char (stream)
+  (loop for gesture = (clim:read-gesture :stream stream)
+        until (characterp gesture)
+        finally (clim:unread-gesture gesture :stream stream)
+                (return gesture)))
+
 (clim:define-presentation-method clim:accept ((type predication) stream (view clim:textual-view) &key default)
-  (let ((first-char (clim:stream-peek-char stream)))
+  (let ((first-char (#-mcclim clim:stream-peek-char #+mcclim mcclim-peek-char stream)))
     (when (member first-char '(#\! #\? #\x) :test #'char-equal)
-      (clim:stream-read-char stream))
+      (clim:stream-read-char stream)))
     (let* ((*readtable* *joshua-readtable*)
            (form (clim:accept '((clim:form) :auto-activate t)
                               :history 'predication
@@ -900,17 +907,17 @@
                           ((pattern '(clim:member-sequence (:all :selective))
 	                            :prompt "matching what"
 	                            :default :all
-	                            :documentation "Show predications in the database matching this pattern.")
+	                            #-mcclim :documentation #-mcclim "Show predications in the database matching this pattern.")
                            (other-truth-value-too-p 'clim:boolean
 			                            :prompt "opposite truth-value too?"
 			                            :default t
-			                            :documentation "Show patterns with both truth-values.")
+			                            #-mcclim :documentation #-mcclim "Show patterns with both truth-values.")
                            &key
                            (show-partially-failing-models 'clim:boolean
 				                          :prompt "show models which couldn't completely handle the query"
 				                          :mentioned-default t
 				                          :default nil
-				                          :documentation "Show a list of those models which encountered trouble answering the query"))
+				                          #-mcclim :documentation #-mcclim "Show a list of those models which encountered trouble answering the query"))
   (let ((stream *standard-output*))
     (when (eql pattern :selective)
       (setq pattern (clim:accept 'predication :stream stream :prompt "Matching what pattern?")))
@@ -1002,25 +1009,25 @@
                                               :extra-items '(("All" :value :all :documentation "Enable all types of tracing"))
                                               :first-word-of-doc-strings "Enable"))
 		      :prompt "Type of tracing"
-		      :documentation "What kind of tracing to Enable")
+		      #-mcclim :documentation #-mcclim "What kind of tracing to Enable")
      &key
      (menu 'clim:boolean
 	   :default nil
 	   :mentioned-default t
-	   :documentation "Use the menu to set detailed tracing options")
+	   #-mcclim :documentation #-mcclim "Use the menu to set detailed tracing options")
      (trace-events `((clim:subset-alist ,(get-events-alist *joshua-debugger* Type-of-tracing)))
 		   :default (get-current-events *joshua-debugger* :trace Type-of-tracing)
 		   :prompt "Trace which events"
 		   :when (not (eq Type-of-tracing :all))
-		   :documentation "What events to output trace messages for")
+		   #-mcclim :documentation #-mcclim "What events to output trace messages for")
      (step-events `((clim:subset-alist ,(get-events-alist *joshua-debugger* Type-of-tracing)))
 		  :prompt "Step at which events"
 		  :when (not (eq Type-of-tracing :all))
 		  :default (get-current-events *joshua-debugger* :step Type-of-tracing)
-		  :documentation "What events to stop and interact at"))
+		  #-mcclim :documentation #-mcclim "What events to stop and interact at"))
    (if (or (eq Type-of-tracing :all) menu)
        (set-joshua-trace-conditions *joshua-debugger* :tracer Type-of-tracing :menu menu
-				    :enable-p t)
+				    :enable-p t :own-window-p t)
        (set-joshua-trace-conditions *joshua-debugger* :tracer Type-of-tracing :menu menu
 				    :enable-p t :trace-events trace-events
 				    :step-events step-events))
@@ -1040,7 +1047,7 @@
 			    :first-word-of-doc-strings "Disable"))
 		      :prompt "Type of tracing"
 		      :default :all
-		      :documentation "What kind of tracing to disable"))
+		      #-mcclim :documentation #-mcclim "What kind of tracing to disable"))
    (set-joshua-trace-conditions *joshua-debugger* :tracer Type-of-tracing :menu nil
 				:enable-p nil)
    (show-joshua-tracing *joshua-debugger* Type-of-tracing))
@@ -1057,12 +1064,12 @@
 			                              :documentation
 			                              "Set the tracing options for a particular tracing event")))
 	                        :prompt "Type of object to trace (or untrace)"
-	                        :default nil
-	                        :documentation "What type of object to trace, a rule, a predication, or a Predicate"
+	                        :default 'rule
+	                        #-mcclim :documentation #-mcclim "What type of object to trace, a rule, a predication, or a Predicate"
 	                        )
                           (object type
 	                          :prompt "object to trace"
-	                          :documentation "What object to trace")
+	                           #-mcclim :documentation  #-mcclim "What object to trace")
                           &key (tracing-options
 	                        `((clim:member-alist ,(append
 			                               (collect-options-for-object *joshua-debugger* object)
@@ -1071,7 +1078,7 @@
 	                          :highlighting-test ,#'equal)
 	                        :default :menu
                                 :prompt "tracing options"
-	                        :documentation "What kind of tracing to do"))
+	                        #-mcclim :documentation  #-mcclim "What kind of tracing to do"))
   ;;; Tracing-options will return a list containing the generic and the instance to
   ;;; apply it to to get the desired tracing-options
   (declare (ignore type))

@@ -4,13 +4,13 @@
 ;;;> ** (c) Copyright 1989, 1988 Symbolics, Inc.  All rights reserved.
 ;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
 ;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
+;;;>    The software, data, and information contained herein are proprietary
+;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends
+;;;> to keep such software, data, and information confidential and to preserve
+;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant
+;;;> to a written license agreement, and may be used, copied, transmitted, and
 ;;;> stored only in accordance with the terms of such license.
-;;;> 
+;;;>
 ;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
 ;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3653, Symbolics
 ;;;> 3620 (R), Symbolics 3610 (R), Symbolics XL400, Symbolics Common Lisp (R),
@@ -20,12 +20,12 @@
 ;;;> Examiner (R), S-DYNAMICS (R), S-GEOMETRY (R), S-PAINT (R), S-RENDER (R), "Your Next
 ;;;> Step in Computing" (R), Ivory, MacIvory, Symbolics C, Symbolics Pascal, Symbolics Prolog,
 ;;;> Symbolics Fortran, CLOE, Joshua, Concordia, and Statice are trademarks of Symbolics, Inc.
-;;;> 
+;;;>
 ;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer 
+;;;>    Use, duplication, and disclosure by the Government are subject to restrictions
+;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer
 ;;;> Software Clause at FAR 52.227-7013.
-;;;> 
+;;;>
 ;;;>      Symbolics, Inc.
 ;;;>      8 New England Executive Park, East
 ;;;>      Burlington, Massachusetts  01803
@@ -59,7 +59,7 @@
 ;;;
 ;;; First, some substrate for defining protocol functions.  Joshua protocol function specs
 ;;; look like (<name> <model/pred> . <keywords>) where <name> is the name of a protocol function (SAY,
-;;; TELL, ASK, etc.), <model/pred> is the model or predicate you're talking about, and 
+;;; TELL, ASK, etc.), <model/pred> is the model or predicate you're talking about, and
 ;;; <keywords> is a bunch of options.  <keywords> can be nothing, in which case you're talking
 ;;; about a primary method.  It can also be flavorish things like :BEFORE, :AFTER, :CASE :FOO, etc.
 ;;; Finally, it can be :WHOPPER, :WHOPPER-SUBST, or :WRAPPER with the obvious meaning.
@@ -105,7 +105,7 @@
   ;; good for error-checking in define-predicate-method
   '(satisfies joshua-protocol-function-spec-p))
 
-;;; 
+;;;
 ;;; Some parts of the protocol have internal and external names, e.g., TELL and JI::TELL-INTERNAL.
 ;;; This is a translation mechanism to get from one to the other.
 ;;;
@@ -180,7 +180,7 @@
   (check-type name symbol)
   (let ((real-pred (predicate-is-synonym-for name)))
     (setf (predicate-synonyms real-pred) (delete name (predicate-synonyms real-pred))))
-  (remprop name 'predicate-is-synonym-for)) 
+  (remprop name 'predicate-is-synonym-for))
 
 ;;; With Clos all predicate methods can be real clos methods, using
 ;;; EQL dispatching as well as class dispatching.
@@ -277,7 +277,7 @@
   ;; ---- Added by sgr from examining the source ---
   ;; REMPROP
   ;; VALIDATE-FUNCTION-SPEC
-  ;; 
+  ;;
   ;; SYS:FUNCTION-SPEC-DEFAULT-HANDLER is also interesting.
   (when (and (not (joshua-protocol-function-spec-p fspec))
 	     (eq operation 'zl:::sys:validate-function-spec))
@@ -423,7 +423,7 @@
 
 (defun has-been-in-database-p (predication)
   (and (predicationp predication)
-       (not (zerop 
+       (not (zerop
 	      (predication-bits-has-been-in-database
 	       (predication-bits predication))))))
 
@@ -592,7 +592,7 @@
 			 (write-char close stream))))
 	(when statement
 	  (print-dereferenced-list statement
-				   *joshua-open-predication-char*      
+				   *joshua-open-predication-char*
 				   *joshua-close-predication-char*)))))))
 
 (defmethod print-object ((self predication) stream)
@@ -816,7 +816,7 @@
 							,(when any-defaulting `#'continuation)))
 			       ,basic-statement)))
 		    ;; will re-cons statement if defaulting dictates it has to.
-		   `(setq .statement. ,basic-statement)))))	   
+		   `(setq .statement. ,basic-statement)))))
 	 (write-destructuring-code ()
 	   ;; write code for destructuring elements of argument map into instance variables
 	   (when destructure-ivs
@@ -856,7 +856,7 @@
 	  ,(write-defaulting-code)
 	  ;; this will only exist if you use :destructure-into-instance-variables.
 	  ,@(write-destructuring-code))))))
-  
+
 (defmacro with-statement-destructured (arglist predication &body body)
   ;; useful for spreading some args into local variables if you don't want to
   ;; do :DESTRUCTURE-INTO-INSTANCE-VARIABLES.
@@ -917,7 +917,7 @@
 			  context       'rest-in-peace)
 	  else if (and (consp arg)
 		       (= (length arg) 2.)
-		       (is-acceptable-arg-name (first arg)) 
+		       (is-acceptable-arg-name (first arg))
 		       (eq context 'rest))
 		 ;; defaulted rest variable
 		 do (setq rest-arg-spec (list (first arg) (second arg))
@@ -935,7 +935,7 @@
 ;;;
 ;;; Now define some places to stash info about the predicate.
 ;;; We use a hash-table of all predicates
-;;; 
+;;;
 
 (defvar *all-predicates* (make-hash-table))
 
@@ -943,7 +943,7 @@
 (eval-when (:compile-toplevel :execute :load-toplevel)
   ;; This is required for SBCL which insists that defconstant maintains eql'ness
   ;; if it happends more than once.  Since the system-definition compiles and then
-  ;; loads each file, we do see this twice during compilation.  There is a specific 
+  ;; loads each file, we do see this twice during compilation.  There is a specific
   ;; error thrown with an appropriate restart, but this is simpler.
   (defmacro define-constant (name value &optional doc)
     `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
@@ -991,7 +991,7 @@
 #+allegro
 (def-fwrapper wrap-arglist (symbol)
   (handler-case (call-next-fwrapper)
-    (error nil 
+    (error nil
       (or
        (find-predicate-arglist symbol)
        (error "~s  is not a function, macro or predicate" symbol)))
@@ -999,6 +999,34 @@
 
 #+allegro
 (fwrap 'excl:arglist 'wrap-arglist-1 'wrap-arglist)
+
+;;; I think this would work in Emacs without autodoc, but apparently we get autodoc
+#+sbcl
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun get-arglist-of-predication-wrapper  (original-function function-name)
+    (let ((predicate-arglist (find-predicate-arglist function-name)))
+      (if (null predicate-arglist)
+          (funcall original-function function-name)
+          predicate-arglist)))
+
+  (sb-int:encapsulate 'sb-introspect:function-lambda-list 'joshua 'get-arglist-of-predication-wrapper)
+
+  (defun valid-operator-symbol-p-wrapper (original-function symbol)
+    (if (find-predicate-arglist symbol)
+        t
+        (funcall original-function symbol)))
+
+  (sb-int:encapsulate 'swank::valid-operator-symbol-p 'joshua 'valid-operator-symbol-p-wrapper)
+
+  (defun extra-keywords-wrapper (original-function operator args)
+    (if (find-predicate-arglist operator)
+        nil
+        (funcall original-function operator args)))
+
+  (sb-int:encapsulate 'swank::extra-keywords 'joshua 'extra-keywords-wrapper))
+
+
+
 
 
 (defmethod virtual-data-p ((self predication))
@@ -1166,7 +1194,7 @@
     (setf (gethash predicate-name *all-predicates*)
 	  (make-predicate-descriptor :args-info args-info
 				     :arglist arg-list))))
- 
+
 ;;; Note that it's a bug to put methods on synonyms, they should go on either a model or the
 ;;; canonical version.
 (def-defining-form define-predicate-synonym
@@ -1225,7 +1253,7 @@
     (declare (ignore env all-lvs)
 	     #-sbcl(dynamic-extent thing))
     thing))
-       
+
 
 ;;; Here are the macro versions of TELL and ASK.  They have positional
 ;;; rather than keyword arguments.
@@ -1317,14 +1345,14 @@
   (fresh-line stream)
   (say (ask-query backward-support) stream))
 
-;;; This applies a function to each element in the backward-support. 
-;(defun map-over-derivation (derivation function)	
+;;; This applies a function to each element in the backward-support.
+;(defun map-over-derivation (derivation function)
 ;  (declare (sys:downward-funarg function))
 ;  (labels ((map-over-support (support)
 ;	     (cond ((consp support)
 ;		    (funcall function (car support))
 ;		    (map nil #'map-over-support (cdr support)))
-;		   (t 
+;		   (t
 ;		      (funcall support-continuation support)))))
 ;    (loop for derivation-item in derivation
 ;	  do
@@ -1377,7 +1405,7 @@
 		  (print-query-results (first rest) :stream stream))
 		(loop for sub-support in (rest rest)
 		      do (when sub-support
-                           (print-indent)                           
+                           (print-indent)
 			   (print-query-results sub-support :stream stream))))
 	      (symbol
 		(ecase type
