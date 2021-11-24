@@ -160,7 +160,7 @@
              (values (eval form) 'predication))
             ((predicationp form)
              (values form 'predication))
-            (t (error "~s is not a Joshua Predication" form))))))
+            (t (error "~s is not a Joshua Predication" form)))))
 
 (clim:define-presentation-method clim:present (obj (type predication) stream (view clim:textual-view) &key)
   (let ((*print-predication-top-level-p* nil))
