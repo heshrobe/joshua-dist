@@ -14,7 +14,7 @@
 
 (load "~/quicklisp/setup.lisp")
 
-(ql:quickload '(:cl-json :drakma :cxml))
+(ql:quickload '(:cl-yaml :cl-json :drakma :cxml))
 
 (defparameter *missing-systems* nil)
 (defparameter *existing-systems* nil)
