@@ -117,7 +117,7 @@
   (:documentation "Does this slot store multiple values?"))
 
 (defclass trigger-holding-mixin ()
-  ((forward-triggers :initform nil :accessor slot-forward-triggers) 
+  ((forward-triggers :initform nil :accessor slot-forward-triggers)
    (backward-triggers :initform nil :accessor slot-backward-triggers)
    (backward-question-triggers :initform nil :accessor slot-backward-question-triggers)))
 
@@ -1356,23 +1356,23 @@
          (loop for value in ,key-variable
              do (tell `[,',predicate (,self ,',slot-name) ,value]))
        (loop for value in ,init-form
-           do (tell `[,',predicate (,self ,',slot-name) ,value]))))
+           do (tell `[,',predicate (,self ,',slot-name) ,value] :justification :assumption))))
    ((and key-p init-form-present)
     `(if ,key-p
          (tell `[,',predicate (,self ,',slot-name) ,,key-variable])
-       (tell `[,',predicate (,self ,',slot-name) ,,init-form])))
+       (tell `[,',predicate (,self ,',slot-name) ,,init-form] :justification :assumption)))
    ((and key-p set-valued?)
     `(when ,key-p
        (loop for value in ,key-variable
-           do (tell `[,',predicate (,self ,',slot-name) ,value]))))
+           do (tell `[,',predicate (,self ,',slot-name) ,value] :justification :assumption))))
    (key-p
     `(when ,key-p
-       (tell `[,',predicate (,self ,',slot-name) ,,key-variable])))
+       (tell `[,',predicate (,self ,',slot-name) ,,key-variable] :justification :assumption)))
    ((and init-form-present set-valued?)
     `(loop for value in ,init-form
-         do (tell `[,',predicate (,self ,',slot-name) ,value])))
+         do (tell `[,',predicate (,self ,',slot-name) ,value] :justification :assumption)))
    (init-form-present
-    `(tell `[,',predicate (,self ,',slot-name) ,,init-form]))))
+    `(tell `[,',predicate (,self ,',slot-name) ,,init-form] :justification :assumption))))
 
 (def-defining-form define-object-type
     :definer
