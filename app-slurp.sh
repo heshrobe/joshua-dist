@@ -5,6 +5,32 @@ cd ~/joshua-dist/
 git pull mit master
 
 
+echo "Doing Start-Interface"
+FILE=~/Research-Projects/start-interface
+if test -e "$FILE";
+   then echo "Pulling Start-Interface"
+	cd ~/Research-Projects/start-interface/
+	git pull mit master
+else echo "Start Interface Directory doesn't exist.  Skipping"
+
+echo "Doing Recipes"
+FILE=~/Research-Projects/recipes
+if test -e "$FILE";
+   then echo "Pulling Recipes"
+	cd ~/Research-Projects/recipes/
+	git pull mit master
+else echo "Start Interface Directory doesn't exist.  Skipping"
+
+     
+echo "Doing Guide"
+FILE=~/Research-Projects/guide
+if test -e "$FILE";
+   then echo "Pulling Guide"
+	cd ~/Research-Projects/guide/
+	git pull mit master
+else echo "Start Interface Directory doesn't exist.  Skipping"
+
+
 echo "Doing ATTACK PLANNER"
 FILE=~/Research-Projects/attack-planning
 if test -e "$FILE";
