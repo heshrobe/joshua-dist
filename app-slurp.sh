@@ -12,6 +12,7 @@ if test -e "$FILE";
 	cd ~/Research-Projects/start-interface/
 	git pull mit master
 else echo "Start Interface Directory doesn't exist.  Skipping"
+     fi
 
 echo "Doing Recipes"
 FILE=~/Research-Projects/recipes
@@ -20,7 +21,7 @@ if test -e "$FILE";
 	cd ~/Research-Projects/recipes/
 	git pull mit master
 else echo "Start Interface Directory doesn't exist.  Skipping"
-
+     fi
      
 echo "Doing Guide"
 FILE=~/Research-Projects/guide
@@ -29,7 +30,7 @@ if test -e "$FILE";
 	cd ~/Research-Projects/guide/
 	git pull mit master
 else echo "Start Interface Directory doesn't exist.  Skipping"
-
+     fi
 
 echo "Doing ATTACK PLANNER"
 FILE=~/Research-Projects/attack-planning
