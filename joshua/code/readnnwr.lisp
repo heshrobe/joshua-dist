@@ -994,29 +994,33 @@ Joshua readtable and the JI, JU, and Joshua packages. "
 ;; #+(and sbcl swank)
 ;; (setf (named-readtables:find-readtable :joshua) ji::*joshua-readtable*)
 
-;;; This is a hack that allows SBCL's xfef to record uses of predications
-;;; at the moment they get recorded as a call.  As I learn more
+
+;;; This is a hack that allows SBCL's xfef to record a use of a predicate
+;;; to get recorded as a call.
+;;;
+;;; The idea is to look at the previous stack frame which should have the macro form
+;;; that's being expanded.  In 2.2.0 and later most of the internals are block compiled
+;;; so there's nothing to wrap that has the right information.
+;;;
+;;; But the previous frame from
+;;; the backtrace seems to reflect the internal state.
+;;;
+;;; As I learn more
 ;;; I might create a new xref category is that's possible (probably not since
 ;;; the compression scheme depends on a constant with a list of all type).
 
 
-#+sbcl
-(sb-int:encapsulate 'sb-c::ir1-convert-global-functoid 'joshua-hack
-                    #'(lambda (orginal-function start next result form fun)
-                        (let ((*macro-form* form))
-                          ;; I need to bind the so that the other guy
-                          ;; can reach into the form.  That info isn't available
-                          ;; easily in the call.
-                          (declare (special *macro-form*))
-                          (funcall orginal-function start next result form fun))))
+
 
 #+sbcl
-(sb-int:encapsulate 'sb-c::record-macroexpansion 'joshua-hack
-                   #'(lambda (original-function macro-name  block path)
-                       (declare (special *macro-form*))
-                       (cond
-                         ((eql macro-name 'predication-maker)
-                          ;; record it as a call not a macroexpansion
-                          ;; and don't record the expansion of predication-maker
-                          (sb-c::record-call (predication-maker-predicate *macro-form*) block path))
-                         (t (funcall original-function macro-name block path)))))
+(sb-int:encapsulate 'sb-c::record-macroexpansion 'my-hack
+                    #'(lambda (original-function macro-name block path)
+                        (let* ((previous-frame (first (sb-debug:list-backtrace :count 1 :start 1 )))
+                               (form (and (listp previous-frame) (fifth previous-frame))))
+                          (cond
+                            ((and (eql macro-name 'predication-maker)
+                                   (listp form)
+                                   (predication-maker-p form))
+                             (sb-c::record-call (predication-maker-predicate form) block path))
+                            (t
+                              (funcall original-function macro-name block path))))))
