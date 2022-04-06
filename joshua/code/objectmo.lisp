@@ -1348,6 +1348,8 @@
 
 ;;; In the CLOS version you'll provide CLOS slot-descriptors for the
 ;;; "other instance variables" field.
+;;; Possible addition: If you're doing an initform and there's already a value with
+;;; assumption support, then unjustify before the tell.
 
 (defun build-init-tell (predicate slot-name init-form-present init-form key-variable key-p set-valued?)
   (cond

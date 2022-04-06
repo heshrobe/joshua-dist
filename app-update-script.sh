@@ -69,6 +69,19 @@ else echo "\nStart Interface not present"
 fi
 
 
+FILE=~/Research-Projects/planning-core
+if test -e $FILE; then
+echo "\nDoing Planning Core\n"
+cd ~/Research-Projects/planning-core/
+git commit -a -m "Updating all apps"
+echo "\nPushing to Github.com"
+git push origin
+echo "\nPushing to MIT Github"
+git push mit
+else echo "\nStart Interface not present"
+fi
+
+
 FILE=~/Research-Projects/recipes
 if test -e $FILE; then
 echo "\nDoing Recipes\n"
@@ -81,10 +94,10 @@ git push mit
 else echo "\nRecipes not present"
 fi
 
-FILE=~/Research-Projects/ASIST/guide
+FILE=~/Research-Projects/guide
 if test -e $FILE; then
 echo "\nDoing Guide\n"
-cd ~/Research-Projects/ASIST/guide/
+cd ~/Research-Projects/guide/
 git commit -a -m "Updating all apps"
 echo "\nPushing to Github.com"
 git push origin

@@ -4,13 +4,13 @@
 ;;;> ** (c) Copyright 1989, 1988 Symbolics, Inc.  All rights reserved.
 ;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
 ;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
+;;;>    The software, data, and information contained herein are proprietary
+;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends
+;;;> to keep such software, data, and information confidential and to preserve
+;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant
+;;;> to a written license agreement, and may be used, copied, transmitted, and
 ;;;> stored only in accordance with the terms of such license.
-;;;> 
+;;;>
 ;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
 ;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3653, Symbolics
 ;;;> 3620 (R), Symbolics 3610 (R), Symbolics XL400, Symbolics Common Lisp (R),
@@ -20,12 +20,12 @@
 ;;;> Examiner (R), S-DYNAMICS (R), S-GEOMETRY (R), S-PAINT (R), S-RENDER (R), "Your Next
 ;;;> Step in Computing" (R), Ivory, MacIvory, Symbolics C, Symbolics Pascal, Symbolics Prolog,
 ;;;> Symbolics Fortran, CLOE, Joshua, Concordia, and Statice are trademarks of Symbolics, Inc.
-;;;> 
+;;;>
 ;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer 
+;;;>    Use, duplication, and disclosure by the Government are subject to restrictions
+;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer
 ;;;> Software Clause at FAR 52.227-7013.
-;;;> 
+;;;>
 ;;;>      Symbolics, Inc.
 ;;;>      8 New England Executive Park, East
 ;;;>      Burlington, Massachusetts  01803
@@ -50,13 +50,13 @@
 ;;; The procedure node can also repeatedly succeed.
 ;;;
 ;;;  left-node  right-node right-node right-node
-;;;       \     /          /          /		
+;;;       \     /          /          /
 ;;;     left-node         /         /
 ;;;           \          /        /
 ;;;           procedure /       /
 ;;;             \      /      /
-;;;           left-node     / 
-;;;                   \   /   
+;;;           left-node     /
+;;;                   \   /
 ;;;                   terminal-node
 
 
@@ -283,7 +283,7 @@
 ;;; So when you hit the procedure, you make an and node for x & y
 ;;; insert it in whatever you're processing and then feed that into p.
 ;;; Giving topology something like.
-;;; x ----- 
+;;; x -----
 ;;;       | ---- p ---or
 ;;; y -----           |
 ;;;                   |
@@ -295,7 +295,7 @@
   #-sbcl(declare (values analysis bottom-node insertion))
 ;;  (let ((*print-level* 2) (*print-length* 5))
 ;;    (format t "~% ~{~a~^ ~}" (list (car trigger) (cadr trigger))))
-  (rete-topologizer (car trigger) 
+  (rete-topologizer (car trigger)
 		    (cdr trigger)
 		    variables-in-block
 		    environment-stack))
@@ -327,7 +327,7 @@
 	    (setq last-node (if last-node
 				(tack-node-onto-group last-node last-node insertion all-my-variables)
 			      insertion))
-	when (not (null entry)) 
+	when (not (null entry))
 	collect entry into entries
 	and do (setq all-my-variables (union all-my-variables (pattern-analysis-variables-referenced entry)))
 	    ;; (format t "~%Variables: ~a ~a" all-my-variables (type-of entry))
@@ -389,7 +389,7 @@
 	  for dummy = (progn (multiple-value-setq (entry bottom-node insertion)
 			       (build-rete-topology sub-trigger nil environment-stack))
 			     (when insertion
-			       (push `(procedure ,bottom-node) 
+			       (push `(procedure ,bottom-node)
 				     (pattern-analysis-links insertion))))
 	  for his-key = (pattern-analysis-non-local-parents entry)
 	  for his-group = (assoc his-key non-local-usage-alist :test #'(lambda (a b) (null (set-exclusive-or a b))))
@@ -523,7 +523,7 @@
 			  for his-vars = (do-one-analysis child)
 			  do (setq all-variables-below
 				   (union all-variables-below his-vars)))
-			(setq all-variables-below body-variables))		    
+			(setq all-variables-below body-variables))
 		    (when (and-group-pattern-analysis-p analysis)
 		      (loop for pattern in (and-group-pattern-analysis-sub-patterns analysis)
 			    for his-vars = (do-one-analysis pattern)
@@ -753,7 +753,7 @@
 				   (pattern-analysis-name analysis))
     (declare (ignore stuff))
     (setf (object-match-pattern-analysis-semi-unification-code analysis) semi
-	  (pattern-analysis-map analysis) map 
+	  (pattern-analysis-map analysis) map
 	  (pattern-analysis-map-generated analysis) t)))
 
 
@@ -777,17 +777,17 @@
 
 (defun make-rete-network (rule-name top-level-node *pred-mapping*)
   (declare (special *pred-mapping*))
-  (let ((*node-making-code* nil) 
+  (let ((*node-making-code* nil)
 	(*body-code* nil))
     (declare (special *node-making-code* *body-code*))
     (make-rete-network-dispatch rule-name top-level-node)
     (values (nreverse *node-making-code*) (nreverse *body-code*))
     ))
- 
+
 (defun make-rete-network-dispatch (rule-name trigger-structure)
   (or (pattern-analysis-rete-node trigger-structure)
       (let ((method-exists (find-method #'rete-net-constructor nil
-					(list 
+					(list
 					 #-(or allegro sbcl) `(eql ,(type-of trigger-structure))
 					 #+(or allegro sbcl) (intern-eql-specializer (type-of trigger-structure))
 					 (find-class t)
@@ -798,7 +798,7 @@
 		 (type-of trigger-structure) trigger-structure))
 	(when method-exists (rete-net-constructor (type-of trigger-structure) rule-name trigger-structure))
 	(let ((my-node (pattern-analysis-rete-node trigger-structure)))
-	  (follow-links rule-name trigger-structure)	  
+	  (follow-links rule-name trigger-structure)
 	  my-node))))
 
 (defun follow-links (rule-name trigger-structure)
@@ -977,13 +977,13 @@
 ;;; rule and "interns" it in the global rete network.
 ;;; If the rule already has a definition, the rete-network is
 ;;; updated so that all vestiges of the old rule are removed.
-;;; 
+;;;
 ;;; Thus there are 3 rete networks being played with:   The system's
 ;;; real rete network A rete network for the new version of the rule A
 ;;; part of the system's rete network which contains nodes belonging to
 ;;; the old version of this rule.
 ;;;
-;;; We first find everything having to do with the old version of the 
+;;; We first find everything having to do with the old version of the
 ;;; rule which will need to be removed.
 ;;;
 ;;; Then we install the match-nodes for the new version of the rule,
@@ -1044,11 +1044,11 @@
 					      (variant (match-id-pattern match-id) trigger))
 				      do (setq trigger (match-id-pattern match-id))
 					 (return (values))))
-			    (pushnew (list trigger truth-value) triggers)				
+			    (pushnew (list trigger truth-value) triggers)
 			    (push (cons node canonical-node) interning-alist)
 			    (pushnew canonical-node match-nodes)
 			    (pushnew canonical-node terminal-nodes))))
-		       ((rete-procedure-node-p node)			
+		       ((rete-procedure-node-p node)
 			(cond (top-level
 			       (pushnew node terminal-nodes)
 			       (push (cons node node) interning-alist))
@@ -1268,7 +1268,7 @@
 	   (setq new-nodes (delete child new-nodes :key #'car))
 	   (when (basic-rete-node-p child)
 	     (loop for child-entry in (basic-rete-node-children child)
-		when (typep child-entry 'basic-rete-child-entry)  
+		when (typep child-entry 'basic-rete-child-entry)
 		do (remove-children (basic-rete-child-entry-child child-entry))))))
       (loop for (donator . receptor) in alist
 	 doing (typecase receptor
@@ -1276,7 +1276,7 @@
 		  (intern-rete-match-nodes donator receptor))
 		 (otherwise (intern-rete-nodes donator receptor))))
       (values new-nodes alist))))
- 
+
 
 
 
@@ -1428,7 +1428,7 @@
           else if (= truth-value +false+) collect supporter into false-support
           else if (= truth-value +unknown+) collect supporter into unknown-support
           else do (error "Contradictory truth-value of ~S in *support*: ~S" supporter *support*)
-          finally 
+          finally
           (when certainty-factor
             (setq rule-name (list rule-name certainty-factor)))
           (with-stack-list (justification rule-name true-support false-support unknown-support)
@@ -1621,8 +1621,9 @@
 			   :environment match-env
 			   :predications (if (typep object 'tms-object-mixin)
 					     (list (basic-object-type-predication object)
-						   (basic-object-part-predication object))
-					   (list (basic-object-type-predication object)))					   
+                                                   ;;(Basic-object-part-predication object)
+                                                   )
+					   (list (basic-object-type-predication object)))
 			   :has-logic-variables (if has-logic-variables 1 0)
 			   :my-node node)))
 	(add-rete-state object state-entry)
@@ -1649,7 +1650,7 @@
 		       (delete state (basic-rete-node-environments node))))
 	       (loop for sub-state in (rete-internal-state-children state)
 		     doing (get-rid-of-state-entry sub-state)))))
-    (declare (dynamic-extent #'get-rid-of-state-entry))	  
+    (declare (dynamic-extent #'get-rid-of-state-entry))
     (loop for state-entry in (predication-rete-states predication)
 	  doing (get-rid-of-state-entry state-entry))
     (setf (predication-bits-ive-been-untold (predication-bits predication)) 1)
@@ -1788,4 +1789,3 @@
 ;;; The graph rete net code is now in ptypes-and-commands
 (eval-when (:compile-toplevel :execute :load-toplevel)
   (proclaim '(special *forward-rules*)))
-

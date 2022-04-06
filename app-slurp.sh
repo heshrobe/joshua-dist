@@ -12,6 +12,16 @@ if test -e "$FILE";
 	cd ~/Research-Projects/start-interface/
 	git pull mit master
 else echo "Start Interface Directory doesn't exist.  Skipping"
+fi
+
+
+echo "Doing Planning Core"
+FILE=~/Research-Projects/planning-core
+if test -e "$FILE";
+   then echo "Pulling Planning core"
+	cd ~/Research-Projects/planning-core/
+	git pull mit master
+else echo "Planning Core Directory doesn't exist.  Skipping"
      fi
 
 echo "Doing Recipes"

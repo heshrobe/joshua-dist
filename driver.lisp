@@ -45,8 +45,8 @@
   ;; This provides a class for the Allegro version of defsystem that allows me to control where the binaries
   ;; go
   (load (make-pathname :directory `(:absolute ,@directory)
-			:device (pathname-device loading-file)
-			:name "system-class" :type "lisp"))
+                       :device (pathname-device loading-file)
+                       :name "system-class" :type "lisp"))
   ;; XML Parser
   (load-if-there Xml-parser
 		 (make-pathname :directory `(:absolute ,@directory "xml-parser")
@@ -55,45 +55,46 @@
   ;; XML Server for XML-RPC
   (load-if-there Xml-Server
 		 (make-pathname :directory `(:absolute ,@directory "sample-xml-rpc-server")
-							 :device (pathname-device loading-file)
-							 :name "defsystem" :type "lisp"))
+                                :device (pathname-device loading-file)
+                                :name "defsystem" :type "lisp"))
   ;; Clim Fixes
-   (load (make-pathname :directory `(:absolute ,@directory "clim-fixes")
-			:device (pathname-device loading-file)
-			:name "clim-fixes-defsystem" :type "lisp"))
-   ;; Clim Env
-   (load (make-pathname :directory `(:absolute ,@directory "clim-env" "portable-lisp-environment")
-			:device (pathname-device loading-file)
-			:name "load-env" :type "lisp"))
-   ;; Joshua
-   (load (make-pathname :directory `(:absolute ,@directory "joshua" "code")
-			:device (pathname-device loading-file)
-			:name "joshua-defsystem" :type "lisp"))
-   ;; Joshua Developer Tools
-   (load (make-pathname :directory `(:absolute ,@directory "joshua" "developer")
-			:device (pathname-device loading-file)
-			:name "jd-defsystem" :type "lisp"))
-   ;; Ideal Bayesian Inference Sysetm
-   (load-if-there ideal
-		  (make-pathname :directory `(:absolute ,@directory "ideal" "code")
-				 :device (pathname-device loading-file)
-				 :name "defsystem" :type "lisp"))
-   ;; load the defsystems for the all the current apps
-   ;; Start Interface
-   (load-if-there start-interface "~/Research-Projects/start-interface/code/defsystem.lisp")
-   ;; Programmer's Apprentice
-   (load-if-there Natsoft  "~/Research-Projects/natural-software/code/defsystem.lisp")
+  (load (make-pathname :directory `(:absolute ,@directory "clim-fixes")
+                       :device (pathname-device loading-file)
+                       :name "clim-fixes-defsystem" :type "lisp"))
+  ;; Clim Env
+  (load (make-pathname :directory `(:absolute ,@directory "clim-env" "portable-lisp-environment")
+                       :device (pathname-device loading-file)
+                       :name "load-env" :type "lisp"))
+  ;; Joshua
+  (load (make-pathname :directory `(:absolute ,@directory "joshua" "code")
+                       :device (pathname-device loading-file)
+                       :name "joshua-defsystem" :type "lisp"))
+  ;; Joshua Developer Tools
+  (load (make-pathname :directory `(:absolute ,@directory "joshua" "developer")
+                       :device (pathname-device loading-file)
+                       :name "jd-defsystem" :type "lisp"))
+  ;; Ideal Bayesian Inference Sysetm
+  ;; (load-if-there ideal (make-pathname :directory `(:absolute ,@directory "ideal" "code")
+  ;;      			 :device (pathname-device loading-file)
+  ;;      			 :name "defsystem" :type "lisp"))
+  ;; load the defsystems for the all the current apps
+  ;; Start Interface
+  (load-if-there start-interface "~/Research-Projects/start-interface/code/defsystem.lisp")
+  ;; Programmer's Apprentice
+  (load-if-there Natsoft  "~/Research-Projects/natural-software/code/defsystem.lisp")
   ;; AWDRAT
-   (load-if-there AWDRAT  "~/Research-Projects/awdrat/code/defsystem.lisp")
+  ;; (load-if-there AWDRAT  "~/Research-Projects/awdrat/code/defsystem.lisp")
   ;; Control System Demo
-   (load-if-there Control-System "~/Research-Projects/control-system/defsystem.lisp")
+  ;; (load-if-there Control-System "~/Research-Projects/control-system/defsystem.lisp")
   ;; Attack Planner
-   (load-if-there Attack-Planner "~/Research-Projects/attack-planning/code/defsystem.lisp")
-   ;; Recipes
-   (load-if-there Recipes "~/Research-Projects/recipes/code/defsystem.lisp")
-   ;; Guide
-   (load-if-there Guide "~/Research-Projects/ASIST/guide/defsystem.lisp")
-   )
+  (load-if-there Attack-Planner "~/Research-Projects/attack-planning/code/defsystem.lisp")
+  ;; planning-core
+  (load-if-there planning-core "~/Research-Projects/planning-core/code/defsystem.lisp")
+  ;; Recipes
+  (load-if-there Recipes "~/Research-Projects/recipes/code/defsystem.lisp")
+  ;; Guide
+  (load-if-there Guide "~/Research-Projects/guide/code/defsystem.lisp")
+  )
 
 
 #+Allegro
@@ -117,15 +118,14 @@
     (compile-system 'joshua-developer :recompile recompile))
   (load-system 'joshua-developer)
   ;; ideal
-  (when compile
-    (if-there ideal
-     (compile-system 'ideal :recompile recompile)))
-  (if-there (load-system 'ideal))
+  ;; (when compile
+  ;;   (if-there ideal (compile-system 'ideal :recompile recompile)))
+  ;; (if-there (load-system 'ideal))
   ;; xml-parser
   (if-there xml-parser
-	      (when compile
-		(compile-system 'xml-parser :recompile recompile))
-	      (load-system 'xml-parser))
+            (when compile
+              (compile-system 'xml-parser :recompile recompile))
+            (load-system 'xml-parser))
   ;; xml-server
   (when xml-server
     (if-there xml-server
@@ -137,10 +137,10 @@
               (when compile
                 (compile-system 'start-interface :recompile recompile))
               (load-system 'start-interface))
-    (if-there recipes
+    (if-there planning-core
               (when compile
-                (compile-system 'recipes :recompile recompile))
-              (load-system 'recipes))
+                (compile-system 'planning-core :recompile recompile))
+              (load-system 'planning-core))
     (if-there guide
               (when compile
                 (compile-system 'guide :recompile recompile))
@@ -149,14 +149,14 @@
 	      (when compile
 		(compile-system 'natsoft :recompile recompile))
 	      (load-system 'natsoft))
-    (if-there awdrat
-	      (when compile
-		(compile-system 'awdrat :recompile recompile))
-	      (load-system 'awdrat))
-    (if-there control-system
-	      (when compile
-		(compile-system 'controls :recompile recompile))
-	      (load-system 'controls))
+    ;; (if-there awdrat
+    ;;           (when compile
+    ;;     	(compile-system 'awdrat :recompile recompile))
+    ;;           (load-system 'awdrat))
+    ;; (if-there control-system
+    ;;           (when compile
+    ;;     	(compile-system 'controls :recompile recompile))
+    ;;           (load-system 'controls))
     (if-there attack-planner
 	      (when compile
 		(compile-system 'aplan :recompile recompile))
