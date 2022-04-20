@@ -4,13 +4,13 @@
 ;;;> ** (c) Copyright 1989, 1988 Symbolics, Inc.  All rights reserved.
 ;;;> ** Portions of font library Copyright (c) 1984 Bitstream, Inc.  All Rights Reserved.
 ;;;>
-;;;>    The software, data, and information contained herein are proprietary 
-;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends 
-;;;> to keep such software, data, and information confidential and to preserve 
-;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant 
-;;;> to a written license agreement, and may be used, copied, transmitted, and 
+;;;>    The software, data, and information contained herein are proprietary
+;;;> to, and comprise valuable trade secrets of, Symbolics, Inc., which intends
+;;;> to keep such software, data, and information confidential and to preserve
+;;;> them as trade secrets.  They are given in confidence by Symbolics pursuant
+;;;> to a written license agreement, and may be used, copied, transmitted, and
 ;;;> stored only in accordance with the terms of such license.
-;;;> 
+;;;>
 ;;;> Symbolics, Symbolics 3600, Symbolics 3670 (R), Symbolics 3675 (R), Symbolics 3630,
 ;;;> Symbolics 3640, Symbolics 3645 (R), Symbolics 3650 (R), Symbolics 3653, Symbolics
 ;;;> 3620 (R), Symbolics 3610 (R), Symbolics XL400, Symbolics Common Lisp (R),
@@ -20,12 +20,12 @@
 ;;;> Examiner (R), S-DYNAMICS (R), S-GEOMETRY (R), S-PAINT (R), S-RENDER (R), "Your Next
 ;;;> Step in Computing" (R), Ivory, MacIvory, Symbolics C, Symbolics Pascal, Symbolics Prolog,
 ;;;> Symbolics Fortran, CLOE, Joshua, Concordia, and Statice are trademarks of Symbolics, Inc.
-;;;> 
+;;;>
 ;;;> RESTRICTED RIGHTS LEGEND
-;;;>    Use, duplication, and disclosure by the Government are subject to restrictions 
-;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer 
+;;;>    Use, duplication, and disclosure by the Government are subject to restrictions
+;;;> as set forth in subdivision (c)(1)(ii) of the Rights in Trademark Data and Computer
 ;;;> Software Clause at FAR 52.227-7013.
-;;;> 
+;;;>
 ;;;>      Symbolics, Inc.
 ;;;>      8 New England Executive Park, East
 ;;;>      Burlington, Massachusetts  01803
@@ -91,7 +91,9 @@
 		     (copy-value (predication-statement value))
 		   (if new-p
 		       (values (make-predication new-pred) t)
-		       (values value nil))))
+                     (values value nil))))
+               ;; if it's a bound logic variable copy out the value
+               (joshua-logic-variable (values (copy-object-if-necessary value) nil))
 	       (otherwise (values value nil)))))
     (copy-value value)))
 
@@ -112,7 +114,7 @@
     basic-map))
 
 (defun index-from-map (variable map)
-  ;; given a variable name and a map, return the index 
+  ;; given a variable name and a map, return the index
   (cdr (assoc variable map)))
 
 (defun generate-merged-environment-map (left-map right-map)
@@ -139,7 +141,7 @@
 ;;; hash tables.  There are methods which control how these functions
 ;;; are generated (such as positions-matcher-can-skip); if any of these
 ;;; is redefined the hash tables are cleared.
-;;; 
+;;;
 
 
 ;;;  In Genera, this is the hash table's hash function.
@@ -245,7 +247,7 @@
   (clrhash *matcher-cache*)
   (clrhash *semi-matcher-cache*)
   (clrhash *merger-cache*)
-  (clrhash *semi-merger-cache*) 
+  (clrhash *semi-merger-cache*)
   (setq *matcher-cache-hits* 0
 	*matcher-cache-misses* 0
 	*merger-cache-hits* 0
@@ -263,7 +265,7 @@
   (unadvise-compile-file)
   (setq *original-compile-file* (symbol-function 'compile-file))
   (setf (symbol-function 'compile-file)
-	#'(lambda (input-pathname &key output-file &allow-other-keys) 
+	#'(lambda (input-pathname &key output-file &allow-other-keys)
 	    (let ((*file-matcher-cache* nil)
 		  (*file-semi-matcher-cache* nil)
 		  (*file-merger-cache* nil)
@@ -307,7 +309,7 @@
  (advise-compile-file))
 
 #+mcl
-(ccl:advise compile-file 
+(ccl:advise compile-file
             (let ((*file-matcher-cache* nil)
 	          (*file-semi-matcher-cache* nil)
 	          (*file-merger-cache* nil)
@@ -316,7 +318,7 @@
               (declare (special *file-matcher-cache* *file-semi-matcher-cache*
 		                *file-merger-cache* *file-semi-merger-cache*))
               (:do-it))
-            :when :around 
+            :when :around
             :name 'set-up-joshua-cache )
 
 #+allegro
@@ -340,7 +342,7 @@
     (declare (special *file-matcher-cache* *file-semi-matcher-cache*
 		      *file-merger-cache* *file-semi-merger-cache*))
     :do-it))
-  
+
 
 (defun get-matcher-or-merger-from-cache (key type-of-cache creator-if-not-found)
   ;; get a matcher or merger from the appropriate cache, creating it if not found
@@ -465,7 +467,7 @@
       `(lambda (predication-to-match)
 	 (macrolet ((known-lvs () ',(union known-lvs variables)))
 	   (with-unbound-logic-variables ,variables
-	     (with-unification	    
+	     (with-unification
 	       ;; first do the unification
 	       ,generated-code
 	       ,@(when support-variable
@@ -501,7 +503,7 @@
 	 (progn predication-to-match)
 	 (let ,variables
 	   ;; create some local variables as vicars for the logic variables, then test
-	   (and 
+	   (and
 		,(write-forward-rule-semi-matcher predication-maker 'predication-to-match environment)
 		,@(when support-variable
 		   `((setq ,support-variable predication-to-match)))
@@ -645,7 +647,7 @@
 	 (with-unification			;set up trail mechanism
 	   ;; first unify all the elements of left and right envs.  This results in pointers
 	   ;; from unbound variables in right to unbound variables in left.
-	   ,@(loop for shared-var in shared-vars 
+	   ,@(loop for shared-var in shared-vars
 		   collecting `(unify (lookup-in-environment
 					left-env ,(index-from-map shared-var left-map))
 				      (lookup-in-environment
@@ -697,7 +699,7 @@
       `(lambda (left-env right-env)
 	 (progn left-env right-env)		;so rules with no variables don't get warnings
 	 (when (and
-		 ,@(loop for shared-var in shared-vars 
+		 ,@(loop for shared-var in shared-vars
 			 collecting
 			   `(equal
 			      (lookup-in-environment left-env
@@ -810,7 +812,7 @@
 					collect `(setf (aref .new-env. ,position) (logic-variable-maker ,variable)))
 				(funcall .continuation. .new-env. ,support-variable nil)
 				nil)
-			     `(let* ((new-state-has-lvs (if old-state-has-lvs 
+			     `(let* ((new-state-has-lvs (if old-state-has-lvs
 							    (or ,@(loop for variable in old-lvs-plus-used-new-lvs
 									collect `(unbound-logic-variable-p ,variable)))
 							    (or ,@(loop for variable in new-variables-that-somebody-uses
@@ -879,7 +881,7 @@
 	 (known-to-be-semi-unification (pattern-analysis-pure-semi-unification? analysis))
 	 shuffling-code
 	 binding-code
-	 has-lv-expression 
+	 has-lv-expression
 	 (old-env-refd nil))
     (setq shuffling-code
 	  (loop for (out-variable . output-position) in output-map
